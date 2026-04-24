@@ -51,6 +51,10 @@ export interface BaselineOutput {
     estimated_tco2e: number;
     reason_for_priority: "high_spend" | "high_emissions" | "high_uncertainty" | "policy_relevant";
     recommended_next_agent: "green_alternatives_agent" | "cost_savings_agent" | "both";
+    // Additive (spec R008.AC3): filled by deterministic path from reasons.ts; LLM path overwrites with per-cluster string.
+    reason_for_priority_detail?: string;
+    transaction_count?: number;
+    avg_confidence?: Confidence;
   }>;
   required_context_question: string | null;
 }
