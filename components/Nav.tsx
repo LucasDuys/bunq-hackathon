@@ -3,6 +3,7 @@ import { Leaf } from "lucide-react";
 
 const items = [
   { href: "/", label: "Overview" },
+  { href: "/briefing", label: "Briefing" },
   { href: "/categories", label: "Categories" },
   { href: "/reserve", label: "Reserve" },
   { href: "/ledger", label: "Ledger" },
