@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, FileText, Link2, ExternalLink } from "lucide-react";
 import { Badge, Card, CardBody, CardHeader, CardTitle, Stat, SectionDivider } from "@/components/ui";
+import { InvoiceActions } from "@/components/InvoiceActions";
 import { getInvoiceWithItems } from "@/lib/queries";
 import { fmtEur, fmtPct } from "@/lib/utils";
 
@@ -59,6 +60,13 @@ export default async function InvoiceDetailPage({
           </div>
         </div>
       </div>
+
+      {/* Actions: view file, download, reprocess */}
+      <InvoiceActions
+        invoiceId={invoice.id}
+        status={invoice.status}
+        fileMime={invoice.fileMime}
+      />
 
       <SectionDivider />
 

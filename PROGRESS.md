@@ -170,6 +170,15 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `fixtures/invoices/` — 3 demo fixtures: KLM, AWS, Albert Heijn with line items (2026-04-25)
 - [x] `scripts/seed.ts` — `seedInvoices()` seeds demo invoices with classification + transaction linking (2026-04-25)
 - [x] `npm install googleapis` — Gmail API dependency added (2026-04-25)
+- [x] `app/api/invoices/[id]/file/route.ts` — File serving endpoint: view/download stored invoice files (2026-04-25)
+- [x] `app/api/invoices/[id]/reprocess/route.ts` — Reprocess endpoint: re-run Claude extraction on failed/stale invoices (2026-04-25)
+- [x] `components/InvoiceActions.tsx` — Client component: view file, download, reprocess buttons with loading states (2026-04-25)
+- [x] `scripts/test-invoice-extraction.ts` — Test script for mock + live extraction pipeline (`npm run invoice:test`) (2026-04-25)
+- [x] DAG integration: baseline agent queries linked invoices, boosts confidence +0.15, sets `data_basis: "invoice"` for downstream agents (2026-04-25)
+- [x] `lib/agents/dag/types.ts` — Added `baseline_has_invoice`, `baseline_invoice_count`, `baseline_data_basis` to PriorityTarget (2026-04-25)
+- [x] Green alternatives agent uses `data_basis: "item_level"` for invoice-backed clusters (2026-04-25)
+- [x] Cost savings agent uses `data_basis: "invoice"` for invoice-backed clusters (2026-04-25)
+- [x] `docs/invoices.md` — Full teammate documentation: architecture, API routes, testing, DB schema, DAG integration (2026-04-25)
 
 ## bunq Sandbox / Live Integration (2026-04-25)
 

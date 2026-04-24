@@ -194,7 +194,7 @@ const mockOutput = (baseline: BaselineOutput, pool: ResearchedPool | undefined):
         amount_eur: c.target.annualized_spend_eur,
         estimated_kg_co2e: Number(baseKg.toFixed(1)),
         confidence: c.target.baseline_confidence ?? 0.6,
-        data_basis: "category_level" as const,
+        data_basis: c.target.baseline_has_invoice ? "item_level" as const : "category_level" as const,
       },
       alternatives: alts,
       recommendation_status: topSaving > 0 ? ("recommend_switch" as const) : ("needs_context" as const),

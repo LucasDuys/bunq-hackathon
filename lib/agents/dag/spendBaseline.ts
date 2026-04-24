@@ -6,8 +6,8 @@
  * is "schema + top-K clusters", not a reasoning step. Agents that need row-level context
  * call lib/agents/dag/tools.ts (bounded).
  */
-import { and, eq, gte } from "drizzle-orm";
-import { db, transactions } from "@/lib/db/client";
+import { and, eq, gte, inArray } from "drizzle-orm";
+import { db, transactions, invoices } from "@/lib/db/client";
 import { estimateEmission, rollup } from "@/lib/emissions/estimate";
 import { factorFor } from "@/lib/factors";
 import type { AgentContext, BaselineOutput } from "./types";
@@ -54,6 +54,8 @@ type Bucket = {
   confidenceSum: number;
   confidenceWeight: number;
   factorUncertaintyPct: number;
+  hasInvoice: boolean;
+  invoiceCount: number;
 };
 
 const isGreenWorthy = (category: string, subCategory: string | null): boolean =>
@@ -106,17 +108,33 @@ export async function run(input: BaselineInput, _ctx?: AgentContext): Promise<Ba
     };
   }
 
+  // Pre-load invoice-linked transaction IDs for confidence boost
+  const txIds = rows.map((r) => r.id);
+  const linkedInvoices = txIds.length > 0
+    ? db
+        .select({ linkedTxId: invoices.linkedTxId })
+        .from(invoices)
+        .where(and(eq(invoices.status, "processed"), inArray(invoices.linkedTxId, txIds)))
+        .all()
+    : [];
+  const invoiceLinkedTxIds = new Set(linkedInvoices.map((r) => r.linkedTxId).filter(Boolean));
+
   const buckets = new Map<string, Bucket>();
   const allEstimates: Array<{ co2eKgPoint: number; co2eKgLow: number; co2eKgHigh: number; confidence: number }> = [];
   for (const tx of rows) {
     const amountEur = tx.amountCents / 100;
     const cat = tx.category ?? "other";
     const sub = tx.subCategory ?? null;
+    const txHasInvoice = invoiceLinkedTxIds.has(tx.id);
+    // Invoice-linked transactions get a confidence boost (line-item data > spend-based)
+    const classifierConf = txHasInvoice
+      ? Math.min(1, (tx.categoryConfidence ?? 0.6) + 0.15)
+      : tx.categoryConfidence ?? 0.6;
     const est = estimateEmission({
       category: cat,
       subCategory: sub,
       amountEur,
-      classifierConfidence: tx.categoryConfidence ?? 0.6,
+      classifierConfidence: classifierConf,
     });
     allEstimates.push(est);
     const key = `${tx.merchantNorm}|${cat}|${sub ?? "_"}`;
@@ -130,6 +148,10 @@ export async function run(input: BaselineInput, _ctx?: AgentContext): Promise<Ba
       existing.co2eKgHigh += est.co2eKgHigh;
       existing.confidenceSum += est.confidence * est.co2eKgPoint;
       existing.confidenceWeight += est.co2eKgPoint;
+      if (txHasInvoice) {
+        existing.hasInvoice = true;
+        existing.invoiceCount += 1;
+      }
     } else {
       buckets.set(key, {
         merchantNorm: tx.merchantNorm,
@@ -144,6 +166,8 @@ export async function run(input: BaselineInput, _ctx?: AgentContext): Promise<Ba
         confidenceSum: est.confidence * est.co2eKgPoint,
         confidenceWeight: est.co2eKgPoint,
         factorUncertaintyPct: factor.uncertaintyPct,
+        hasInvoice: txHasInvoice,
+        invoiceCount: txHasInvoice ? 1 : 0,
       });
     }
   }
@@ -217,6 +241,9 @@ export async function run(input: BaselineInput, _ctx?: AgentContext): Promise<Ba
     baseline_sub_category: b.subCategory,
     baseline_confidence: Number(conf.toFixed(3)),
     baseline_tx_count: b.txCount,
+    baseline_has_invoice: b.hasInvoice,
+    baseline_invoice_count: b.invoiceCount,
+    baseline_data_basis: b.hasInvoice ? "invoice" as const : "spend_based" as const,
   }));
 
   return {
