@@ -405,6 +405,23 @@ export interface ExecReportOutput {
   limitations: string[];
 }
 
+/**
+ * R001 / T005 — payload shape for the `agent.credit_strategy.run` audit event
+ * emitted by `runDag`. The signed `input_digest_sha256` lets a reviewer detect
+ * a sign-flip or formula bug post-hoc by re-hashing the four inputs and
+ * comparing against the recorded digest.
+ */
+export interface CreditAuditPayload {
+  orgId: string;
+  month: string;
+  runId: string;
+  total_net_company_scale_financial_impact_eur: number;
+  total_emissions_reduced_tco2e: number;
+  total_recommended_credit_purchase_cost_eur: number;
+  tax_advisor_review_required: boolean;
+  input_digest_sha256: string;
+}
+
 export interface DagRunResult {
   runId: string;
   baseline: BaselineOutput;
