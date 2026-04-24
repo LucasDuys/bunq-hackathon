@@ -1,7 +1,6 @@
 /**
- * Rule-first merchant classifier: regex → (category, subCategory).
+ * Rule-first merchant classifier: regex -> (category, subCategory).
  * Covers common Dutch/EU business merchants. LLM handles the rest.
- * See research/03-merchant-classification.md.
  */
 export type Rule = {
   pattern: RegExp;

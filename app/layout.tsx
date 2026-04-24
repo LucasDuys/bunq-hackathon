@@ -7,8 +7,8 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Carbon Autopilot — bunq Business",
-  description: "Monthly carbon close system for bunq Business accounts.",
+  title: "Carbo — bunq Business",
+  description: "Agentic carbon accounting for bunq Business accounts.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

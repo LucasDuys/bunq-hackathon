@@ -5,7 +5,6 @@ import { decodeKeyEnv, signBody } from "./signing";
 /**
  * Minimal bunq API client. Signs requests with RSA-SHA256.
  * In BUNQ_MOCK mode, returns canned responses so the rest of the app works offline.
- * See research/08-bunq-primitives.md.
  */
 
 type Method = "GET" | "POST" | "PUT" | "DELETE";

@@ -90,7 +90,7 @@ export default async function Overview() {
             <div className="flex gap-2 items-start"><Zap className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" /><span>Webhook ingests every bunq transaction and classifies the merchant.</span></div>
             <div className="flex gap-2 items-start"><TrendingUp className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" /><span>Monthly close aggregates, estimates CO₂e with a confidence range, and clusters uncertainty.</span></div>
             <div className="flex gap-2 items-start"><Play className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" /><span>Agent asks 2–3 high-impact questions; confidence lifts.</span></div>
-            <div className="flex gap-2 items-start"><Shield className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" /><span>Policy engine allocates funds to the Carbon Reserve sub-account. Credits are EU-first.</span></div>
+            <div className="flex gap-2 items-start"><Shield className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" /><span>Policy engine allocates funds to the Carbo Reserve sub-account. Credits are EU-first.</span></div>
           </CardBody>
         </Card>
       </div>

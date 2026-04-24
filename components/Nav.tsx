@@ -13,7 +13,7 @@ export const Nav = () => (
     <div className="max-w-6xl mx-auto px-6 h-14 flex items-center gap-8">
       <Link href="/" className="flex items-center gap-2 text-sm font-semibold">
         <Leaf className="h-5 w-5 text-emerald-600" />
-        <span>Carbon Autopilot</span>
+        <span>Carbo</span>
       </Link>
       <nav className="flex items-center gap-5 text-sm">
         {items.map((it) => (

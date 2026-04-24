@@ -32,7 +32,7 @@ Key columns for the carbon estimator:
 | `DQR` | Data Quality Rating (1 = excellent, 5 = poor) — surface in confidence scoring |
 | `Matériau d'emballage` | Packaging material (for alternative-matrix suggestions) |
 
-Scope: covers the Albert Heijn / Jumbo supermarket aisle well (dairy, meat, produce, processed). Does **not** cover non-food items — pair with UK BEIS/Defra or Climatiq for fuel, travel, electronics, cloud compute.
+Scope: covers the Albert Heijn / Jumbo supermarket aisle well (dairy, meat, produce, processed). Does **not** cover non-food items — non-food emission factors are hardcoded in `lib/factors/index.ts` (derived from DEFRA 2024, ADEME, and Exiobase). Merchant classification uses the Claude API (Anthropic SDK) to map transactions to the right factor.
 
 Source: <https://doc.agribalyse.fr/documentation-en/agribalyse-data/data-access>
 License: Open (ADEME public data).

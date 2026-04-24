@@ -10,9 +10,8 @@ export type EmissionEstimate = {
 };
 
 /**
- * Blend: factor uncertainty × classifier confidence → overall confidence (0..1).
- * Range: point × (1 ± uncertainty). High uncertainty → wide range.
- * See research/02-confidence-methodology.md.
+ * Blend: factor uncertainty x classifier confidence -> overall confidence (0..1).
+ * Range: point x (1 +/- uncertainty). High uncertainty -> wide range.
  */
 export const estimateEmission = (params: {
   category: string;

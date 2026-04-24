@@ -1,16 +1,16 @@
-# Carbon Autopilot
+# Carbo
 
-Monthly carbon-close system for bunq Business. Webhook-ingested transactions → spend-based emission estimates with confidence ranges → agent-driven refinement (2–3 questions) → policy-driven allocation to a bunq Carbon Reserve sub-account → simulated EU carbon-credit purchase → CSRD ESRS E1 report.
+Agentic carbon accounting for bunq Business accounts. Webhook-ingested transactions → spend-based emission estimates with confidence ranges → agent-driven refinement (2–3 questions) → policy-driven allocation to a bunq Carbo Reserve sub-account → simulated EU carbon-credit purchase → CSRD ESRS E1 report.
 
-Built for the bunq hackathon. Best API Integration track.
+Built for **bunq Hackathon 7.0** (April 24-25, 2026). 3-person team, 24-hour build.
 
 ## Pitch
 > "We turn bunq transactions into a monthly, audit-ready carbon report — and automatically fund your EU carbon reserve."
 
 ## Stack
-- **Next.js 15 App Router** (TypeScript), Tailwind 4, Recharts.
+- **Next.js 16 App Router** (TypeScript), Tailwind 4, Recharts.
 - **SQLite** via better-sqlite3 + **Drizzle ORM**; append-only `audit_events` hash-chain via trigger.
-- **Anthropic TS SDK** — Haiku 4.5 for merchant classification, Sonnet 4.6 for refinement questions + CSRD narrative.
+- **Anthropic TS SDK** — Haiku 4.5 for merchant classification, Sonnet 4.6 for refinement questions + CSRD narrative. No external emission factor APIs (factors hardcoded from DEFRA 2024 / ADEME / Exiobase).
 - **bunq** thin client with RSA-SHA256 signing + webhook verify. Mock-first; flip `BUNQ_MOCK=0` for live sandbox.
 - **Cloudflare Tunnel** is the recommended deploy for webhook URL stability.
 
@@ -47,7 +47,11 @@ pnpm run reset    # wipes + re-seeds. Restart `pnpm dev` afterward so the DB han
 5. `/ledger` — SHA-256 hash chain; chain-valid badge.
 6. `/categories` — impact matrix: train vs flight is 16× difference.
 
-See `research/12-demo-choreography.md` for the full script.
+## Emission Estimation Approach
+
+Spend-based emission factors (GHG Protocol Scope 3, Category 1). Each transaction's EUR amount × category-specific factor (kg CO₂e per EUR). Factors from DEFRA 2024, ADEME Base Carbone, and Exiobase — all hardcoded in `lib/factors/index.ts`, no external API calls.
+
+The Claude API handles the intelligence layer: classifying merchants into the right emission category, generating refinement questions to reduce uncertainty, and writing CSRD-compliant narratives.
 
 ## Directory map
 - `app/` — Next routes (pages + 4 API routes).
@@ -59,12 +63,8 @@ See `research/12-demo-choreography.md` for the full script.
 - `lib/policy/` — Zod-validated policy DSL + evaluator.
 - `lib/credits/` — simulated EU carbon-credit projects (biochar / reforestation / peatland).
 - `lib/audit/` — SHA-256 hash-chained append-only audit ledger.
-- `research/` — 12 practical briefs (the "why" behind every design choice).
+- `lib/anthropic/` — Anthropic SDK wrapper + mock mode.
 - `scripts/` — migrate / seed / reset / bunq bootstrap.
-
-## Architecture
-See [`ARCHITECTURE.md`](./ARCHITECTURE.md) for data flow + state machine diagram + design rationale.
-See [`research/INDEX.md`](./research/INDEX.md) for the 12 research briefs.
 
 ## What's real vs simulated in the demo
 | Real | Simulated |
