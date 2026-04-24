@@ -15,3 +15,21 @@ Hard rules agents must honor on every UI change:
 - Respect `prefers-reduced-motion` and `prefers-color-scheme`.
 
 If `DESIGN.md` and code disagree, fix the code. If you learned something the doc doesn't cover, update `DESIGN.md` in the same PR.
+
+# Agentic DAG is specified
+
+The reasoning layer is an 8-agent DAG under `lib/agents/dag/` driven by `runDag()` (entry point: `POST /api/impacts/research`). Before adding, modifying, or judging any agent:
+
+1. **Read [`docs/agents/00-overview.md`](docs/agents/00-overview.md)** — DAG diagram, model split (Baseline deterministic; Research + others Sonnet), authority boundaries, persistence tables.
+2. **Read [`docs/architecture-comparison.md`](docs/architecture-comparison.md)** — original-plan-vs-reality, drift section, parallel-path inventory, migration order.
+3. **Read the per-agent doc** for the agent you're touching (`docs/agents/0N-*.md`). It contains the canonical system prompt + I/O JSON schema + gap-vs-current-code.
+4. **Check [`.forge/specs/`](.forge/specs/)** for an approved spec covering the change. If none exists, run `/forge:brainstorm` to create one before coding.
+
+Hard rules agents must honor on every DAG change:
+- Authority discipline: judges (`greenJudge`, `costJudge`) are **validators**, not authorities. Code may override their LLM verdict on hard rules (zero-sources, math mismatch). Credit strategy and executive report numbers are **deterministic** — LLM writes prose only.
+- Every Sonnet-using agent has a `buildMock()` deterministic path triggered by `isMock()`. Keep both paths in sync; if you add a field, deterministic must populate it too.
+- `lib/agents/dag/llm.ts::callAgent` is the only sanctioned LLM entry point for DAG agents. Don't import `@anthropic-ai/sdk` directly — the helper handles prompt cache, mock fallback, and `agentMessages` instrumentation.
+- Bound every tool you add to `lib/agents/dag/tools.ts`. No unbounded `SELECT * FROM transactions`.
+- Never pass raw transaction rows into a per-call LLM payload. Aggregate first. See `research/13-context-scaling-patterns.md` for the budget rules.
+
+If `docs/agents/*` and code disagree, fix the code. If you learned something the docs don't cover, update both `docs/agents/0N-*.md` and `docs/architecture-comparison.md` in the same PR.
