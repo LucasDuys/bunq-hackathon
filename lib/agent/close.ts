@@ -273,16 +273,33 @@ const finalizeEstimates = async (closeRunId: string) => {
   }).where(eq(closeRuns.id, closeRunId)).run();
 
   appendAudit({ orgId: run.orgId, actor: "agent", type: "close.proposed", payload: { actions, outcome, finalCo2eKg: finalRollup.co2eKgPoint, finalConfidence: finalRollup.confidence }, closeRunId });
+
+  // Per spec (CONCEPT.md "Agentic action"): low-risk reserves under the policy
+  // threshold auto-execute; only over-threshold runs wait for human approval.
+  if (!outcome.requiresApproval) {
+    const exec = await approveAndExecute(closeRunId, "system");
+    return {
+      state: exec.state,
+      finalCo2eKg: finalRollup.co2eKgPoint,
+      finalConfidence: finalRollup.confidence,
+      reserveEur: outcome.reserveTotalEur,
+      actions,
+      requiresApproval: false,
+      autoExecuted: true,
+      executed: exec.executed,
+    };
+  }
+
   return { state: nextState, finalCo2eKg: finalRollup.co2eKgPoint, finalConfidence: finalRollup.confidence, reserveEur: outcome.reserveTotalEur, actions, requiresApproval: outcome.requiresApproval };
 };
 
-export const approveAndExecute = async (closeRunId: string) => {
+export const approveAndExecute = async (closeRunId: string, approver: "user" | "system" = "user") => {
   const run = db.select().from(closeRuns).where(eq(closeRuns.id, closeRunId)).all()[0];
   if (!run) throw new Error("not found");
   if (!run.proposedActions) throw new Error("no proposed actions");
 
   db.update(closeRuns).set({ state: "EXECUTING", approved: true, approvedAt: Math.floor(Date.now() / 1000) }).where(eq(closeRuns.id, closeRunId)).run();
-  appendAudit({ orgId: run.orgId, actor: "user", type: "close.approved", payload: { closeRunId }, closeRunId });
+  appendAudit({ orgId: run.orgId, actor: approver, type: "close.approved", payload: { closeRunId, auto: approver === "system" }, closeRunId });
 
   const actions = JSON.parse(run.proposedActions) as ProposedAction[];
   const org = db.select().from(orgs).where(eq(orgs.id, run.orgId)).all()[0];
@@ -304,6 +321,7 @@ export const approveAndExecute = async (closeRunId: string) => {
         amountEur: a.amountEur,
         description: a.description,
         token,
+        closeRunId,
       });
     }
     // credit_purchase actions stay audit-only for the hackathon (simulated marketplace).

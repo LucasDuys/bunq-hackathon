@@ -11,6 +11,7 @@ export type IntraUserTransferParams = {
   amountEur: number;
   description: string;
   token: string;
+  closeRunId?: string | null;
 };
 
 /**
@@ -30,6 +31,7 @@ export const intraUserTransfer = async (params: IntraUserTransferParams) => {
         amountEur: params.amountEur,
         description: params.description,
       },
+      closeRunId: params.closeRunId ?? null,
     });
     return { Response: [{ Id: { id: -1 } }], dryRun: true } as const;
   }
