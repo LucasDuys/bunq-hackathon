@@ -1,0 +1,372 @@
+{
+  "runId": "run_demo_2026_03",
+  "metrics": {
+    "spend_emissions_baseline_agent": { "latencyMs": 420, "inputTokens": 1850, "outputTokens": 620, "cached": true },
+    "green_alternatives_agent":        { "latencyMs": 1840, "inputTokens": 3200, "outputTokens": 2100, "cached": false },
+    "cost_savings_agent":              { "latencyMs": 1780, "inputTokens": 3150, "outputTokens": 1950, "cached": false },
+    "green_judge_agent":               { "latencyMs": 980, "inputTokens": 2700, "outputTokens": 900, "cached": false },
+    "cost_judge_agent":                { "latencyMs": 1020, "inputTokens": 2650, "outputTokens": 880, "cached": false },
+    "carbon_credit_incentive_strategy_agent": { "latencyMs": 1340, "inputTokens": 4100, "outputTokens": 1450, "cached": false },
+    "executive_report_agent":          { "latencyMs": 1620, "inputTokens": 3900, "outputTokens": 1850, "cached": false }
+  },
+  "totalLatencyMs": 6400,
+  "baseline": {
+    "agent": "spend_emissions_baseline_agent",
+    "company_id": "acme-bv",
+    "analysis_period": "2026-03",
+    "baseline": {
+      "total_spend_eur": 128430,
+      "estimated_total_tco2e": 41.2,
+      "baseline_confidence": 0.74,
+      "top_spend_categories": [
+        { "category": "procurement", "spend_eur": 46200, "share_pct": 36 },
+        { "category": "travel", "spend_eur": 28800, "share_pct": 22 },
+        { "category": "food", "spend_eur": 18300, "share_pct": 14 },
+        { "category": "software", "spend_eur": 14700, "share_pct": 11 },
+        { "category": "office", "spend_eur": 12100, "share_pct": 9 }
+      ],
+      "top_emission_categories": [
+        { "category": "travel", "tco2e": 14.8, "share_pct": 36 },
+        { "category": "procurement", "tco2e": 12.1, "share_pct": 29 },
+        { "category": "food", "tco2e": 7.6, "share_pct": 18 },
+        { "category": "energy", "tco2e": 4.9, "share_pct": 12 }
+      ],
+      "high_cost_high_carbon_clusters": [
+        "cluster_travel_flights_short_haul_eu",
+        "cluster_food_catering_beef_heavy"
+      ],
+      "uncertain_high_value_clusters": ["cluster_procurement_amazon_business"]
+    },
+    "priority_targets": [
+      { "cluster_id": "cluster_travel_flights_short_haul_eu", "category": "travel", "annualized_spend_eur": 48600, "estimated_tco2e": 92.4, "reason_for_priority": "high_emissions", "recommended_next_agent": "both" },
+      { "cluster_id": "cluster_food_catering_beef_heavy",     "category": "food",   "annualized_spend_eur": 26400, "estimated_tco2e": 38.2, "reason_for_priority": "high_emissions", "recommended_next_agent": "green_alternatives_agent" },
+      { "cluster_id": "cluster_procurement_amazon_business",  "category": "procurement", "annualized_spend_eur": 55400, "estimated_tco2e": 26.1, "reason_for_priority": "high_uncertainty", "recommended_next_agent": "cost_savings_agent" },
+      { "cluster_id": "cluster_software_saas_overlapping",    "category": "software", "annualized_spend_eur": 17640, "estimated_tco2e": 1.8, "reason_for_priority": "high_spend", "recommended_next_agent": "cost_savings_agent" }
+    ],
+    "required_context_question": null
+  },
+  "greenAlt": {
+    "agent": "green_alternatives_agent",
+    "company_id": "acme-bv",
+    "analysis_period": "2026-03",
+    "results": [
+      {
+        "cluster_id": "cluster_travel_flights_short_haul_eu",
+        "transaction_id": null,
+        "merchant": "KLM + Transavia (short-haul EU)",
+        "current_purchase": {
+          "raw_description": "short-haul EU flights AMS-BRU, AMS-CDG, AMS-FRA",
+          "normalized_item_or_category": "air_travel_short_haul_eu",
+          "amount_eur": 48600,
+          "estimated_kg_co2e": 92400,
+          "confidence": 0.82,
+          "data_basis": "category_level"
+        },
+        "alternatives": [
+          {
+            "alternative_name": "Rail for routes under 700km (Thalys/ICE)",
+            "alternative_type": "travel_mode",
+            "estimated_kg_co2e": 18500,
+            "carbon_saving_kg": 73900,
+            "carbon_saving_percent": 80,
+            "estimated_price_eur": 39200,
+            "price_delta_eur": -9400,
+            "source": "emission_factor_library",
+            "confidence": 0.88,
+            "comparability_notes": "Door-to-door time parity on AMS-BRU and AMS-FRA; AMS-CDG rail adds ~45min vs flight."
+          }
+        ],
+        "recommendation_status": "recommend_switch",
+        "recommended_action": "Migrate AMS-BRU, AMS-FRA, AMS-CDG travel to rail. Policy update to default-to-rail for <700km.",
+        "reasoning_summary": "Rail emits 80% less CO2e on short-haul EU routes with comparable door-to-door time and a lower ticket price."
+      },
+      {
+        "cluster_id": "cluster_food_catering_beef_heavy",
+        "transaction_id": null,
+        "merchant": "Catering Nederland BV",
+        "current_purchase": {
+          "raw_description": "monthly catering — beef-heavy lunches",
+          "normalized_item_or_category": "catering_beef_heavy",
+          "amount_eur": 2200,
+          "estimated_kg_co2e": 3180,
+          "confidence": 0.71,
+          "data_basis": "item_level"
+        },
+        "alternatives": [
+          {
+            "alternative_name": "Vegetarian / chicken catering mix",
+            "alternative_type": "product",
+            "estimated_kg_co2e": 1060,
+            "carbon_saving_kg": 2120,
+            "carbon_saving_percent": 66,
+            "estimated_price_eur": 2050,
+            "price_delta_eur": -150,
+            "source": "emission_factor_library",
+            "confidence": 0.79,
+            "comparability_notes": "Same caterer, same headcount, menu swap."
+          }
+        ],
+        "recommendation_status": "recommend_switch",
+        "recommended_action": "Switch standing order to vegetarian + chicken mix; keep 1 beef day/month.",
+        "reasoning_summary": "66% carbon reduction and a small cost saving; same caterer."
+      }
+    ],
+    "summary": {
+      "total_current_kg_co2e": 95580,
+      "total_potential_kg_co2e_saved": 76020,
+      "top_green_opportunities": ["Rail-for-short-haul EU", "Vegetarian catering mix"],
+      "average_confidence": 0.83
+    }
+  },
+  "costSavings": {
+    "agent": "cost_savings_agent",
+    "company_id": "acme-bv",
+    "analysis_period": "2026-03",
+    "results": [
+      {
+        "cluster_id": "cluster_software_saas_overlapping",
+        "transaction_id": null,
+        "merchant": "Overlapping SaaS subscriptions",
+        "current_spend": {
+          "amount_eur": 1470,
+          "monthly_spend_eur": 1470,
+          "annualized_spend_eur": 17640,
+          "category": "software",
+          "data_basis": "recurring_pattern"
+        },
+        "cost_saving_options": [
+          {
+            "option_name": "Consolidate Notion + Confluence → Notion only",
+            "option_type": "cancellation",
+            "estimated_monthly_saving_eur": 310,
+            "estimated_annual_saving_eur": 3720,
+            "one_time_saving_eur": null,
+            "confidence": 0.84,
+            "source": "historical_data",
+            "business_risk": "low",
+            "carbon_effect": "lower",
+            "notes": "6 months of overlapping seats detected."
+          }
+        ],
+        "recommendation_status": "review_recurring_spend",
+        "recommended_action": "Cancel Confluence by May 1. Migrate 18 docs.",
+        "approval_required": true,
+        "reasoning_summary": "Overlapping wiki tools with near-identical usage patterns."
+      },
+      {
+        "cluster_id": "cluster_procurement_amazon_business",
+        "transaction_id": null,
+        "merchant": "Amazon Business",
+        "current_spend": {
+          "amount_eur": 4620,
+          "monthly_spend_eur": 4620,
+          "annualized_spend_eur": 55440,
+          "category": "procurement",
+          "data_basis": "recurring_pattern"
+        },
+        "cost_saving_options": [
+          {
+            "option_name": "Negotiate bulk contract for top 8 SKUs",
+            "option_type": "bulk_purchase",
+            "estimated_monthly_saving_eur": 480,
+            "estimated_annual_saving_eur": 5760,
+            "one_time_saving_eur": null,
+            "confidence": 0.68,
+            "source": "benchmark",
+            "business_risk": "low",
+            "carbon_effect": "neutral",
+            "notes": "Typical 10% bulk discount on office procurement benchmarks."
+          }
+        ],
+        "recommendation_status": "bulk_purchase_opportunity",
+        "recommended_action": "Quote 8 most-ordered SKUs directly with 3 distributors.",
+        "approval_required": false,
+        "reasoning_summary": "Recurring monthly spend concentrated in a small SKU set — bulk contracts beat retail."
+      }
+    ],
+    "summary": {
+      "total_observed_spend_eur": 73080,
+      "total_potential_monthly_saving_eur": 790,
+      "total_potential_annual_saving_eur": 9480,
+      "top_cost_opportunities": ["SaaS consolidation", "Amazon Business bulk contract"],
+      "average_confidence": 0.76
+    }
+  },
+  "greenJudge": {
+    "agent": "green_judge_agent",
+    "company_id": "acme-bv",
+    "analysis_period": "2026-03",
+    "judged_results": [
+      {
+        "cluster_id": "cluster_travel_flights_short_haul_eu",
+        "transaction_id": null,
+        "verdict": "approved",
+        "score": 92,
+        "approved_recommendation": "Rail for EU routes <700km",
+        "corrected_current_kg_co2e": 92400,
+        "corrected_potential_kg_co2e_saved": 73900,
+        "confidence": 0.88,
+        "issues_found": [],
+        "audit_summary": "Factor validated against ADEME. Comparability strong on 3/3 routes."
+      },
+      {
+        "cluster_id": "cluster_food_catering_beef_heavy",
+        "transaction_id": null,
+        "verdict": "approved_with_caveats",
+        "score": 81,
+        "approved_recommendation": "Vegetarian/chicken mix; keep 1 beef day/month",
+        "corrected_current_kg_co2e": 3180,
+        "corrected_potential_kg_co2e_saved": 2000,
+        "confidence": 0.77,
+        "issues_found": ["Saving estimate adjusted down ~6% to reflect 1 beef day kept."],
+        "audit_summary": "Category factor reasonable; comparability strong."
+      }
+    ],
+    "summary": {
+      "approved_total_current_kg_co2e": 95580,
+      "approved_total_potential_kg_co2e_saved": 75900,
+      "high_confidence_green_opportunities": ["Rail-for-short-haul EU", "Vegetarian catering mix"],
+      "rejected_or_uncertain_items": []
+    }
+  },
+  "costJudge": {
+    "agent": "cost_judge_agent",
+    "company_id": "acme-bv",
+    "analysis_period": "2026-03",
+    "judged_results": [
+      {
+        "cluster_id": "cluster_software_saas_overlapping",
+        "transaction_id": null,
+        "verdict": "approved",
+        "score": 90,
+        "approved_recommendation": "Cancel Confluence; consolidate to Notion",
+        "corrected_monthly_saving_eur": 310,
+        "corrected_annual_saving_eur": 3720,
+        "confidence": 0.84,
+        "business_risk": "low",
+        "carbon_effect": "lower",
+        "issues_found": [],
+        "audit_summary": "Math correct; recurring pattern verified 6 months."
+      },
+      {
+        "cluster_id": "cluster_procurement_amazon_business",
+        "transaction_id": null,
+        "verdict": "approved_with_caveats",
+        "score": 74,
+        "approved_recommendation": "Bulk contract for top SKUs",
+        "corrected_monthly_saving_eur": 360,
+        "corrected_annual_saving_eur": 4320,
+        "confidence": 0.65,
+        "business_risk": "low",
+        "carbon_effect": "neutral",
+        "issues_found": ["Benchmark discount adjusted from 10% → 8% without supplier quote."],
+        "audit_summary": "Directionally correct; needs 1-2 supplier quotes to upgrade confidence."
+      }
+    ],
+    "summary": {
+      "approved_total_monthly_saving_eur": 670,
+      "approved_total_annual_saving_eur": 8040,
+      "high_confidence_cost_opportunities": ["SaaS consolidation"],
+      "rejected_or_uncertain_items": []
+    }
+  },
+  "creditStrategy": {
+    "agent": "carbon_credit_incentive_strategy_agent",
+    "company_id": "acme-bv",
+    "analysis_period": "2026-03",
+    "jurisdiction": { "country": "NL", "tax_jurisdiction": "NL", "entity_type": "BV", "corporate_tax_rate": 0.258 },
+    "baseline": { "baseline_annual_spend_eur": 1541160, "baseline_annual_tco2e": 494.4 },
+    "results": [
+      {
+        "recommendation_title": "Rail for EU routes <700km",
+        "switching_impact": {
+          "current_annual_spend_eur": 48600,
+          "new_annual_spend_eur": 39200,
+          "direct_procurement_saving_eur": 9400,
+          "baseline_tco2e": 92.4,
+          "new_tco2e": 18.5,
+          "emissions_reduced_tco2e": 73.9
+        },
+        "credit_strategy": {
+          "remaining_tco2e_after_switch": 18.5,
+          "recommended_credit_purchase_tco2e": 18.5,
+          "credit_type": "removal",
+          "project_region": "EU",
+          "credit_price_per_tonne_eur": 120,
+          "credit_purchase_cost_eur": 2220,
+          "avoided_credit_purchase_cost_eur": 8868,
+          "eligible_for_tax_or_incentive": "unknown",
+          "eligibility_basis": "requires_verification"
+        },
+        "tax_and_incentives": {
+          "estimated_credit_tax_value_eur": 0,
+          "estimated_procurement_tax_value_eur": 2425,
+          "estimated_subsidy_or_grant_value_eur": 0,
+          "avoided_carbon_tax_or_ets_cost_eur": 0,
+          "tax_treatment": "scenario_only"
+        },
+        "net_financial_impact": {
+          "gross_savings_before_tax_eur": 18268,
+          "total_tax_incentive_upside_eur": 2425,
+          "total_avoided_carbon_cost_eur": 8868,
+          "total_credit_cost_eur": 2220,
+          "net_company_scale_financial_impact_eur": 20693,
+          "payback_period_months": 0
+        },
+        "decision": {
+          "recommendation_status": "strong_financial_case",
+          "cfo_summary": "EUR ~20.7k net annual impact — cheaper tickets, lower emissions, smaller credit spend.",
+          "verification_needed": ["Confirm corporate-tax treatment of travel-mode switch"],
+          "confidence": 0.82
+        }
+      }
+    ],
+    "summary": {
+      "total_direct_procurement_saving_eur": 17440,
+      "total_emissions_reduced_tco2e": 75.9,
+      "total_avoided_credit_purchase_cost_eur": 9108,
+      "total_recommended_credit_purchase_cost_eur": 50208,
+      "total_estimated_tax_incentive_upside_eur": 4498,
+      "total_avoided_carbon_tax_or_ets_cost_eur": 0,
+      "total_net_company_scale_financial_impact_eur": 28766,
+      "average_confidence": 0.79,
+      "tax_advisor_review_required": true
+    }
+  },
+  "executiveReport": {
+    "agent": "executive_report_agent",
+    "company_id": "acme-bv",
+    "analysis_period": "2026-03",
+    "report_title": "Acme BV — Monthly carbon close (March 2026)",
+    "executive_summary": "Three approved switches reduce annualized emissions by 75.9 tCO2e and create EUR 28.8k of net company-scale financial impact.",
+    "kpis": {
+      "baseline_annual_spend_eur": 1541160,
+      "projected_annual_spend_after_switching_eur": 1521700,
+      "direct_procurement_savings_eur": 17440,
+      "emissions_reduced_tco2e": 75.9,
+      "recommended_credit_purchase_cost_eur": 50208,
+      "estimated_tax_incentive_upside_eur": 4498,
+      "avoided_carbon_tax_or_ets_cost_eur": 0,
+      "implementation_cost_eur": 0,
+      "net_company_scale_financial_impact_eur": 28766,
+      "payback_period_months": 0,
+      "confidence": 0.79
+    },
+    "top_recommendations": [
+      { "rank": 1, "title": "Rail for EU routes <700km",       "category": "travel",     "carbon_saving_kg": 73900, "annual_saving_eur": 9400, "matrix_quadrant": "low_cost_low_carbon", "action": "Update travel policy; default to rail", "approval_required": true,  "confidence": 0.88 },
+      { "rank": 2, "title": "Vegetarian/chicken catering mix", "category": "food",       "carbon_saving_kg": 2000,  "annual_saving_eur": 1800, "matrix_quadrant": "low_cost_low_carbon", "action": "Swap standing order",                    "approval_required": false, "confidence": 0.77 },
+      { "rank": 3, "title": "SaaS consolidation: drop Confluence", "category": "software", "carbon_saving_kg": 40,    "annual_saving_eur": 3720, "matrix_quadrant": "low_cost_low_carbon", "action": "Cancel Confluence by May 1",             "approval_required": true,  "confidence": 0.84 },
+      { "rank": 4, "title": "Amazon Business bulk contract",   "category": "procurement", "carbon_saving_kg": 0,     "annual_saving_eur": 4320, "matrix_quadrant": "low_cost_high_carbon", "action": "Quote top 8 SKUs with 3 distributors",  "approval_required": false, "confidence": 0.65 }
+    ],
+    "matrix": {
+      "low_cost_low_carbon":  ["Rail for EU routes <700km", "Vegetarian catering mix", "SaaS consolidation"],
+      "high_cost_low_carbon": [],
+      "low_cost_high_carbon": ["Amazon Business bulk contract"],
+      "high_cost_high_carbon": []
+    },
+    "limitations": [
+      "Tax treatment of travel-mode switches not yet confirmed with accountant.",
+      "Bulk procurement benchmark is category-average, not a live supplier quote."
+    ]
+  }
+}
