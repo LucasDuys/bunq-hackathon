@@ -54,6 +54,40 @@
   --confidence-low: #e06f6f;
   --confidence-none: #6b6f76;
 
+  /* Semantic aliases — matrix components reference these names; map to brand tokens above. */
+  --status-success: var(--green);
+  --status-warning: var(--amber);
+  --status-danger: var(--red);
+  --status-info: var(--blue);
+
+  --fg-primary: var(--text);
+  --fg-secondary: var(--text-dim);
+  --fg-muted: var(--text-mute);
+  --fg-on-accent: var(--green-deep);
+
+  --bg-canvas: var(--bg);
+  --bg-surface: var(--bg-card);
+  --bg-surface-muted: var(--bg-raised);
+
+  --border-default: var(--border);
+
+  --brand-forest-600: var(--green-soft);
+  --brand-forest-950: var(--green-deep);
+  --brand-mint-500: var(--green-bright);
+  --brand-mint-100: var(--green-glow);
+  --ring-accent: rgba(74, 222, 128, 0.35);
+
+  /* Impact matrix quadrant tokens — meaning-first (cost × CO₂e). */
+  --quadrant-win-win: var(--green);
+  --quadrant-pay: var(--amber);
+  --quadrant-trap: #9099a3;
+  --quadrant-avoid: var(--red);
+
+  --quadrant-win-win-bg: rgba(48, 192, 111, 0.08);
+  --quadrant-pay-bg: rgba(217, 164, 65, 0.07);
+  --quadrant-trap-bg: rgba(144, 153, 163, 0.06);
+  --quadrant-avoid-bg: rgba(224, 111, 111, 0.06);
+
   /* Radii */
   --r-xs: 6px;
   --r-sm: 10px;

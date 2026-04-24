@@ -11,19 +11,19 @@ Today the monthly close runs one Sonnet call for refinement questions and one fo
 ## DAG
 
 ```
-                     ┌─── Green Alternatives ───┐
-Spend & Emissions ───┤                          ├──► Green Judge ──┐
-  Baseline Agent     └─── Cost Savings ─────────┴──► Cost Judge ───┤
+Spend & Emissions ──► Research Agent ──► Green Alternatives ─┐
+  Baseline Agent          │              Cost Savings ───────┤
+                          │                                  ▼
+                          │                          Green Judge ──┐
+                          │                          Cost Judge ───┤
+                          │                                        ▼
+                          └────────► ResearchedPool ────► Carbon Credit & Incentive Strategy
                                                                    │
-                                     ┌─────────────────────────────┘
-                                     ▼
-                     Carbon Credit & Incentive Strategy Agent
-                                     │
-                                     ▼
-                         Executive Report Agent
-                                     │
-                                     ▼
-                   PDF + dashboard + CFO action plan
+                                                                   ▼
+                                                         Executive Report Agent
+                                                                   │
+                                                                   ▼
+                                                 PDF + dashboard + CFO action plan
 ```
 
 ## Agents
@@ -31,6 +31,7 @@ Spend & Emissions ───┤                          ├──► Green Judge
 | # | Agent | Role | Doc | Scaffold |
 |---|---|---|---|---|
 | 01 | Spend & Emissions Baseline | Build the baseline; identify high-impact clusters | [01-spend-baseline.md](./01-spend-baseline.md) | `lib/agents/dag/spendBaseline.ts` |
+| 08 | Research | Live web_search → named alternatives + citations | [08-research.md](./08-research.md) | `lib/agents/dag/research.ts` |
 | 02 | Green Alternatives | Find lower-carbon alternatives per cluster | [02-green-alternatives.md](./02-green-alternatives.md) | `lib/agents/dag/greenAlternatives.ts` |
 | 03 | Cost Savings | Find cheaper alternatives, vendor consolidation, recurring-spend waste | [03-cost-savings.md](./03-cost-savings.md) | `lib/agents/dag/costSavings.ts` |
 | 04 | Green Judge | Validate green recommendations; correct or reject | [04-green-judge.md](./04-green-judge.md) | `lib/agents/dag/greenJudge.ts` |

@@ -2,6 +2,25 @@
 
 Everything the plan called for but we didn't ship — organized by blast radius. Hackathon MVP is functional; this is the list for anyone (or future-you) picking up after the demo.
 
+## Matrix DAG (commit `b5b4c5e`) — follow-ups
+
+The 7-agent DAG (`lib/agents/dag/`) now runs end-to-end behind `/impacts`. Deterministic baseline → parallel Green Alt + Cost Savings (Sonnet 4.6, cached system prompts) → parallel Green Judge + Cost Judge → Credit Strategy → Executive Report. Plan + budget in `plans/matrix-dag.md`. What this branch did **not** ship:
+
+- [x] **Live web search (Research Agent).** Shipped in `lib/agents/dag/research.ts` via Anthropic's native `web_search_20250305` tool + `betaZodTool` terminal recorder, bounded by `RESEARCH_MAX_SEARCHES_PER_CLUSTER`. Results cache for 30 days per `(category, sub_category, jurisdiction, policy_digest, week_bucket)` in `research_cache`. Fallback ladder: live → cache → template → honest gap. Mock mode synthesizes from templates so `/impacts` stays populated with `ANTHROPIC_MOCK=1`. Plan: `plans/matrix-research.md`. Docs: `docs/agents/08-research.md`.
+- [x] **Anthropic `toolRunner` loop (Research Agent).** `callAgentWithTools` in `lib/agents/dag/llm.ts` drives the research agent's `messages.toolRunner` with 3 Zod tools + native web_search. The other 6 DAG agents still use the pre-resolved-tools pattern; swap them only if we want iterative row-level lookups (`env.maxToolCalls=8` remains as the guard there).
+- [ ] **`agent_messages` table populated.** Schema + migration shipped; no writer wired up. `llm.ts` already returns `tokensIn / tokensOut / cached` — plumb those into an insert per call so we get a per-call trace instead of only the final `DagRunResult` JSON.
+- [ ] **`/agents/[runId]` inspector page.** Full payload is persisted in `agent_runs.dag_payload`; no UI yet. Useful for debugging live-mode regressions.
+- [ ] **PDF render of `executiveReport.pdf_render_payload`.** Stub field only; no renderer. Plumb into the existing report flow once the dashboard story is signed off.
+- [ ] **Hook the DAG into `lib/agent/close.ts`.** Today the close flow still uses the single-Sonnet question generator + narrative. `docs/architecture-comparison.md` calls for replacing `QUESTIONS_GENERATED` with `runDag()`; keep `AWAITING_ANSWERS` as an optional state triggered only when any agent returns `required_context_question`.
+- [ ] **Live-mode smoke test.** `ANTHROPIC_MOCK=0 ANTHROPIC_API_KEY=sk-... npm run dev` + `POST /api/impacts/research` — verify Zod parsing under real Sonnet output, confirm cache hit rate via `cache_read_input_tokens`, confirm mock fallback engages cleanly on parse error. For the Research Agent specifically: expect `research_cache` to populate + `web_search_audit` to record one row per `web_search` query; rerun twice → second run should be ~all cache hits (`web_search_requests ≈ 0`).
+- [ ] **Evidence bundle export.** ZIP: `recommendations.csv` + `sources/*.html` snapshots + `manifest.json` with SHA-256 hashes of each source page. Third-party verifier CLI (`npx carbo verify`) consumes it. §14.5 of `plans/matrix-research.md`.
+- [ ] **Community cache.** Two bunq businesses in the same SIC code + jurisdiction share `research_cache` rows — the key is already policy-hashable. Needs schema flag for "public OK" before we can share across orgs. §14.6.
+- [ ] **Weekly re-research cron.** If a new alternative appears with >20% better delta, notify via bunq RequestInquiry. `researchAgent.purgeExpiredCache()` already exists; just needs a scheduler + diff logic. §14.3.
+- [ ] **Jurisdiction table hardcoded.** `lib/agents/dag/tools.ts::JURISDICTIONS` covers NL/DE/FR/EU with 2024 rates + a flat €80/tCO₂e ETS assumption. No sector-specific ETS exposure. Replace with a signed data source (EC ETS auction results + national tax lookup) when we move past hackathon scope.
+- [ ] **Design tokens migration only partial.** `/impacts` + `components/ImpactMatrix.tsx` now reference `var(--status-*)` / `var(--quadrant-*)` from `app/globals.css`. The rest of the app (Nav, dashboard, close pages, `components/ui.tsx`) still uses raw `emerald-*` / `zinc-*`. Needs a full DESIGN.md migration PR — see "UI / UX polish" below.
+- [ ] **Recurring-spend detector is coarse.** `detectRecurringSpend` uses a month-bucket set count over 6 months (≥3 months = recurring). No variance / amount-stability check. Good enough for demo; swap for a proper periodicity detector before production.
+- [ ] **Implementation cost = 0 everywhere.** `creditStrategy.ts::IMPLEMENTATION_COST_DEFAULT` is hard-coded to 0 because we don't want to invent numbers. Payback-period math consequently always returns 0. Wire a small per-alternative-type implementation-cost table when the UX calls for it.
+
 ## Not yet wired to real services
 Mock mode works end-to-end, but we haven't driven live traffic through either external dependency.
 
@@ -27,7 +46,7 @@ Tax incentive data layer is shipped (`lib/tax/`). Next steps to make it demo-rea
 - [ ] **Optional invoice upload for large/ambiguous spend** — spec allows it as a refinement path alongside questions. Multimodal (PDF + image) Claude parse → auto-apply category. The `refinement_qa` schema can hold it as-is; need an upload endpoint and UI card.
 - [ ] **Voice refinement** — "this was a team dinner." Claude voice → text → treat as a free-text refinement. Nice-to-have.
 - [ ] **Visual/narrative dashboard summary** — an LLM-written paragraph at the top of `/` contextualizing the month. Share a prompt with `generateCsrdNarrative` but target the overview reader, not auditors.
-- [ ] **Onboarding flow** — right now an org is seeded. Real flow: user authenticates, we create the sub-accounts, register webhook, install default policy. Probably 1–2 screens.
+- [x] **Onboarding flow** — agentic onboarding lives at `/onboarding`. Three tracks: generate (short interview), upload existing policy (PDF/DOCX/MD/YAML/JSON), or mix (upload + fill gaps). Activates policy, creates Carbo Reserve + Credits sub-accounts, seeds a first close. See `lib/agent/onboarding.ts`. Remaining v2 polish: pressure-test live-mode Sonnet PDF parsing on real ESG docs; add a `/settings/policy` re-edit flow so a completed onboarding can be tweaked without starting a new run; wire authentication so the `DEFAULT_ORG_ID` assumption goes away.
 - [ ] **Multi-entity consolidation** — a parent org with many bunq users → single CSRD report. Requires multi-tenant rework of queries. Out of hackathon scope.
 - [ ] **Policy editor UI** — `/settings/policy`: form-based edit of the JSON policy, validated by the same Zod schema. Right now policies live in DB only; editing means SQL.
 - [ ] **Approval workflow via bunq RequestInquiry** — instead of an in-app approve button, fire a RequestInquiry to the CFO's bunq user so approval is bank-native. Spec mentions this as an option.

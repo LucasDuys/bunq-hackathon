@@ -6,6 +6,7 @@
 
 export type AgentName =
   | "spend_emissions_baseline_agent"
+  | "research_agent"
   | "green_alternatives_agent"
   | "cost_savings_agent"
   | "green_judge_agent"
@@ -44,20 +45,86 @@ export interface BaselineOutput {
     high_cost_high_carbon_clusters: string[];
     uncertain_high_value_clusters: string[];
   };
-  priority_targets: Array<{
-    cluster_id: string;
-    category: string;
-    annualized_spend_eur: number;
-    estimated_tco2e: number;
-    reason_for_priority: "high_spend" | "high_emissions" | "high_uncertainty" | "policy_relevant";
-    recommended_next_agent: "green_alternatives_agent" | "cost_savings_agent" | "both";
-    // Additive (spec R008.AC3): filled by deterministic path from reasons.ts; LLM path overwrites with per-cluster string.
-    reason_for_priority_detail?: string;
-    transaction_count?: number;
-    avg_confidence?: Confidence;
-  }>;
+  priority_targets: PriorityTarget[];
   required_context_question: string | null;
 }
+
+export interface PriorityTarget {
+  cluster_id: string;
+  category: string;
+  annualized_spend_eur: number;
+  estimated_tco2e: number;
+  reason_for_priority: "high_spend" | "high_emissions" | "high_uncertainty" | "policy_relevant";
+  recommended_next_agent: "green_alternatives_agent" | "cost_savings_agent" | "both";
+  // Enriched context the Baseline agent computes and downstream agents consume directly.
+  // Keeps tool-call pressure off Green/Cost agents — they don't need to re-resolve merchant labels.
+  baseline_merchant_norm?: string;
+  baseline_merchant_label?: string;
+  baseline_sub_category?: string | null;
+  baseline_confidence?: number;
+  baseline_tx_count?: number;
+}
+
+// plans/matrix-research.md §6 — evidence-backed alternatives from the Research Agent.
+export interface EvidenceSource {
+  title: string;
+  url: string;
+  snippet: string | null;
+  domain: string;
+  fetched_at: number; // unix sec
+}
+
+export type ResearchedAltFeasibility = "drop_in" | "migration" | "procurement" | "policy";
+export type ResearchedAltProvenance = "web_search" | "cache" | "template" | "hybrid";
+export type ResearchedAltFlag =
+  | "requires_policy_check"
+  | "requires_tax_verification"
+  | "incumbent_match"
+  | "paywalled_source"
+  | "single_source_only";
+
+export interface ResearchedAlternative {
+  id: string; // stable hash per (cluster, vendor, name)
+  cluster_id: string;
+  name: string;
+  vendor: string | null;
+  url: string | null;
+  description: string;
+  cost_delta_pct: number | null; // signed, -0.35 = 35% cheaper
+  co2e_delta_pct: number | null; // signed, -0.9 = 90% less
+  confidence: number; // 0..1
+  feasibility: ResearchedAltFeasibility;
+  geography: string;
+  sources: EvidenceSource[];
+  provenance: ResearchedAltProvenance;
+  freshness_days: number;
+  flags: ResearchedAltFlag[];
+}
+
+export interface ResearchResult {
+  cluster_id: string;
+  alternatives: ResearchedAlternative[];
+  searches_used: number;
+  cache_hit: boolean;
+}
+
+export interface ResearchOutput {
+  agent: "research_agent";
+  company_id: string;
+  analysis_period: string;
+  results: ResearchResult[];
+  summary: {
+    clusters_researched: number;
+    total_alternatives: number;
+    total_sources: number;
+    total_searches_used: number;
+    cache_hits: number;
+    web_search_spend_eur: number; // at $10/1k requests → €0.0094/req (approx, USD→EUR rough)
+  };
+}
+
+// ResearchedPool keyed by cluster_id for easy access in Green/Cost agents.
+export type ResearchedPool = Record<string, ResearchedAlternative[]>;
 
 export interface GreenAltOutput {
   agent: "green_alternatives_agent";
@@ -159,27 +226,29 @@ export interface CostSavingsOutput {
   };
 }
 
-export interface JudgedResult {
+export type Verdict = "approved" | "approved_with_caveats" | "needs_context" | "rejected";
+
+export interface JudgedBase {
   cluster_id: string | null;
   transaction_id: string | null;
-  verdict: "approved" | "approved_with_caveats" | "needs_context" | "rejected";
-  score: number;
+  verdict: Verdict;
   approved_recommendation: string | null;
   confidence: Confidence;
   issues_found: string[];
   audit_summary: string;
 }
 
+export interface GreenJudgedResult extends JudgedBase {
+  green_score: number;
+  corrected_current_kg_co2e: number | null;
+  corrected_potential_kg_co2e_saved: number | null;
+}
+
 export interface GreenJudgeOutput {
   agent: "green_judge_agent";
   company_id: string;
   analysis_period: string;
-  judged_results: Array<
-    JudgedResult & {
-      corrected_current_kg_co2e: number | null;
-      corrected_potential_kg_co2e_saved: number | null;
-    }
-  >;
+  judged_results: GreenJudgedResult[];
   summary: {
     approved_total_current_kg_co2e: number;
     approved_total_potential_kg_co2e_saved: number;
@@ -188,23 +257,74 @@ export interface GreenJudgeOutput {
   };
 }
 
+export interface CostJudgedResult extends JudgedBase {
+  cost_score: number;
+  corrected_monthly_saving_eur: number | null;
+  corrected_annual_saving_eur: number | null;
+  business_risk: "low" | "medium" | "high";
+  carbon_effect: "lower" | "neutral" | "higher" | "unknown";
+}
+
 export interface CostJudgeOutput {
   agent: "cost_judge_agent";
   company_id: string;
   analysis_period: string;
-  judged_results: Array<
-    JudgedResult & {
-      corrected_monthly_saving_eur: number | null;
-      corrected_annual_saving_eur: number | null;
-      business_risk: "low" | "medium" | "high";
-      carbon_effect: "lower" | "neutral" | "higher" | "unknown";
-    }
-  >;
+  judged_results: CostJudgedResult[];
   summary: {
     approved_total_monthly_saving_eur: number;
     approved_total_annual_saving_eur: number;
     high_confidence_cost_opportunities: string[];
     rejected_or_uncertain_items: string[];
+  };
+}
+
+export interface CreditStrategyResult {
+  cluster_id: string | null;
+  recommendation_title: string;
+  switching_impact: {
+    current_annual_spend_eur: number | null;
+    new_annual_spend_eur: number | null;
+    direct_procurement_saving_eur: number | null;
+    implementation_cost_eur: number | null;
+    baseline_tco2e: number | null;
+    new_tco2e: number | null;
+    emissions_reduced_tco2e: number | null;
+  };
+  credit_strategy: {
+    remaining_tco2e_after_switch: number | null;
+    recommended_credit_purchase_tco2e: number | null;
+    credit_type: "removal_technical" | "removal_nature" | "reduction" | "mixed" | "unknown";
+    project_region: "EU" | "non_EU" | "mixed" | "unknown";
+    credit_price_per_tonne_eur: number | null;
+    credit_purchase_cost_eur: number | null;
+    avoided_credit_purchase_cost_eur: number | null;
+    eligibility_basis: "confirmed" | "database_match" | "assumption" | "not_eligible" | "requires_verification";
+  };
+  tax_and_incentives: {
+    estimated_credit_tax_value_eur: number | null;
+    estimated_procurement_tax_value_eur: number | null;
+    avoided_carbon_tax_or_ets_cost_eur: number | null;
+    tax_treatment: "confirmed" | "scenario_only" | "not_applicable" | "requires_verification";
+  };
+  net_financial_impact: {
+    gross_savings_before_tax_eur: number | null;
+    total_tax_incentive_upside_eur: number | null;
+    total_avoided_carbon_cost_eur: number | null;
+    total_credit_cost_eur: number | null;
+    net_company_scale_financial_impact_eur: number | null;
+    payback_period_months: number | null;
+  };
+  decision: {
+    recommendation_status:
+      | "strong_financial_case"
+      | "positive_with_tax_incentive"
+      | "positive_only_if_policy_required"
+      | "not_financially_positive"
+      | "requires_tax_verification"
+      | "insufficient_data";
+    cfo_summary: string;
+    verification_needed: string[];
+    confidence: Confidence;
   };
 }
 
@@ -219,7 +339,7 @@ export interface CreditStrategyOutput {
     corporate_tax_rate: number | null;
   };
   baseline: { baseline_annual_spend_eur: number; baseline_annual_tco2e: number };
-  results: Array<Record<string, unknown>>;
+  results: CreditStrategyResult[];
   summary: {
     total_direct_procurement_saving_eur: number;
     total_emissions_reduced_tco2e: number;
@@ -251,6 +371,8 @@ export interface ExecReportOutput {
     net_company_scale_financial_impact_eur: number;
     payback_period_months: number;
     confidence: Confidence;
+    evidence_source_count: number;
+    web_search_spend_eur: number;
   };
   top_recommendations: Array<{
     rank: number;
@@ -279,6 +401,7 @@ export interface ExecReportOutput {
 export interface DagRunResult {
   runId: string;
   baseline: BaselineOutput;
+  research: ResearchOutput;
   greenAlt: GreenAltOutput;
   costSavings: CostSavingsOutput;
   greenJudge: GreenJudgeOutput;
