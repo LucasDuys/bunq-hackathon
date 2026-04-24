@@ -1,0 +1,269 @@
+{
+  "company": "Shell plc",
+  "reportingYear": 2023,
+  "country": "GB",
+  "industry": "Oil and gas",
+  "revenueEur": null,
+  "employees": null,
+  "sourceUrl": null,
+  "sourceFile": "shell-2023.pdf",
+  "framework": "VOLUNTARY",
+  "frameworkNotes": "Shell Sustainability Report 2023 (own framework). References GHG Protocol Corporate Accounting and Reporting Standard. Also signatory to Oil and Gas Decarbonization Charter (COP28 2023). Not filed under CSRD. 'Net Carbon Intensity' (NCI) is Shell's proprietary metric (gCO2e/MJ).",
+  "assurance": {
+    "level": "limited",
+    "assurer": "LRQA",
+    "scopeNote": "Limited assurance by LRQA on Scope 1 & 2 GHG emissions under operational control, and on Net Carbon Intensity metric (2016-2023)."
+  },
+  "emissions": {
+    "unit": "tCO2e",
+    "baseYear": 2016,
+    "reportingPeriod": "2023",
+    "scope1": {
+      "totalTco2e": 50000000,
+      "methodNote": "Direct emissions under operational control. Calculated using locally regulated methods where they exist, otherwise 2021 API Compendium (GHG Protocol recognized standard). Coverage: CO2, CH4, N2O, HFC, PFC, SF6, NF3. GWPs from IPCC AR5 (2023); AR4 used for prior years. Does not include carbon credits.",
+      "uncertaintyPct": 4,
+      "includesBiogenic": false
+    },
+    "scope2": {
+      "locationBasedTco2e": null,
+      "marketBasedTco2e": 7000000,
+      "methodNote": "Market-based method, operational control boundary.",
+      "uncertaintyPct": 8
+    },
+    "scope3": [
+      {
+        "category": "cat11_use_of_sold_products",
+        "tco2e": 517000000,
+        "method": "activity_based",
+        "factorSource": null,
+        "note": "Customer emissions from use of Shell oil products only. 2021 baseline = 569 Mt CO2e for 15-20% reduction target.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      }
+    ],
+    "totalScope1And2Tco2e": 57000000,
+    "totalTco2e": 1204000000,
+    "intensity": [
+      {
+        "metric": "gCO2e/MJ (Net Carbon Intensity)",
+        "value": 74,
+        "scopeCoverage": ["Scope 1", "Scope 2", "Scope 3 cat11", "credits-adjusted"]
+      }
+    ],
+    "avoidedEmissionsTco2e": null,
+    "biogenicEmissionsTco2e": null,
+    "operationalControlBoundary": true,
+    "equityShareBoundary": false
+  },
+  "energy": null,
+  "targets": [
+    {
+      "name": "Scope 1 & 2 absolute reduction (net basis)",
+      "scopeCoverage": ["Scope 1", "Scope 2"],
+      "targetYear": 2030,
+      "baseYear": 2016,
+      "baseEmissionsTco2e": 83000000,
+      "reductionPct": 50,
+      "targetType": "absolute",
+      "sbtiValidated": false,
+      "sbtiClassification": null,
+      "progressPct": 60
+    },
+    {
+      "name": "Net Carbon Intensity (NCI) 2025",
+      "scopeCoverage": ["Scope 1", "Scope 2", "Scope 3 cat11", "credits"],
+      "targetYear": 2025,
+      "baseYear": 2016,
+      "baseEmissionsTco2e": null,
+      "reductionPct": 11,
+      "targetType": "intensity",
+      "sbtiValidated": false,
+      "sbtiClassification": null,
+      "progressPct": null
+    },
+    {
+      "name": "Net Carbon Intensity (NCI) 2030",
+      "scopeCoverage": ["Scope 1", "Scope 2", "Scope 3 cat11", "credits"],
+      "targetYear": 2030,
+      "baseYear": 2016,
+      "baseEmissionsTco2e": null,
+      "reductionPct": 17.5,
+      "targetType": "intensity",
+      "sbtiValidated": false,
+      "sbtiClassification": null,
+      "progressPct": null
+    },
+    {
+      "name": "Customer emissions from oil products (Cat 11)",
+      "scopeCoverage": ["Scope 3 cat11"],
+      "targetYear": 2030,
+      "baseYear": 2021,
+      "baseEmissionsTco2e": 569000000,
+      "reductionPct": 17.5,
+      "targetType": "absolute",
+      "sbtiValidated": false,
+      "sbtiClassification": null,
+      "progressPct": null
+    },
+    {
+      "name": "Methane emissions intensity",
+      "scopeCoverage": ["Scope 1 methane"],
+      "targetYear": 2030,
+      "baseYear": null,
+      "baseEmissionsTco2e": null,
+      "reductionPct": null,
+      "targetType": "intensity",
+      "sbtiValidated": false,
+      "sbtiClassification": null,
+      "progressPct": null
+    },
+    {
+      "name": "Eliminate routine flaring from Upstream",
+      "scopeCoverage": ["Scope 1 flaring"],
+      "targetYear": 2025,
+      "baseYear": null,
+      "baseEmissionsTco2e": null,
+      "reductionPct": 100,
+      "targetType": "absolute",
+      "sbtiValidated": false,
+      "sbtiClassification": null,
+      "progressPct": null
+    },
+    {
+      "name": "Net-zero emissions energy business",
+      "scopeCoverage": ["Scope 1", "Scope 2", "Scope 3"],
+      "targetYear": 2050,
+      "baseYear": null,
+      "baseEmissionsTco2e": null,
+      "reductionPct": 100,
+      "targetType": "net_zero",
+      "sbtiValidated": false,
+      "sbtiClassification": "net_zero",
+      "progressPct": null
+    }
+  ],
+  "credits": {
+    "totalTonnesRetired": 21800000,
+    "removalPct": null,
+    "reductionPct": null,
+    "euBasedPct": null,
+    "byStandard": {
+      "Verra_VCS": 85,
+      "American_Carbon_Registry": 9,
+      "Gold_Standard": 6,
+      "Australian_ACCU": 1
+    },
+    "correspondingAdjustmentPct": null,
+    "totalSpendEur": 80000000,
+    "projects": [
+      {
+        "name": "Greenline Climate (forest carbon credit development)",
+        "country": "US",
+        "type": "removal_nature",
+        "standard": "Verra_VCS",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "Joint venture with Spatial Informatics Group providing services for forest carbon credit projects."
+      },
+      {
+        "name": "Kateri (grassland restoration)",
+        "country": "US",
+        "type": "removal_nature",
+        "standard": "Verra_VCS",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "Carbon sequestration developer helping livestock farmers via sustainable land and grazing management."
+      },
+      {
+        "name": "Household energy efficiency (LED replacement)",
+        "country": "IN",
+        "type": "reduction",
+        "standard": "unspecified",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "Replacement of incandescent bulbs with energy-efficient LEDs for 8M+ households in India."
+      },
+      {
+        "name": "Quest CCS",
+        "country": "CA",
+        "type": "removal_tech",
+        "standard": "unspecified",
+        "vintageYear": null,
+        "tonnesRetired": 1000000,
+        "description": "Shell-operated (10%) CCS facility at Scotford upgrader. 8.8 Mt stored cumulatively since 2015; 1.0 Mt captured in 2023. Capacity 1 mtpa."
+      },
+      {
+        "name": "Gorgon CCS",
+        "country": "AU",
+        "type": "removal_tech",
+        "standard": "unspecified",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "JV partner 25%, Chevron-operated. 9+ Mt CO2 stored since 2019. Largest CCS operation in the world. Capacity up to 4 mtpa."
+      },
+      {
+        "name": "Northern Lights (Phase 1)",
+        "country": "NO",
+        "type": "removal_tech",
+        "standard": "unspecified",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "JV partner 33.3%, under construction. 1.5 mtpa phase 1. Agreements with Yara (830 kt/yr) and Ørsted (430 kt/yr). CO2 ships from NL and DK, stored 2,600m below North Sea."
+      }
+    ],
+    "usedForNetClaim": true
+  },
+  "internalCarbonPrice": null,
+  "risks": [
+    {
+      "kind": "transition_market",
+      "timeHorizon": "long",
+      "description": "Energy transition demand shift away from hydrocarbons. Material risk identified. Mitigated via Powering Progress strategy emphasising LNG, biofuels, low-carbon energy solutions, CCS.",
+      "likelihoodLabel": null,
+      "controlEffectivenessLabel": null,
+      "financialImpactEur": null
+    },
+    {
+      "kind": "transition_policy",
+      "timeHorizon": "medium",
+      "description": "Regulatory changes affecting demand for oil and gas products and carbon pricing. Paris Agreement alignment.",
+      "likelihoodLabel": null,
+      "controlEffectivenessLabel": null,
+      "financialImpactEur": null
+    },
+    {
+      "kind": "physical_chronic",
+      "timeHorizon": "long",
+      "description": "Physical resilience of assets; adapting assets and activities to climate change risks where needed.",
+      "likelihoodLabel": null,
+      "controlEffectivenessLabel": null,
+      "financialImpactEur": null
+    }
+  ],
+  "governance": {
+    "boardOversight": true,
+    "execRemunerationTiedToClimate": true,
+    "execRemunerationClimateSharePct": null,
+    "climateCommittees": [],
+    "transitionPlanPublished": true,
+    "transitionPlanReference": "Shell Energy Transition Strategy 2024 (published March 2024); 2023 Annual Report"
+  },
+  "methodology": {
+    "ghgProtocolVersion": "Corporate Accounting and Reporting Standard",
+    "scope2MethodsUsed": ["market_based"],
+    "gwpAssessmentReport": "AR5",
+    "factorSources": [
+      "Locally regulated methods where available",
+      "2021 API Compendium (GHG Protocol industry standard)",
+      "Ipieca / API / IOGP oil & gas industry guidelines",
+      "IPCC AR5 (2023 onward)",
+      "IPCC AR4 (prior years)"
+    ],
+    "materialityMethod": null,
+    "restatedBaseYear": false,
+    "restatementReason": null
+  },
+  "euTaxonomy": null,
+  "transitionPlanSummary": "Net-zero by 2050 across Scopes 1/2/3 via Powering Progress strategy. Levers: reduce Scope 1+2 by improving energy efficiency, deploying renewable electricity, managing flaring and methane; grow LNG with lower carbon intensity; manage upstream portfolio focusing on higher-margin lower-carbon barrels; transform downstream toward low-carbon solutions; use CCS and high-quality carbon credits for residual emissions. 1.5°C-aligned per IPCC AR6 scenarios.",
+  "actionSummary": "$7.9bn in low-carbon and non-energy products in 2023 (~1/3 of $24.4bn total capex), incl. $5.6bn in low-carbon energy solutions (biofuels, hydrogen, EV charging, wind, solar). $86M on carbon credits ($52M nature-based + $34M technology-based). $340M on CCS (+55% YoY). 21.8 Mt carbon credits retired 2023 (20 Mt in NCI metric). CCS portfolio: Quest (CA, operator), Gorgon (AU, JV), Pernis CO2 capture (NL, operator under construction), Northern Lights (NO, JV under construction), Acorn (UK, JV), Aramis (NL, JV). OGDC signatory COP28."
+}
