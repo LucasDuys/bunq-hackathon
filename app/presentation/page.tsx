@@ -82,6 +82,7 @@ function DagReplay({ data }: { data: DagRunResult }) {
       case "cost_judge_agent": return data.costJudge.summary;
       case "carbon_credit_incentive_strategy_agent": return data.creditStrategy.summary;
       case "executive_report_agent": return data.executiveReport.kpis;
+      default: return {};
     }
   })();
 

@@ -16,9 +16,11 @@ import {
 } from "@/components/ui";
 import { StartCloseButton } from "@/components/StartCloseButton";
 import { TrendChart } from "@/components/TrendChart";
+import { getActiveRunForOrg } from "@/lib/agent/onboarding";
 import {
   DEFAULT_ORG_ID,
   currentMonth,
+  getActivePolicyRaw,
   getAllTransactions,
   getCategorySpendForMonth,
   getLatestCloseRun,
@@ -39,6 +41,8 @@ export default async function Overview() {
   const totalSpend = spendRows.reduce((s, r) => s + (r.spendEur ?? 0), 0);
   const latestRun = getLatestCloseRun(DEFAULT_ORG_ID);
   const trend = getMonthlyTrend(DEFAULT_ORG_ID, 6);
+  const activeOnboarding = getActiveRunForOrg(DEFAULT_ORG_ID);
+  const hasPolicy = !!getActivePolicyRaw(DEFAULT_ORG_ID);
 
   const taxSavings = getTaxSavingsForMonth(DEFAULT_ORG_ID, month);
   const impactCategories = buildCategoryAnalyses(taxSavings);
@@ -64,6 +68,37 @@ export default async function Overview() {
           `,
         }}
       />
+
+      {(!hasPolicy || activeOnboarding) && (
+        <div
+          className="relative z-[1] ca-card flex flex-col md:flex-row md:items-center gap-3 md:gap-4 px-5 py-4"
+          style={{ borderColor: "var(--green-soft)" }}
+        >
+          <Sparkles className="h-5 w-5 shrink-0" style={{ color: "var(--green-bright)" }} />
+          <div className="flex-1 text-sm">
+            <div className="font-semibold" style={{ color: "var(--text)" }}>
+              {activeOnboarding ? "Your onboarding is in progress" : "Finish setting up Carbo"}
+            </div>
+            <div className="mt-0.5" style={{ color: "var(--text-dim)" }}>
+              {activeOnboarding
+                ? "Pick up where you left off — a few minutes gets you a signed policy and a first close."
+                : "Carbo needs a carbon policy before it can close the month. Answer a short interview or upload your existing doc."}
+            </div>
+          </div>
+          <Link
+            href={activeOnboarding ? `/onboarding/${activeOnboarding.id}` : "/onboarding"}
+            className="inline-flex items-center gap-1 rounded-full px-4 h-9 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2"
+            style={{
+              background: "var(--green)",
+              color: "#07110b",
+              boxShadow: "0 0 0 1px var(--green-soft)",
+            }}
+          >
+            {activeOnboarding ? "Resume" : "Start onboarding"}
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      )}
 
       {/* Page content */}
       <div className="relative z-[1] flex flex-col gap-5">
