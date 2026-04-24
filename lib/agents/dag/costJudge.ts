@@ -6,8 +6,49 @@
  * change monetary totals without evidence.
  */
 import { z } from "zod";
-import type { AgentContext, CostSavingsOutput, CostJudgeOutput } from "./types";
+import type { AgentContext, CostSavingsOutput, CostJudgeOutput, ResearchedPool } from "./types";
 import { callAgent, isMock } from "./llm";
+
+const TRUSTED_DOMAINS = new Set([
+  "defra.gov.uk",
+  "gov.uk",
+  "ec.europa.eu",
+  "ember-climate.org",
+  "ember-energy.org",
+  "ademe.fr",
+  "base-carbone.ademe.fr",
+  "ghgprotocol.org",
+  "science.org",
+  "transportenvironment.org",
+  "ipcc.ch",
+  "flexera.com",
+  "aws.amazon.com",
+]);
+
+const domainOf = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "unknown";
+  }
+};
+
+const evidenceQualityFor = (
+  clusterId: string | null,
+  pool: ResearchedPool | undefined,
+): { quality: number; sourceCount: number; trustedCount: number } => {
+  const sources = clusterId && pool ? pool[clusterId]?.flatMap((a) => a.sources) ?? [] : [];
+  const sourceCount = sources.length;
+  if (sourceCount === 0) return { quality: 0, sourceCount, trustedCount: 0 };
+  const trustedCount = sources.filter((s) => TRUSTED_DOMAINS.has(domainOf(s.url))).length;
+  let q = 0.3;
+  q += Math.min(0.3, Math.max(0, sourceCount - 1) * 0.1);
+  if (trustedCount > 0) q += 0.25;
+  const nowSec = Math.floor(Date.now() / 1000);
+  const freshest = Math.min(...sources.map((s) => nowSec - s.fetched_at));
+  if (freshest < 30 * 86_400) q += 0.15;
+  return { quality: Number(Math.min(1, q).toFixed(3)), sourceCount, trustedCount };
+};
 
 export const SYSTEM_PROMPT = `You are the Cost Judge Agent for Carbon Autopilot for bunq Business.
 
@@ -59,14 +100,18 @@ const OUTPUT_SCHEMA = z.object({ judged_results: z.array(JUDGED_SCHEMA) });
 
 export interface CostJudgeInput {
   costSavings: CostSavingsOutput;
+  researchedPool?: ResearchedPool;
 }
 
-const scoreResult = (r: CostSavingsOutput["results"][number]): { score: number; issues: string[] } => {
+const scoreResult = (
+  r: CostSavingsOutput["results"][number],
+  pool: ResearchedPool | undefined,
+): { score: number; issues: string[]; evidenceQuality: number; sourceCount: number } => {
   const issues: string[] = [];
   const topOpt = r.cost_saving_options[0];
   if (!topOpt) {
     issues.push("no option proposed");
-    return { score: 20, issues };
+    return { score: 20, issues, evidenceQuality: 0, sourceCount: 0 };
   }
   let base = 100;
   if (topOpt.source === "assumption") {
@@ -89,12 +134,21 @@ const scoreResult = (r: CostSavingsOutput["results"][number]): { score: number; 
     base -= 15;
     issues.push("spend basis is an assumption");
   }
+  const { quality, sourceCount, trustedCount } = evidenceQualityFor(r.cluster_id, pool);
+  if (sourceCount === 0) {
+    base -= 35;
+    issues.push("zero_sources");
+  } else if (sourceCount === 1) {
+    issues.push("single_source_only");
+  }
+  if (trustedCount === 0 && sourceCount > 0) issues.push("no_trusted_source");
   const confidenceComponent = topOpt.confidence * 100;
   const score = Math.max(0, Math.min(100, (base + confidenceComponent) / 2));
-  return { score: Number(score.toFixed(0)), issues };
+  return { score: Number(score.toFixed(0)), issues, evidenceQuality: quality, sourceCount };
 };
 
-const verdictForScore = (score: number): z.infer<typeof VERDICT> => {
+const verdictForScore = (score: number, sourceCount: number): z.infer<typeof VERDICT> => {
+  if (sourceCount === 0) return "rejected";
   if (score >= 85) return "approved";
   if (score >= 70) return "approved_with_caveats";
   if (score >= 50) return "needs_context";
@@ -114,10 +168,10 @@ const correctMath = (r: CostSavingsOutput["results"][number]): { monthly: number
   };
 };
 
-const buildMock = (costSavings: CostSavingsOutput): CostJudgeOutput => {
+const buildMock = (costSavings: CostSavingsOutput, pool: ResearchedPool | undefined): CostJudgeOutput => {
   const judged = costSavings.results.map((r) => {
-    const { score, issues } = scoreResult(r);
-    const verdict = verdictForScore(score);
+    const { score, issues, evidenceQuality, sourceCount } = scoreResult(r, pool);
+    const verdict = verdictForScore(score, sourceCount);
     const { monthly, annual } = correctMath(r);
     const topOpt = r.cost_saving_options[0];
     return {
@@ -132,7 +186,7 @@ const buildMock = (costSavings: CostSavingsOutput): CostJudgeOutput => {
       business_risk: topOpt?.business_risk ?? "medium",
       carbon_effect: topOpt?.carbon_effect ?? "unknown",
       issues_found: issues,
-      audit_summary: `${verdict} (${score}/100): ${issues.length ? issues.join("; ") : "passes checks"}`,
+      audit_summary: `${verdict} (${score}/100, evidence=${evidenceQuality}): ${issues.length ? issues.join("; ") : "passes checks"}`,
     };
   });
 
@@ -162,7 +216,7 @@ const buildMock = (costSavings: CostSavingsOutput): CostJudgeOutput => {
 
 export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<CostJudgeOutput> {
   if (isMock()) {
-    const out = buildMock(input.costSavings);
+    const out = buildMock(input.costSavings, input.researchedPool);
     for (const j of out.judged_results) {
       await ctx.auditLog({ type: "agent.cost_judge.verdict", payload: { cluster_id: j.cluster_id, verdict: j.verdict, score: j.cost_score } });
     }
@@ -179,16 +233,22 @@ export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<Cos
       ].join("\n"),
       maxTokens: 3000,
     });
-    if (!jsonText) return buildMock(input.costSavings);
+    if (!jsonText) return buildMock(input.costSavings, input.researchedPool);
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const rebuilt = parsed.judged_results.map((j, i) => {
       const source = input.costSavings.results[i];
       if (!source) return j;
       const { monthly, annual } = correctMath(source);
+      const { sourceCount, quality: evidenceQuality } = evidenceQualityFor(source.cluster_id, input.researchedPool);
+      const finalVerdict: z.infer<typeof VERDICT> = sourceCount === 0 ? "rejected" : j.verdict;
+      const extraIssues = sourceCount === 0 ? [...j.issues_found, "zero_sources"] : j.issues_found;
       return {
         ...j,
-        corrected_monthly_saving_eur: j.verdict === "rejected" ? 0 : monthly,
-        corrected_annual_saving_eur: j.verdict === "rejected" ? 0 : annual,
+        verdict: finalVerdict,
+        corrected_monthly_saving_eur: finalVerdict === "rejected" ? 0 : monthly,
+        corrected_annual_saving_eur: finalVerdict === "rejected" ? 0 : annual,
+        issues_found: extraIssues,
+        audit_summary: `${j.audit_summary} | evidence=${evidenceQuality}`,
       };
     });
     const approved = rebuilt.filter((j) => j.verdict === "approved" || j.verdict === "approved_with_caveats");
@@ -217,6 +277,6 @@ export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<Cos
       },
     };
   } catch {
-    return buildMock(input.costSavings);
+    return buildMock(input.costSavings, input.researchedPool);
   }
 }

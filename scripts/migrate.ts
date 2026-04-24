@@ -204,9 +204,40 @@ CREATE TABLE IF NOT EXISTS agent_messages (
   tokens_in INTEGER,
   tokens_out INTEGER,
   cached INTEGER NOT NULL DEFAULT 0,
+  server_tool_use_count INTEGER,
+  web_search_requests INTEGER,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE INDEX IF NOT EXISTS idx_agent_messages_run ON agent_messages(agent_run_id);
+
+CREATE TABLE IF NOT EXISTS research_cache (
+  cache_key TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  sub_category TEXT,
+  jurisdiction TEXT NOT NULL,
+  policy_digest TEXT NOT NULL,
+  week_bucket TEXT NOT NULL,
+  alternatives_json TEXT NOT NULL,
+  sources_count INTEGER NOT NULL,
+  search_requests_used INTEGER NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  ttl_sec INTEGER NOT NULL DEFAULT 2592000
+);
+CREATE INDEX IF NOT EXISTS idx_research_cache_org ON research_cache(org_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_research_cache_week ON research_cache(week_bucket, category);
+
+CREATE TABLE IF NOT EXISTS web_search_audit (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  agent_run_id TEXT NOT NULL,
+  cluster_id TEXT,
+  query TEXT NOT NULL,
+  results_n INTEGER NOT NULL,
+  first_url TEXT,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_web_search_audit_run ON web_search_audit(agent_run_id);
+
 
 CREATE TABLE IF NOT EXISTS onboarding_runs (
   id TEXT PRIMARY KEY,
@@ -258,5 +289,19 @@ mkdirSync(dirname(dbPath), { recursive: true });
 const sqlite = new Database(dbPath);
 sqlite.pragma("journal_mode = WAL");
 sqlite.exec(DDL);
+
+// Additive columns on pre-existing tables. SQLite has no "ADD COLUMN IF NOT EXISTS",
+// so check the pragma before issuing. Keep forward-compatible with fresh installs.
+const columnsOf = (table: string): Set<string> => {
+  const rows = sqlite.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+  return new Set(rows.map((r) => r.name));
+};
+const ensureColumn = (table: string, column: string, ddl: string) => {
+  const cols = columnsOf(table);
+  if (!cols.has(column)) sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${ddl}`);
+};
+ensureColumn("agent_messages", "server_tool_use_count", "INTEGER");
+ensureColumn("agent_messages", "web_search_requests", "INTEGER");
+
 console.log(`Migrated: ${dbPath}`);
 sqlite.close();

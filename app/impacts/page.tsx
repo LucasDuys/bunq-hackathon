@@ -1,8 +1,9 @@
-import { ArrowRight, ExternalLink, Info, Target } from "lucide-react";
+import { ArrowRight, ExternalLink, Info, Sparkles, Target } from "lucide-react";
 import type { Quadrant } from "@/lib/agent/impacts";
 import { Badge, Card, CardBody, CardHeader, CardTitle, ConfidenceBar, Stat } from "@/components/ui";
 import { ImpactMatrix, type MatrixPoint } from "@/components/ImpactMatrix";
 import { RunImpactResearch } from "@/components/RunImpactResearch";
+import { ScenarioPlanner, type PlannableAlternative } from "@/components/ScenarioPlanner";
 import { getLatestDagResult, getLatestRecommendations } from "@/lib/impacts/store";
 import type { DagRunResult } from "@/lib/agents/dag/types";
 import { DEFAULT_ORG_ID } from "@/lib/queries";
@@ -329,6 +330,32 @@ export default async function ImpactsPage() {
     })),
   );
 
+  const plannableAlts: PlannableAlternative[] = baselines.flatMap((b) =>
+    b.alternatives.map((a) => ({
+      id: a.id,
+      baselineKey: b.key,
+      baselineLabel: b.merchantLabel,
+      name: a.name,
+      category: b.category,
+      costDeltaEurYear: a.costDeltaEurYear,
+      co2eDeltaKgYear: a.co2eDeltaKgYear,
+      confidence: a.confidence,
+      quadrant: a.quadrant,
+      sourceCount: a.sources.length,
+    })),
+  );
+
+  // plans/matrix-research.md §12 — surface research spend + evidence coverage as CFO-facing KPIs.
+  // Old agent_runs rows may pre-date these fields; default to 0 so the page renders.
+  const researchKpis = dag
+    ? {
+        evidenceSources: dag.executiveReport.kpis.evidence_source_count ?? 0,
+        webSearchSpendEur: dag.executiveReport.kpis.web_search_spend_eur ?? 0,
+        clustersResearched: dag.research?.summary.clusters_researched ?? 0,
+        cacheHits: dag.research?.summary.cache_hits ?? 0,
+      }
+    : null;
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-start justify-between gap-6">
@@ -354,7 +381,48 @@ export default async function ImpactsPage() {
       ) : (
         <>
           {dag ? <CfoSummary dag={dag} /> : null}
+          {researchKpis ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-[var(--brand-forest-600)] dark:text-[var(--brand-mint-500)]" aria-hidden />
+                  <CardTitle>Research evidence</CardTitle>
+                </div>
+              </CardHeader>
+              <CardBody>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <Stat
+                    label="Clusters researched"
+                    value={researchKpis.clustersResearched.toString()}
+                    sub={`${researchKpis.cacheHits} served from cache`}
+                  />
+                  <Stat
+                    label="Source URLs"
+                    value={researchKpis.evidenceSources.toString()}
+                    sub="across every approved switch"
+                    tone={researchKpis.evidenceSources > 0 ? "positive" : "warning"}
+                  />
+                  <Stat
+                    label="Web-search spend"
+                    value={fmtEur(researchKpis.webSearchSpendEur, 2)}
+                    sub="this close run"
+                  />
+                  <Stat
+                    label="Matrix freshness"
+                    value={researchKpis.clustersResearched > researchKpis.cacheHits ? "Live" : "Cached"}
+                    sub={
+                      researchKpis.clustersResearched > researchKpis.cacheHits
+                        ? "new web_search results this run"
+                        : "served from 30-day cache"
+                    }
+                    tone="positive"
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          ) : null}
           {dag ? <TopRecommendations dag={dag} /> : null}
+          <ScenarioPlanner alternatives={plannableAlts} />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card>

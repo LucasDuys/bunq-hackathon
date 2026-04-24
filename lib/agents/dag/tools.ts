@@ -685,3 +685,38 @@ export const getCarbonPriceExposure = (country = "NL", sector = "default"): { eu
   const applicable = coveredSectors.has(sector.toLowerCase());
   return { euPerTonne: profile.etsEurPerTonne, applicable, source: profile.source };
 };
+
+/**
+ * Resolve the incumbent merchant for a priority cluster. Research Agent calls this
+ * before recording alternatives so "Switch to Pure Energie" never fires for a company
+ * already paying Pure Energie. Matches on merchant_norm (preferred) or a noisy
+ * substring of merchant_raw — good enough to dedupe the most common cases.
+ */
+export type IncumbentInfo = {
+  merchantNorm: string;
+  merchantLabel: string;
+  txCount: number;
+  lastTimestamp: number;
+} | null;
+
+export const getIncumbentMerchant = (orgId: string, merchantNorm: string): IncumbentInfo => {
+  if (!merchantNorm) return null;
+  const rows = db
+    .select({
+      merchantNorm: transactions.merchantNorm,
+      merchantRaw: transactions.merchantRaw,
+      timestamp: transactions.timestamp,
+    })
+    .from(transactions)
+    .where(and(eq(transactions.orgId, orgId), eq(transactions.merchantNorm, merchantNorm)))
+    .orderBy(desc(transactions.timestamp))
+    .limit(MAX_ROWS)
+    .all();
+  if (rows.length === 0) return null;
+  return {
+    merchantNorm,
+    merchantLabel: rows[0].merchantRaw,
+    txCount: rows.length,
+    lastTimestamp: rows[0].timestamp,
+  };
+};

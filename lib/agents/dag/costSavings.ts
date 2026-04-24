@@ -6,7 +6,14 @@
  * Runs in parallel with Green Alternatives from runDag().
  */
 import { z } from "zod";
-import type { AgentContext, BaselineOutput, CostSavingsOutput, PriorityTarget } from "./types";
+import type {
+  AgentContext,
+  BaselineOutput,
+  CostSavingsOutput,
+  PriorityTarget,
+  ResearchedAlternative,
+  ResearchedPool,
+} from "./types";
 import { detectRecurringSpend, findCostSaving, type AltTemplate, type RecurringSpend } from "./tools";
 import { callAgent, isMock } from "./llm";
 
@@ -82,15 +89,21 @@ const OUTPUT_SCHEMA = z.object({ results: z.array(RESULT_SCHEMA) });
 
 export interface CostSavingsInput {
   baseline: BaselineOutput;
+  researchedPool?: ResearchedPool;
 }
 
 type Bundle = {
   target: PriorityTarget;
   templates: AltTemplate[];
+  researched: ResearchedAlternative[];
   recurring?: RecurringSpend;
 };
 
-const buildBundles = (baseline: BaselineOutput, recurring: RecurringSpend[]): Bundle[] => {
+const buildBundles = (
+  baseline: BaselineOutput,
+  recurring: RecurringSpend[],
+  pool: ResearchedPool | undefined,
+): Bundle[] => {
   const byMerchant = new Map(recurring.map((r) => [r.merchantNorm, r]));
   const filtered = baseline.priority_targets.filter(
     (t) => t.recommended_next_agent === "cost_savings_agent" || t.recommended_next_agent === "both",
@@ -98,6 +111,7 @@ const buildBundles = (baseline: BaselineOutput, recurring: RecurringSpend[]): Bu
   return filtered.map((target) => ({
     target,
     templates: findCostSaving(target.category, target.baseline_sub_category ?? null),
+    researched: pool?.[target.cluster_id] ?? [],
     recurring: target.baseline_merchant_norm ? byMerchant.get(target.baseline_merchant_norm) : undefined,
   }));
 };
@@ -147,12 +161,40 @@ const templateToOption = (t: AltTemplate, annualSpendEur: number): Option => {
   };
 };
 
-const mockOutput = (baseline: BaselineOutput, recurring: RecurringSpend[]): CostSavingsOutput => {
-  const bundles = buildBundles(baseline, recurring);
+const researchedToOption = (a: ResearchedAlternative, annualSpendEur: number): Option => {
+  const cdPct = a.cost_delta_pct ?? 0;
+  const annualSaving = -annualSpendEur * cdPct;
+  const co2eDelta = a.co2e_delta_pct ?? 0;
+  const carbonEffect: Option["carbon_effect"] =
+    co2eDelta < -0.05 ? "lower" : co2eDelta > 0.05 ? "higher" : Math.abs(co2eDelta) < 0.02 ? "neutral" : "unknown";
+  const businessRisk: Option["business_risk"] = a.feasibility === "drop_in" ? "low" : a.feasibility === "migration" ? "medium" : "medium";
+  return {
+    option_name: a.name,
+    option_type: a.feasibility === "policy" ? "policy_change" : "vendor_switch",
+    estimated_monthly_saving_eur: annualSaving > 0 ? Number((annualSaving / 12).toFixed(0)) : null,
+    estimated_annual_saving_eur: annualSaving > 0 ? Number(annualSaving.toFixed(0)) : null,
+    one_time_saving_eur: null,
+    confidence: a.confidence,
+    source: a.provenance === "template" ? "benchmark" : "historical_data",
+    business_risk: businessRisk,
+    carbon_effect: carbonEffect,
+    notes: a.description,
+  };
+};
+
+const mockOutput = (
+  baseline: BaselineOutput,
+  recurring: RecurringSpend[],
+  pool: ResearchedPool | undefined,
+): CostSavingsOutput => {
+  const bundles = buildBundles(baseline, recurring, pool);
   const results = bundles.map((b) => {
     const annualSpend = b.target.annualized_spend_eur;
     const monthlySpend = b.recurring?.monthlyAvgEur ?? annualSpend / 12;
-    const options = b.templates.map((t) => templateToOption(t, annualSpend));
+    // Prefer researched alternatives; fall back to templates.
+    const options = b.researched.length > 0
+      ? b.researched.map((r) => researchedToOption(r, annualSpend))
+      : b.templates.map((t) => templateToOption(t, annualSpend));
     if (b.recurring) {
       const recurringOption: Option = {
         option_name: `Review recurring spend with ${b.target.baseline_merchant_label ?? "this merchant"}`,
@@ -236,7 +278,7 @@ const buildUserMessage = (baseline: BaselineOutput, bundles: Bundle[]): string =
     `Period: ${baseline.analysis_period}`,
     `Annual spend: €${baseline.baseline.total_spend_eur.toLocaleString()}`,
     "",
-    "Priority clusters with candidate cost-saving options from our benchmark library:",
+    "Priority clusters with candidate options. Prefer researched alternatives (live web sources); fall back to library options only if no researched option applies.",
   ];
   for (const b of bundles) {
     lines.push(
@@ -245,32 +287,50 @@ const buildUserMessage = (baseline: BaselineOutput, bundles: Bundle[]): string =
       `  category: ${b.target.category}${b.target.baseline_sub_category ? "/" + b.target.baseline_sub_category : ""}`,
       `  annual_spend_eur: ${b.target.annualized_spend_eur}`,
       `  recurring: ${b.recurring ? `yes (${b.recurring.monthsPresent} months, ~€${b.recurring.monthlyAvgEur}/mo)` : "no"}`,
-      `  candidate_options:`,
     );
-    for (const t of b.templates) {
-      lines.push(
-        `    - name: ${t.name}`,
-        `      type: ${t.type}`,
-        `      cost_delta_pct: ${t.costDeltaPct}`,
-        `      feasibility: ${t.feasibility}`,
-        `      confidence: ${t.confidence}`,
-        `      notes: ${t.rationale}`,
-        `      source_urls: ${t.sources.map((s) => s.url).join(", ")}`,
-      );
+    if (b.researched.length > 0) {
+      lines.push(`  researched_options (provenance=web_search|cache|template):`);
+      for (const r of b.researched) {
+        lines.push(
+          `    - name: ${r.name}`,
+          `      vendor: ${r.vendor ?? "null"}`,
+          `      provenance: ${r.provenance}`,
+          `      cost_delta_pct: ${r.cost_delta_pct}`,
+          `      co2e_delta_pct: ${r.co2e_delta_pct}`,
+          `      feasibility: ${r.feasibility}`,
+          `      confidence: ${r.confidence}`,
+          `      description: ${r.description}`,
+          `      source_urls: ${r.sources.map((s) => s.url).join(", ")}`,
+        );
+      }
+    }
+    if (b.templates.length > 0) {
+      lines.push(`  library_options (fallback only):`);
+      for (const t of b.templates) {
+        lines.push(
+          `    - name: ${t.name}`,
+          `      type: ${t.type}`,
+          `      cost_delta_pct: ${t.costDeltaPct}`,
+          `      feasibility: ${t.feasibility}`,
+          `      confidence: ${t.confidence}`,
+          `      notes: ${t.rationale}`,
+          `      source_urls: ${t.sources.map((s) => s.url).join(", ")}`,
+        );
+      }
     }
   }
   lines.push(
     "",
-    "Return strict JSON: { results: [...] }. Keep every option grounded in the candidate list — no invented vendors.",
+    "Return strict JSON: { results: [...] }. Keep every option grounded in the researched or library list — no invented vendors.",
   );
   return lines.join("\n");
 };
 
 export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<CostSavingsOutput> {
   const recurring = detectRecurringSpend(ctx.orgId, 3, 6);
-  const bundles = buildBundles(input.baseline, recurring);
+  const bundles = buildBundles(input.baseline, recurring, input.researchedPool);
   if (bundles.length === 0 || isMock()) {
-    return mockOutput(input.baseline, recurring);
+    return mockOutput(input.baseline, recurring, input.researchedPool);
   }
   try {
     const { jsonText } = await callAgent({
@@ -278,7 +338,7 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
       user: buildUserMessage(input.baseline, bundles),
       maxTokens: 4000,
     });
-    if (!jsonText) return mockOutput(input.baseline, recurring);
+    if (!jsonText) return mockOutput(input.baseline, recurring, input.researchedPool);
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const results = parsed.results;
     const totalObserved = results.reduce((s, r) => s + (r.current_spend.annualized_spend_eur ?? 0), 0);
@@ -314,6 +374,6 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
       },
     };
   } catch {
-    return mockOutput(input.baseline, recurring);
+    return mockOutput(input.baseline, recurring, input.researchedPool);
   }
 }

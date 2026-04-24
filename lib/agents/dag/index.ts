@@ -1,10 +1,11 @@
 /**
- * 7-agent DAG runner.
- *   baseline → [greenAlt || costSavings] → [greenJudge || costJudge] → creditStrategy → executiveReport
- * See docs/agents/00-overview.md and plans/matrix-dag.md.
+ * 8-agent DAG runner (7 + Research).
+ *   baseline → research → [greenAlt || costSavings] → [greenJudge || costJudge] → creditStrategy → executiveReport
+ * See docs/agents/00-overview.md, plans/matrix-dag.md, plans/matrix-research.md.
  */
 import { randomUUID } from "node:crypto";
 import * as spendBaseline from "./spendBaseline";
+import * as research from "./research";
 import * as greenAlternatives from "./greenAlternatives";
 import * as costSavings from "./costSavings";
 import * as greenJudge from "./greenJudge";
@@ -28,6 +29,7 @@ export async function runDag(
 ): Promise<DagRunResult> {
   const metrics = {} as Record<AgentName, AgentRunMetrics>;
   const totalStart = performance.now();
+  const runId = `run_${randomUUID()}`;
 
   const [baseline, mBaseline] = await timed(() =>
     spendBaseline.run({ orgId: input.orgId, month: input.month }, ctx),
@@ -43,9 +45,16 @@ export async function runDag(
     },
   });
 
+  // Research Agent — live web_search feeds every downstream proposal agent with real citations.
+  const [researchOut, mResearch] = await timed(() =>
+    research.run({ baseline, agentRunId: runId }, ctx),
+  );
+  metrics.research_agent = mResearch;
+  const researchedPool = research.toResearchedPool(researchOut);
+
   const [[greenAlt, mGreenAlt], [cost, mCost]] = await Promise.all([
-    timed(() => greenAlternatives.run({ baseline }, ctx)),
-    timed(() => costSavings.run({ baseline }, ctx)),
+    timed(() => greenAlternatives.run({ baseline, researchedPool }, ctx)),
+    timed(() => costSavings.run({ baseline, researchedPool }, ctx)),
   ]);
   metrics.green_alternatives_agent = mGreenAlt;
   metrics.cost_savings_agent = mCost;
@@ -67,8 +76,8 @@ export async function runDag(
   });
 
   const [[gJudge, mGJudge], [cJudge, mCJudge]] = await Promise.all([
-    timed(() => greenJudge.run({ greenAlt }, ctx)),
-    timed(() => costJudge.run({ costSavings: cost }, ctx)),
+    timed(() => greenJudge.run({ greenAlt, researchedPool }, ctx)),
+    timed(() => costJudge.run({ costSavings: cost, researchedPool }, ctx)),
   ]);
   metrics.green_judge_agent = mGJudge;
   metrics.cost_judge_agent = mCJudge;
@@ -87,7 +96,10 @@ export async function runDag(
   });
 
   const [report, mReport] = await timed(() =>
-    executiveReport.run({ greenJudge: gJudge, costJudge: cJudge, creditStrategy: strategy, baseline }, ctx),
+    executiveReport.run(
+      { greenJudge: gJudge, costJudge: cJudge, creditStrategy: strategy, baseline, research: researchOut },
+      ctx,
+    ),
   );
   metrics.executive_report_agent = mReport;
   await ctx.auditLog({
@@ -99,8 +111,9 @@ export async function runDag(
   });
 
   return {
-    runId: `run_${randomUUID()}`,
+    runId,
     baseline,
+    research: researchOut,
     greenAlt,
     costSavings: cost,
     greenJudge: gJudge,

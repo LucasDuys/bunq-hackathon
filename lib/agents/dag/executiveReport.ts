@@ -13,6 +13,7 @@ import type {
   CreditStrategyResult,
   ExecReportOutput,
   GreenJudgeOutput,
+  ResearchOutput,
 } from "./types";
 import { callAgent, isMock } from "./llm";
 
@@ -37,6 +38,7 @@ export interface ExecReportInput {
   greenJudge: GreenJudgeOutput;
   costJudge: CostJudgeOutput;
   creditStrategy: CreditStrategyOutput;
+  research?: ResearchOutput;
 }
 
 const quadrantFor = (r: CreditStrategyResult): "low_cost_low_carbon" | "high_cost_low_carbon" | "low_cost_high_carbon" | "high_cost_high_carbon" => {
@@ -99,6 +101,14 @@ export async function run(input: ExecReportInput, _ctx: AgentContext): Promise<E
   if (creditStrategy.summary.tax_advisor_review_required) limitations.push("Tax advisor review required on credit / procurement deductibility.");
   if (baseline.baseline.baseline_confidence < 0.6) limitations.push("Baseline confidence under 0.60 — spend-based factors dominate; refinement or invoice parsing will tighten the range.");
 
+  if (input.research) {
+    const coverage = input.research.summary.clusters_researched;
+    const withAlts = input.research.results.filter((r) => r.alternatives.length > 0).length;
+    if (coverage > withAlts) {
+      limitations.push(`${coverage - withAlts} priority cluster${coverage - withAlts === 1 ? "" : "s"} had no viable alternative from research — gap surfaced honestly.`);
+    }
+  }
+
   let execSummary = defaultSummary(baseline, creditStrategy);
   if (!isMock()) {
     try {
@@ -154,6 +164,8 @@ export async function run(input: ExecReportInput, _ctx: AgentContext): Promise<E
       net_company_scale_financial_impact_eur: netImpact,
       payback_period_months: paybackMonths,
       confidence: creditStrategy.summary.average_confidence,
+      evidence_source_count: input.research?.summary.total_sources ?? 0,
+      web_search_spend_eur: input.research?.summary.web_search_spend_eur ?? 0,
     },
     top_recommendations: topRecommendations,
     matrix,

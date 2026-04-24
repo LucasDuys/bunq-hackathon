@@ -4,7 +4,7 @@ import { agentRuns, db, impactRecommendations } from "@/lib/db/client";
 import type { AgentRun, ImpactRecommendation } from "@/lib/db/schema";
 import type { BaselineItem } from "@/lib/impacts/aggregate";
 import type { ResolvedAlternative } from "@/lib/agent/impacts";
-import type { DagRunResult } from "@/lib/agents/dag/types";
+import type { DagRunResult, ResearchedAlternative } from "@/lib/agents/dag/types";
 
 export const persistRecommendations = (params: {
   orgId: string;
@@ -76,6 +76,9 @@ export const getLatestRecommendations = (orgId: string): ImpactRecommendation[] 
 /**
  * Persist the full DAG payload (baseline → report) and flatten approved green alternatives
  * into the legacy impactRecommendations table so the existing /impacts UI keeps rendering.
+ *
+ * When the Research Agent fed evidence for a cluster, we join the researched sources + provenance
+ * onto each row so the UI's citation chips show real, web-sourced URLs rather than empty arrays.
  */
 export const persistDagRun = (params: {
   orgId: string;
@@ -95,14 +98,27 @@ export const persistDagRun = (params: {
       .filter((c): c is string => !!c),
   );
   const priorityByCluster = new Map(dag.baseline.priority_targets.map((t) => [t.cluster_id, t]));
+  // Index researched alternatives by (cluster_id, normalized-name) so we can attach sources
+  // + provenance to the row that ultimately lands in the UI.
+  const researchedByCluster = new Map<string, ResearchedAlternative[]>();
+  for (const r of dag.research?.results ?? []) {
+    if (r.alternatives.length > 0) researchedByCluster.set(r.cluster_id, r.alternatives);
+  }
+  const nameKey = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const rows: Array<typeof impactRecommendations.$inferInsert> = [];
   for (const result of dag.greenAlt.results) {
     if (!result.cluster_id || !approvedCluster.has(result.cluster_id)) continue;
     const target = priorityByCluster.get(result.cluster_id);
+    const clusterResearched = researchedByCluster.get(result.cluster_id) ?? [];
     for (const alt of result.alternatives) {
       const costDeltaPct = (alt.price_delta_eur ?? 0) / 100;
       const co2eDeltaPct = (alt.carbon_saving_percent ?? 0) / -100;
       const quadrant = quadrantFromDeltas(costDeltaPct, co2eDeltaPct);
+      // Join by loose name match to pull web sources forward. Graceful fallback to [] if no match.
+      const match = clusterResearched.find((r) => nameKey(r.name) === nameKey(alt.alternative_name));
+      const sources = match
+        ? match.sources.map((s) => ({ title: s.title, url: s.url }))
+        : [];
       rows.push({
         id: `ira_${randomUUID().slice(0, 10)}`,
         orgId,
@@ -124,9 +140,9 @@ export const persistDagRun = (params: {
         altCostDeltaEurYear: Number(((target?.annualized_spend_eur ?? 0) * costDeltaPct).toFixed(2)),
         altCo2eDeltaKgYear: Number((-1 * (alt.carbon_saving_kg ?? 0)).toFixed(3)),
         altConfidence: alt.confidence,
-        altFeasibility: inferFeasibility(alt.source),
+        altFeasibility: match ? normalizeFeasibility(match.feasibility) : inferFeasibility(alt.source),
         altRationale: alt.comparability_notes,
-        altSources: JSON.stringify([]),
+        altSources: JSON.stringify(sources),
         quadrant,
       });
     }
@@ -166,6 +182,12 @@ const inferFeasibility = (source: string): "drop_in" | "migration" | "procuremen
     default:
       return "procurement";
   }
+};
+
+const normalizeFeasibility = (f: string): "drop_in" | "migration" | "procurement" => {
+  if (f === "drop_in" || f === "migration" || f === "procurement") return f;
+  if (f === "policy") return "drop_in"; // policy changes are generally drop-in in terms of implementation cost
+  return "migration";
 };
 
 export const getLatestAgentRun = (orgId: string): AgentRun | null => {

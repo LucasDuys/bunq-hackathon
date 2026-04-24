@@ -10,7 +10,7 @@
  * the code also recomputing them. This matches the "math stays deterministic" rule.
  */
 import { z } from "zod";
-import type { AgentContext, GreenAltOutput, GreenJudgeOutput } from "./types";
+import type { AgentContext, GreenAltOutput, GreenJudgeOutput, ResearchedPool } from "./types";
 import { callAgent, isMock } from "./llm";
 
 export const SYSTEM_PROMPT = `You are the Green Judge Agent for Carbon Autopilot for bunq Business.
@@ -61,9 +61,60 @@ const OUTPUT_SCHEMA = z.object({ judged_results: z.array(JUDGED_SCHEMA) });
 
 export interface GreenJudgeInput {
   greenAlt: GreenAltOutput;
+  researchedPool?: ResearchedPool;
 }
 
-const scoreResult = (r: GreenAltOutput["results"][number]): { score: number; issues: string[] } => {
+const TRUSTED_DOMAINS = new Set([
+  "defra.gov.uk",
+  "gov.uk",
+  "ec.europa.eu",
+  "ember-climate.org",
+  "ember-energy.org",
+  "ademe.fr",
+  "base-carbone.ademe.fr",
+  "ghgprotocol.org",
+  "science.org",
+  "transportenvironment.org",
+  "ipcc.ch",
+]);
+
+const domainOf = (url: string): string => {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "unknown";
+  }
+};
+
+/**
+ * evidence_quality = f(sources_count, domain_reputation, freshness_days, provenance).
+ * Range 0..1. 0 means "reject"; 0.6+ means "approved-grade".
+ *
+ * Called per result; pulls sources from the researchedPool when available so
+ * the judge can see the same URLs the Research Agent recorded.
+ */
+const evidenceQualityFor = (
+  clusterId: string | null,
+  pool: ResearchedPool | undefined,
+): { quality: number; sourceCount: number; trustedCount: number } => {
+  const sources = clusterId && pool ? pool[clusterId]?.flatMap((a) => a.sources) ?? [] : [];
+  const sourceCount = sources.length;
+  if (sourceCount === 0) return { quality: 0, sourceCount, trustedCount: 0 };
+  const trustedCount = sources.filter((s) => TRUSTED_DOMAINS.has(domainOf(s.url))).length;
+  // Base: 0.3 for ≥1 source, +0.1 per additional up to +0.3, +0.25 if any trusted, +0.15 freshness if < 30 days.
+  let q = 0.3;
+  q += Math.min(0.3, Math.max(0, sourceCount - 1) * 0.1);
+  if (trustedCount > 0) q += 0.25;
+  const nowSec = Math.floor(Date.now() / 1000);
+  const freshest = Math.min(...sources.map((s) => nowSec - s.fetched_at));
+  if (freshest < 30 * 86_400) q += 0.15;
+  return { quality: Number(Math.min(1, q).toFixed(3)), sourceCount, trustedCount };
+};
+
+const scoreResult = (
+  r: GreenAltOutput["results"][number],
+  pool: ResearchedPool | undefined,
+): { score: number; issues: string[]; evidenceQuality: number; sourceCount: number } => {
   const issues: string[] = [];
   const topAlt = r.alternatives[0];
   const evidence = topAlt?.comparability_notes?.length ?? 0;
@@ -86,13 +137,28 @@ const scoreResult = (r: GreenAltOutput["results"][number]): { score: number; iss
       issues.push("positive carbon_saving_percent sign flipped");
     }
   }
+  const { quality, sourceCount, trustedCount } = evidenceQualityFor(r.cluster_id, pool);
+  if (sourceCount === 0) {
+    evidenceScore -= 35;
+    issues.push("zero_sources");
+  } else if (sourceCount === 1) {
+    issues.push("single_source_only");
+  }
+  if (trustedCount === 0 && sourceCount > 0) issues.push("no_trusted_source");
   const confidenceComponent = (topAlt?.confidence ?? r.current_purchase.confidence) * 100;
   const score = Math.max(0, Math.min(100, (evidenceScore + confidenceComponent) / 2 - confidencePenalty));
   if (r.recommendation_status === "needs_context") issues.push("agent self-reported needs_context");
-  return { score: Number(score.toFixed(0)), issues };
+  return {
+    score: Number(score.toFixed(0)),
+    issues,
+    evidenceQuality: quality,
+    sourceCount,
+  };
 };
 
-const verdictForScore = (score: number): z.infer<typeof VERDICT> => {
+const verdictForScore = (score: number, sourceCount: number): z.infer<typeof VERDICT> => {
+  // Hard rule (plans/matrix-research.md §4): zero sources → rejected, regardless of score.
+  if (sourceCount === 0) return "rejected";
   if (score >= 85) return "approved";
   if (score >= 70) return "approved_with_caveats";
   if (score >= 50) return "needs_context";
@@ -108,10 +174,10 @@ const correctMath = (r: GreenAltOutput["results"][number]): { current: number | 
   return { current, saved: saved ?? 0 };
 };
 
-const buildMock = (greenAlt: GreenAltOutput): GreenJudgeOutput => {
+const buildMock = (greenAlt: GreenAltOutput, pool: ResearchedPool | undefined): GreenJudgeOutput => {
   const judged = greenAlt.results.map((r) => {
-    const { score, issues } = scoreResult(r);
-    const verdict = verdictForScore(score);
+    const { score, issues, evidenceQuality, sourceCount } = scoreResult(r, pool);
+    const verdict = verdictForScore(score, sourceCount);
     const { current, saved } = correctMath(r);
     return {
       cluster_id: r.cluster_id,
@@ -124,7 +190,7 @@ const buildMock = (greenAlt: GreenAltOutput): GreenJudgeOutput => {
       corrected_potential_kg_co2e_saved: verdict === "rejected" ? 0 : saved,
       confidence: Number(((r.alternatives[0]?.confidence ?? 0.5) * (score / 100)).toFixed(3)),
       issues_found: issues,
-      audit_summary: `${verdict} (${score}/100): ${issues.length ? issues.join("; ") : "passes checks"}`,
+      audit_summary: `${verdict} (${score}/100, evidence=${evidenceQuality}): ${issues.length ? issues.join("; ") : "passes checks"}`,
     };
   });
 
@@ -163,7 +229,7 @@ const buildUserMessage = (greenAlt: GreenAltOutput): string => {
 
 export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<GreenJudgeOutput> {
   if (isMock()) {
-    const out = buildMock(input.greenAlt);
+    const out = buildMock(input.greenAlt, input.researchedPool);
     for (const j of out.judged_results) {
       await ctx.auditLog({ type: "agent.green_judge.verdict", payload: { cluster_id: j.cluster_id, verdict: j.verdict, score: j.green_score } });
     }
@@ -175,18 +241,24 @@ export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<Gr
       user: buildUserMessage(input.greenAlt),
       maxTokens: 3000,
     });
-    if (!jsonText) return buildMock(input.greenAlt);
+    if (!jsonText) return buildMock(input.greenAlt, input.researchedPool);
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
-    // Even when Sonnet returns verdicts, we recompute math from the original proposal —
-    // the judge cannot invent numbers. We keep Sonnet's score + verdict + issues + summary text.
+    // Even when Sonnet returns verdicts, we recompute math AND the evidence gate in code —
+    // the judge cannot approve a zero-source recommendation regardless of its self-rating.
     const rebuilt = parsed.judged_results.map((j, i) => {
       const source = input.greenAlt.results[i];
       if (!source) return j;
       const { current, saved } = correctMath(source);
+      const { sourceCount, quality: evidenceQuality } = evidenceQualityFor(source.cluster_id, input.researchedPool);
+      const finalVerdict: z.infer<typeof VERDICT> = sourceCount === 0 ? "rejected" : j.verdict;
+      const extraIssues = sourceCount === 0 ? [...j.issues_found, "zero_sources"] : j.issues_found;
       return {
         ...j,
+        verdict: finalVerdict,
         corrected_current_kg_co2e: current,
-        corrected_potential_kg_co2e_saved: j.verdict === "rejected" ? 0 : saved,
+        corrected_potential_kg_co2e_saved: finalVerdict === "rejected" ? 0 : saved,
+        issues_found: extraIssues,
+        audit_summary: `${j.audit_summary} | evidence=${evidenceQuality}`,
       };
     });
     const approved = rebuilt.filter((j) => j.verdict === "approved" || j.verdict === "approved_with_caveats");
@@ -215,6 +287,6 @@ export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<Gr
       },
     };
   } catch {
-    return buildMock(input.greenAlt);
+    return buildMock(input.greenAlt, input.researchedPool);
   }
 }

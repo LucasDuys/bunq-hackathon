@@ -8,7 +8,14 @@
  * agent never issues unbounded tool_use turns. This keeps the critical path at one Sonnet call.
  */
 import { z } from "zod";
-import type { AgentContext, BaselineOutput, GreenAltOutput, PriorityTarget } from "./types";
+import type {
+  AgentContext,
+  BaselineOutput,
+  GreenAltOutput,
+  PriorityTarget,
+  ResearchedAlternative,
+  ResearchedPool,
+} from "./types";
 import { findLowerCarbonAlternative, getEmissionFactor, type AltTemplate } from "./tools";
 import { callAgent, isMock } from "./llm";
 
@@ -77,26 +84,30 @@ const OUTPUT_SCHEMA = z.object({
 
 export interface GreenAltInput {
   baseline: BaselineOutput;
+  researchedPool?: ResearchedPool;
 }
 
 type CandidateBundle = {
   target: PriorityTarget;
   templates: AltTemplate[];
+  researched: ResearchedAlternative[];
 };
 
-const buildCandidates = (baseline: BaselineOutput): CandidateBundle[] => {
+const buildCandidates = (baseline: BaselineOutput, pool: ResearchedPool | undefined): CandidateBundle[] => {
   const filtered = baseline.priority_targets.filter(
     (t) => t.recommended_next_agent === "green_alternatives_agent" || t.recommended_next_agent === "both",
   );
   return filtered
     .map((target) => {
       const sub = target.baseline_sub_category ?? null;
+      const researched = pool?.[target.cluster_id] ?? [];
       return {
         target,
         templates: findLowerCarbonAlternative(target.category, sub),
+        researched,
       };
     })
-    .filter((c) => c.templates.length > 0);
+    .filter((c) => c.templates.length > 0 || c.researched.length > 0);
 };
 
 const templateToAlternative = (t: AltTemplate, baseKg: number) => ({
@@ -111,6 +122,39 @@ const templateToAlternative = (t: AltTemplate, baseKg: number) => ({
   confidence: t.confidence,
   comparability_notes: t.rationale,
 });
+
+const mapResearchedType = (
+  f: ResearchedAlternative["feasibility"],
+): "product" | "supplier" | "behavior" | "travel_mode" | "procurement_policy" => {
+  switch (f) {
+    case "drop_in":
+      return "product";
+    case "migration":
+      return "supplier";
+    case "procurement":
+      return "supplier";
+    case "policy":
+      return "procurement_policy";
+  }
+};
+
+const researchedToAlternative = (a: ResearchedAlternative, baseKg: number) => {
+  const co2eDelta = a.co2e_delta_pct ?? 0;
+  const saved = -baseKg * co2eDelta;
+  const sourceLabel = a.provenance === "template" ? "emission_factor_library" : "api";
+  return {
+    alternative_name: a.name,
+    alternative_type: mapResearchedType(a.feasibility),
+    estimated_kg_co2e: a.co2e_delta_pct !== null ? Number((baseKg * (1 + co2eDelta)).toFixed(1)) : null,
+    carbon_saving_kg: a.co2e_delta_pct !== null ? Number(saved.toFixed(1)) : null,
+    carbon_saving_percent: a.co2e_delta_pct !== null ? Number((co2eDelta * 100).toFixed(0)) : null,
+    estimated_price_eur: null as number | null,
+    price_delta_eur: a.cost_delta_pct !== null ? Number((a.cost_delta_pct * 100).toFixed(0)) : null,
+    source: sourceLabel as "api" | "emission_factor_library" | "historical_data" | "simulated" | "assumption",
+    confidence: a.confidence,
+    comparability_notes: a.description,
+  };
+};
 
 const mapType = (t: AltTemplate["type"]): "product" | "supplier" | "behavior" | "travel_mode" | "procurement_policy" => {
   switch (t) {
@@ -131,11 +175,14 @@ const mapType = (t: AltTemplate["type"]): "product" | "supplier" | "behavior" | 
   }
 };
 
-const mockOutput = (baseline: BaselineOutput): GreenAltOutput => {
-  const candidates = buildCandidates(baseline);
+const mockOutput = (baseline: BaselineOutput, pool: ResearchedPool | undefined): GreenAltOutput => {
+  const candidates = buildCandidates(baseline, pool);
   const results = candidates.map((c) => {
     const baseKg = c.target.estimated_tco2e * 1000;
-    const alts = c.templates.map((t) => templateToAlternative(t, baseKg));
+    // Prefer researched alternatives; fall back to templates if none researched.
+    const alts = c.researched.length > 0
+      ? c.researched.map((r) => researchedToAlternative(r, baseKg))
+      : c.templates.map((t) => templateToAlternative(t, baseKg));
     const topSaving = alts.reduce((s, a) => Math.max(s, a.carbon_saving_kg ?? 0), 0);
     return {
       cluster_id: c.target.cluster_id,
@@ -191,7 +238,7 @@ const buildUserMessage = (baseline: BaselineOutput, candidates: CandidateBundle[
     `Annual tCO₂e: ${baseline.baseline.estimated_total_tco2e}`,
     `Baseline confidence: ${baseline.baseline.baseline_confidence}`,
     "",
-    "Priority clusters with candidate alternatives from our factor library:",
+    "Priority clusters with candidate alternatives. Prefer researched alternatives (they carry fresh web sources); fall back to library candidates only if no researched option applies.",
   ];
   for (const c of candidates) {
     const factor = getEmissionFactor(c.target.category, c.target.baseline_sub_category ?? null);
@@ -203,33 +250,51 @@ const buildUserMessage = (baseline: BaselineOutput, candidates: CandidateBundle[
       `  annual_kg_co2e: ${(c.target.estimated_tco2e * 1000).toFixed(0)}`,
       `  factor_source: ${factor.source} (±${(factor.uncertaintyPct * 100).toFixed(0)}%)`,
       `  confidence: ${c.target.baseline_confidence ?? 0.6}`,
-      `  candidate_alternatives:`,
     );
-    for (const t of c.templates) {
-      lines.push(
-        `    - name: ${t.name}`,
-        `      type: ${t.type}`,
-        `      cost_delta_pct: ${t.costDeltaPct}`,
-        `      co2e_delta_pct: ${t.co2eDeltaPct}`,
-        `      feasibility: ${t.feasibility}`,
-        `      confidence: ${t.confidence}`,
-        `      rationale: ${t.rationale}`,
-        `      sources: ${t.sources.map((s) => s.url).join(", ")}`,
-      );
+    if (c.researched.length > 0) {
+      lines.push(`  researched_alternatives (provenance=web_search|cache|template):`);
+      for (const r of c.researched) {
+        lines.push(
+          `    - name: ${r.name}`,
+          `      vendor: ${r.vendor ?? "null"}`,
+          `      provenance: ${r.provenance}`,
+          `      cost_delta_pct: ${r.cost_delta_pct}`,
+          `      co2e_delta_pct: ${r.co2e_delta_pct}`,
+          `      feasibility: ${r.feasibility}`,
+          `      confidence: ${r.confidence}`,
+          `      description: ${r.description}`,
+          `      source_urls: ${r.sources.map((s) => s.url).join(", ")}`,
+        );
+      }
+    }
+    if (c.templates.length > 0) {
+      lines.push(`  library_candidates (fallback only):`);
+      for (const t of c.templates) {
+        lines.push(
+          `    - name: ${t.name}`,
+          `      type: ${t.type}`,
+          `      cost_delta_pct: ${t.costDeltaPct}`,
+          `      co2e_delta_pct: ${t.co2eDeltaPct}`,
+          `      feasibility: ${t.feasibility}`,
+          `      confidence: ${t.confidence}`,
+          `      rationale: ${t.rationale}`,
+          `      sources: ${t.sources.map((s) => s.url).join(", ")}`,
+        );
+      }
     }
   }
   lines.push(
     "",
     "Return strict JSON: { results: [...] } where each result matches the schema in the system prompt.",
-    "Keep every alternative grounded in the candidate list — do not add alternatives we did not provide.",
+    "Keep every alternative grounded in either the researched or the library-fallback list. Do not invent new vendors.",
   );
   return lines.join("\n");
 };
 
 export async function run(input: GreenAltInput, _ctx: AgentContext): Promise<GreenAltOutput> {
-  const candidates = buildCandidates(input.baseline);
+  const candidates = buildCandidates(input.baseline, input.researchedPool);
   if (candidates.length === 0 || isMock()) {
-    return mockOutput(input.baseline);
+    return mockOutput(input.baseline, input.researchedPool);
   }
   try {
     const { jsonText } = await callAgent({
@@ -237,7 +302,7 @@ export async function run(input: GreenAltInput, _ctx: AgentContext): Promise<Gre
       user: buildUserMessage(input.baseline, candidates),
       maxTokens: 4000,
     });
-    if (!jsonText) return mockOutput(input.baseline);
+    if (!jsonText) return mockOutput(input.baseline, input.researchedPool);
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const results = parsed.results;
     const totalCurrent = results.reduce((s, r) => s + (r.current_purchase.estimated_kg_co2e ?? 0), 0);
@@ -266,6 +331,6 @@ export async function run(input: GreenAltInput, _ctx: AgentContext): Promise<Gre
       },
     };
   } catch {
-    return mockOutput(input.baseline);
+    return mockOutput(input.baseline, input.researchedPool);
   }
 }

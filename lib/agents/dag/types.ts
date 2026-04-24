@@ -6,6 +6,7 @@
 
 export type AgentName =
   | "spend_emissions_baseline_agent"
+  | "research_agent"
   | "green_alternatives_agent"
   | "cost_savings_agent"
   | "green_judge_agent"
@@ -63,6 +64,67 @@ export interface PriorityTarget {
   baseline_confidence?: number;
   baseline_tx_count?: number;
 }
+
+// plans/matrix-research.md §6 — evidence-backed alternatives from the Research Agent.
+export interface EvidenceSource {
+  title: string;
+  url: string;
+  snippet: string | null;
+  domain: string;
+  fetched_at: number; // unix sec
+}
+
+export type ResearchedAltFeasibility = "drop_in" | "migration" | "procurement" | "policy";
+export type ResearchedAltProvenance = "web_search" | "cache" | "template" | "hybrid";
+export type ResearchedAltFlag =
+  | "requires_policy_check"
+  | "requires_tax_verification"
+  | "incumbent_match"
+  | "paywalled_source"
+  | "single_source_only";
+
+export interface ResearchedAlternative {
+  id: string; // stable hash per (cluster, vendor, name)
+  cluster_id: string;
+  name: string;
+  vendor: string | null;
+  url: string | null;
+  description: string;
+  cost_delta_pct: number | null; // signed, -0.35 = 35% cheaper
+  co2e_delta_pct: number | null; // signed, -0.9 = 90% less
+  confidence: number; // 0..1
+  feasibility: ResearchedAltFeasibility;
+  geography: string;
+  sources: EvidenceSource[];
+  provenance: ResearchedAltProvenance;
+  freshness_days: number;
+  flags: ResearchedAltFlag[];
+}
+
+export interface ResearchResult {
+  cluster_id: string;
+  alternatives: ResearchedAlternative[];
+  searches_used: number;
+  cache_hit: boolean;
+}
+
+export interface ResearchOutput {
+  agent: "research_agent";
+  company_id: string;
+  analysis_period: string;
+  results: ResearchResult[];
+  summary: {
+    clusters_researched: number;
+    total_alternatives: number;
+    total_sources: number;
+    total_searches_used: number;
+    cache_hits: number;
+    web_search_spend_eur: number; // at $10/1k requests → €0.0094/req (approx, USD→EUR rough)
+  };
+}
+
+// ResearchedPool keyed by cluster_id for easy access in Green/Cost agents.
+export type ResearchedPool = Record<string, ResearchedAlternative[]>;
 
 export interface GreenAltOutput {
   agent: "green_alternatives_agent";
@@ -309,6 +371,8 @@ export interface ExecReportOutput {
     net_company_scale_financial_impact_eur: number;
     payback_period_months: number;
     confidence: Confidence;
+    evidence_source_count: number;
+    web_search_spend_eur: number;
   };
   top_recommendations: Array<{
     rank: number;
@@ -337,6 +401,7 @@ export interface ExecReportOutput {
 export interface DagRunResult {
   runId: string;
   baseline: BaselineOutput;
+  research: ResearchOutput;
   greenAlt: GreenAltOutput;
   costSavings: CostSavingsOutput;
   greenJudge: GreenJudgeOutput;

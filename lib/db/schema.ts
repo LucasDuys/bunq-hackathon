@@ -191,6 +191,35 @@ export const agentMessages = sqliteTable("agent_messages", {
   tokensIn: integer("tokens_in"),
   tokensOut: integer("tokens_out"),
   cached: integer("cached", { mode: "boolean" }).notNull().default(false),
+  serverToolUseCount: integer("server_tool_use_count"),
+  webSearchRequests: integer("web_search_requests"),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+// Research Agent cache — plans/matrix-research.md §5. Keyed per jurisdiction + policy digest
+// so two orgs in the same regime share cache rows (future multi-tenant amortization).
+export const researchCache = sqliteTable("research_cache", {
+  cacheKey: text("cache_key").primaryKey(),
+  orgId: text("org_id").notNull(),
+  category: text("category").notNull(),
+  subCategory: text("sub_category"),
+  jurisdiction: text("jurisdiction").notNull(),
+  policyDigest: text("policy_digest").notNull(),
+  weekBucket: text("week_bucket").notNull(),
+  alternativesJson: text("alternatives_json").notNull(),
+  sourcesCount: integer("sources_count").notNull(),
+  searchRequestsUsed: integer("search_requests_used").notNull(),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+  ttlSec: integer("ttl_sec").notNull().default(2_592_000),
+});
+
+export const webSearchAudit = sqliteTable("web_search_audit", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentRunId: text("agent_run_id").notNull(),
+  clusterId: text("cluster_id"),
+  query: text("query").notNull(),
+  resultsN: integer("results_n").notNull(),
+  firstUrl: text("first_url"),
   createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
 });
 
@@ -249,6 +278,10 @@ export type ImpactRecommendation = typeof impactRecommendations.$inferSelect;
 export type NewImpactRecommendation = typeof impactRecommendations.$inferInsert;
 export type AgentRun = typeof agentRuns.$inferSelect;
 export type AgentMessage = typeof agentMessages.$inferSelect;
+export type ResearchCacheRow = typeof researchCache.$inferSelect;
+export type NewResearchCacheRow = typeof researchCache.$inferInsert;
+export type WebSearchAudit = typeof webSearchAudit.$inferSelect;
+export type NewWebSearchAudit = typeof webSearchAudit.$inferInsert;
 export type OnboardingRun = typeof onboardingRuns.$inferSelect;
 export type NewOnboardingRun = typeof onboardingRuns.$inferInsert;
 export type OnboardingQa = typeof onboardingQa.$inferSelect;
