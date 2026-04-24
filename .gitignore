@@ -46,7 +46,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# forge: collab carve-out
+# forge: per-machine state stays local; shared artefacts (specs, plans, collab) commit.
 /.forge/*
 !/.forge/collab/
 !/.forge/collab/**
+!/.forge/specs/
+!/.forge/specs/**
+!/.forge/plans/
+!/.forge/plans/**
