@@ -16,11 +16,13 @@ Built for **bunq Hackathon 7.0** (April 24-25, 2026). 3-person team, 24-hour bui
 
 ## Quickstart
 
+Requires **Node 22 LTS** (`.nvmrc` pins it). If you're on nvm/fnm: `nvm use` or `fnm use`. Do **not** run this on Node 25 — its higher memory baseline plus `better-sqlite3`'s native rebuild has been observed to wedge 18GB MacBooks during install.
+
 ```bash
-pnpm install
-pnpm run migrate   # creates ./data/carbon.db
-pnpm run seed      # 61 sandbox transactions across 90 days
-pnpm dev
+npm install
+npm run migrate   # creates ./data/carbon.db
+npm run seed      # 61 sandbox transactions across 90 days
+npm run dev
 ```
 
 Open http://localhost:3000 → click **Run Carbon Close**.
@@ -36,7 +38,7 @@ DRY_RUN=1           # 1 = don't actually move money via bunq.
 
 ### Reset the demo
 ```bash
-pnpm run reset    # wipes + re-seeds. Restart `pnpm dev` afterward so the DB handle isn't stale.
+npm run reset    # wipes + re-seeds. Restart `npm run dev` afterward so the DB handle isn't stale.
 ```
 
 ## Demo flow (3 minutes)

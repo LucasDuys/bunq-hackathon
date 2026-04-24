@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Play, Shield, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, BadgeEuro, Play, Shield, TrendingUp, Zap } from "lucide-react";
 import { Badge, Card, CardBody, CardHeader, CardTitle, ConfidenceBar, Stat } from "@/components/ui";
 import { StartCloseButton } from "@/components/StartCloseButton";
 import { TrendChart } from "@/components/TrendChart";
@@ -11,6 +11,7 @@ import {
   getLatestCloseRun,
   getMonthlyTrend,
   getTransactionsForMonth,
+  getTaxSavingsForMonth,
 } from "@/lib/queries";
 import { fmtEur, fmtKg } from "@/lib/utils";
 
@@ -24,6 +25,8 @@ export default async function Overview() {
   const totalSpend = spendRows.reduce((s, r) => s + (r.spendEur ?? 0), 0);
   const latestRun = getLatestCloseRun(DEFAULT_ORG_ID);
   const trend = getMonthlyTrend(DEFAULT_ORG_ID, 6);
+
+  const taxSavings = getTaxSavingsForMonth(DEFAULT_ORG_ID, month);
 
   const hasRun = !!latestRun && (latestRun.finalCo2eKg != null || latestRun.initialCo2eKg != null);
   const point = latestRun?.finalCo2eKg ?? latestRun?.initialCo2eKg ?? 0;
@@ -73,6 +76,33 @@ export default async function Overview() {
           </CardBody>
         </Card>
       </div>
+
+      {taxSavings.totalPotentialSavingsEur > 0 && (
+        <Link href="/tax-savings" className="block group">
+          <Card className="border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20">
+            <CardBody className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900">
+                  <BadgeEuro className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Potential tax savings identified</div>
+                  <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                    {taxSavings.byScheme.length} Dutch & EU tax schemes applicable · {taxSavings.byCategory.filter((c) => c.topAlternative).length} green switch opportunities
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <div className="text-xl font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">{fmtEur(taxSavings.annualProjection, 0)}</div>
+                  <div className="text-xs text-zinc-500">projected annual savings</div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-zinc-400 group-hover:text-emerald-600 transition-colors" />
+              </div>
+            </CardBody>
+          </Card>
+        </Link>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2">
