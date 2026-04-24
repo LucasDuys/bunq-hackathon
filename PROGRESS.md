@@ -83,6 +83,12 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `app/tax-savings/page.tsx` — Converted from light Tailwind classes to dark-theme CSS variables (2026-04-24)
 - [x] `app/impact/page.tsx` — Section dividers between all content blocks (2026-04-24)
 
+## Impact Page Overhaul (Ben)
+
+- [x] `app/impact/page.tsx` — Full visual overhaul: hero KPI card with serif € number + radial glow, 4 KpiChip cards (intensity, benchmark, CO₂e avoidable, monthly footprint), pullquote-style AI narrative, 2×2 matrix + benchmark chart side-by-side, switch cards grid, simulator, methodology footer (2026-04-24)
+- [x] `components/ImpactMatrix.tsx` — 2×2 cost-vs-carbon quadrant matrix: Quick wins / Green investments / Cost savers / Avoid, median-based classification, category-colored items (2026-04-24)
+- [x] `components/SwitchCard.tsx` — Before/after visual comparison cards: ranked switches with "Now" (red) → "After" (green) bars, CO₂e reduction %, annual savings stats (2026-04-24)
+
 ## Backend — Baseline Agent (Lucas)
 
 - [x] `lib/agents/dag/spendBaseline.ts` — Spend & emissions baseline agent with structured output via Anthropic tool_use (2026-04-24)
