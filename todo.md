@@ -69,9 +69,13 @@ The UI is functional but not brand-built. Reference: [getdesign.md Wise design e
 
 ## Demo / go-live
 
-- [ ] **Rehearse the 3-minute demo twice** with `pnpm reset` between. Time each step. See `research/12-demo-choreography.md`.
-- [ ] **Deploy to Vercel OR run locally behind Cloudflare Tunnel** during the demo. Confirm webhook URL stability.
-- [ ] **Backup story for "mock mode"** — if anything in the live pipeline fails, have `ANTHROPIC_MOCK=1 BUNQ_MOCK=1 DRY_RUN=1` as the safe fallback that still demos everything except real money movement.
+- [ ] **Rehearse the 3-minute demo twice** with `npm run reset` between. Time each step. See `research/12-demo-choreography.md`.
+- [ ] **Deploy to Vercel OR run locally behind Cloudflare Tunnel** during the demo. Confirm webhook URL stability. (Skippable if we commit to mock-only demo — see below.)
+- [x] **Backup story for "mock mode"** — `ANTHROPIC_MOCK=1 BUNQ_MOCK=1 DRY_RUN=1` is the safe default; `npm run dev:fire` injects synthetic webhook events so the close has fresh data to chew on without any real bunq involvement.
+
+## Ingestion (parked — needs team decision)
+
+- [ ] **Email-forward ingestion of receipts + invoices** — `receipts@<domain>` mailbox, inbound provider POSTs to `/api/inbound/email`, attachments hashed and stored in a new `receipts` table, batch-OCR'd at close. Replaces the upload UI entirely. Blocked on: provider choice (Postmark vs Cloudflare Email Routing) + domain ownership.
 
 ## References & follow-ups
 

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, lt } from "drizzle-orm";
 import {
+  bunqSessions,
   closeRuns,
   db,
   emissionEstimates,
@@ -10,6 +11,8 @@ import {
   transactions,
 } from "@/lib/db/client";
 import { appendAudit } from "@/lib/audit/append";
+import { loadContext } from "@/lib/bunq/context";
+import { intraUserTransfer } from "@/lib/bunq/payments";
 import { reclassifyMerchant } from "@/lib/classify/merchant";
 import { normalizeMerchant } from "@/lib/classify/rules";
 import { CREDIT_PROJECTS, totalBudgetMix } from "@/lib/credits/projects";
@@ -282,9 +285,28 @@ export const approveAndExecute = async (closeRunId: string) => {
   appendAudit({ orgId: run.orgId, actor: "user", type: "close.approved", payload: { closeRunId }, closeRunId });
 
   const actions = JSON.parse(run.proposedActions) as ProposedAction[];
-  // Execution is mocked at the bunq-client layer when BUNQ_MOCK=1 / DRY_RUN=1; we still log every step.
+  const org = db.select().from(orgs).where(eq(orgs.id, run.orgId)).all()[0];
+  const ctx = loadContext();
+  const session = db.select().from(bunqSessions).where(eq(bunqSessions.orgId, run.orgId)).orderBy(desc(bunqSessions.id)).limit(1).all()[0];
+  // Mock-mode placeholders: callBunq returns canned responses so these don't need to be real.
+  const userId = org?.bunqUserId ?? ctx.userId ?? "0";
+  const fromAccountId = ctx.mainAccountId ?? "1";
+  const reserveAccountId = org?.reserveAccountId ?? ctx.reserveAccountId ?? "reserve_1";
+  const token = session?.sessionToken ?? "mock_session_token";
+
   for (const a of actions) {
     appendAudit({ orgId: run.orgId, actor: "agent", type: `action.${a.kind}`, payload: a, closeRunId });
+    if (a.kind === "reserve_transfer") {
+      await intraUserTransfer({
+        userId,
+        fromAccountId,
+        toAccountId: reserveAccountId,
+        amountEur: a.amountEur,
+        description: a.description,
+        token,
+      });
+    }
+    // credit_purchase actions stay audit-only for the hackathon (simulated marketplace).
   }
 
   db.update(closeRuns).set({ state: "COMPLETED", status: "completed", completedAt: Math.floor(Date.now() / 1000) }).where(eq(closeRuns.id, closeRunId)).run();
