@@ -1,20 +1,26 @@
 import { randomUUID } from "node:crypto";
+import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { appendAudit } from "@/lib/audit/append";
 import { classifyMerchant } from "@/lib/classify/merchant";
 import { normalizeMerchant } from "@/lib/classify/rules";
 import { db, transactions } from "@/lib/db/client";
 import { env } from "@/lib/env";
+import { loadContext } from "@/lib/bunq/context";
 import { BUNQ_SIG_HEADER, verifyWebhook, type BunqWebhookEvent } from "@/lib/bunq/webhook";
+
+const ORG_ID = "org_acme_bv";
 
 export const POST = async (req: Request) => {
   const raw = await req.text();
   const sig = req.headers.get(BUNQ_SIG_HEADER);
 
   if (!env.bunqMock) {
-    // Real signature verify requires server public key from installation; stubbed for now.
-    const serverKey = process.env.BUNQ_SERVER_PUBLIC_KEY_PEM;
-    if (!serverKey || !verifyWebhook(raw, sig, serverKey)) {
+    const serverKey = loadContext().serverPublicKeyPem;
+    if (!serverKey) {
+      return NextResponse.json({ error: "server public key not bootstrapped" }, { status: 503 });
+    }
+    if (!verifyWebhook(raw, sig, serverKey)) {
       return NextResponse.json({ error: "invalid signature" }, { status: 401 });
     }
   }
@@ -27,17 +33,25 @@ export const POST = async (req: Request) => {
     return NextResponse.json({ ok: true, note: "no payment in event" });
   }
 
+  const bunqTxId = String(payment.id);
+
+  // Idempotency: bunq retries 5x at 1-min intervals. If we've seen this tx, ack and bail.
+  const existing = db.select({ id: transactions.id }).from(transactions)
+    .where(and(eq(transactions.orgId, ORG_ID), eq(transactions.bunqTxId, bunqTxId))).all();
+  if (existing.length > 0) {
+    return NextResponse.json({ ok: true, id: existing[0].id, dedup: true });
+  }
+
   const amountEur = Math.abs(Number(payment.amount.value));
   const merchantRaw = payment.counterparty_alias.display_name;
   const norm = normalizeMerchant(merchantRaw);
   const cls = await classifyMerchant(merchantRaw, payment.description);
 
-  const orgId = "org_acme_bv"; // single-tenant hackathon
   const id = `tx_${randomUUID()}`;
   db.insert(transactions).values({
     id,
-    orgId,
-    bunqTxId: String(payment.id),
+    orgId: ORG_ID,
+    bunqTxId,
     merchantRaw,
     merchantNorm: norm,
     amountCents: Math.round(amountEur * 100),
@@ -51,6 +65,11 @@ export const POST = async (req: Request) => {
     classifierSource: cls.source,
   }).run();
 
-  appendAudit({ orgId, actor: "webhook", type: "tx.ingested", payload: { id, merchantRaw, amountEur, category: cls.category, confidence: cls.confidence } });
+  appendAudit({
+    orgId: ORG_ID,
+    actor: "webhook",
+    type: "tx.ingested",
+    payload: { id, bunqTxId, merchantRaw, amountEur, category: cls.category, confidence: cls.confidence },
+  });
   return NextResponse.json({ ok: true, id });
 };

@@ -31,7 +31,7 @@ The legacy monthly close ran two Sonnet calls (refinement Q&A + narrative) insid
 | # | Agent | Role | Model | LLM mode | Doc | File |
 |---|---|---|---|---|---|---|
 | 01 | Spend & Emissions Baseline | Build the baseline; identify high-impact clusters | none (deterministic) | — | [01-spend-baseline.md](./01-spend-baseline.md) | `lib/agents/dag/spendBaseline.ts` |
-| **NEW** | **Research Agent** | Per-cluster live web research; populate `researchedPool` of real-citation alternatives | Sonnet 4.6 | tool_use (web_search + 2 custom Zod tools) | _planned doc 1.5_ | `lib/agents/dag/research.ts` |
+| 08 | Research Agent | Per-cluster live web research; populate `researchedPool` of real-citation alternatives | Sonnet 4.6 | tool_use (web_search + 2 custom Zod tools) | [08-research.md](./08-research.md) | `lib/agents/dag/research.ts` |
 | 02 | Green Alternatives | Pick lower-carbon alternatives for each cluster | Sonnet 4.6 | plain JSON completion (candidates pre-resolved) | [02-green-alternatives.md](./02-green-alternatives.md) | `lib/agents/dag/greenAlternatives.ts` |
 | 03 | Cost Savings | Find cost wins (recurring spend, vendor consolidation, bulk) | Sonnet 4.6 | plain JSON completion | [03-cost-savings.md](./03-cost-savings.md) | `lib/agents/dag/costSavings.ts` |
 | 04 | Green Judge | Validate green recommendations + recompute math | Sonnet 4.6 | plain JSON completion (code overrides verdict on zero-sources) | [04-green-judge.md](./04-green-judge.md) | `lib/agents/dag/greenJudge.ts` |

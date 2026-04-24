@@ -55,18 +55,45 @@ Spend-based emission factors (GHG Protocol Scope 3, Category 1). Each transactio
 
 The Claude API handles the intelligence layer: classifying merchants into the right emission category, generating refinement questions to reduce uncertainty, and writing CSRD-compliant narratives.
 
+## Architecture & agent docs (read first)
+
+The reasoning layer is an **8-agent DAG** under `lib/agents/dag/` (Baseline → Research → [Green Alt ‖ Cost Savings] → [Green Judge ‖ Cost Judge] → Credit Strategy → Executive Report). Entry point: `POST /api/impacts/research`.
+
+Read in this order before editing any agent:
+
+1. [`docs/agents/00-overview.md`](docs/agents/00-overview.md) — DAG diagram, model split, authority boundaries, persistence tables, entry-point routes.
+2. [`docs/architecture-comparison.md`](docs/architecture-comparison.md) — original-plan-vs-reality, drift section, parallel-path inventory, migration order.
+3. The per-agent doc you're touching: [`docs/agents/01-spend-baseline.md`](docs/agents/01-spend-baseline.md) … [`07-executive-report.md`](docs/agents/07-executive-report.md), plus [`08-research.md`](docs/agents/08-research.md). Each contains the agent's full system prompt + I/O schema + gap-vs-current-code.
+4. The relevant Forge spec under [`.forge/specs/`](.forge/specs/): `spec-baseline-agent.md` (shipped), `spec-dag-hardening.md` (next round — credit-strategy audit, mock-fallback observability, researchCache leakage fix, Annual Savings Forecaster, path consolidation, close-machine integration).
+5. Cross-cutting research briefs in [`research/`](research/) — especially [`research/13-context-scaling-patterns.md`](research/13-context-scaling-patterns.md) (token budgets, chunking, prompt caching) and [`research/13-tax-savings-incentives.md`](research/13-tax-savings-incentives.md) (Dutch EIA/MIA/Vamil + EU ETS math feeding the credit strategy).
+
+To run a real DAG end-to-end after you have an `ANTHROPIC_API_KEY`:
+
+```bash
+npm run seed   # loads fixtures/bunq-transactions.json + 61 synthetic txs
+npm run dev
+# in another shell:
+curl -X POST http://localhost:3000/api/impacts/research -H 'content-type: application/json' -d '{"month":"2026-03"}' | jq
+```
+
 ## Directory map
-- `app/` — Next routes (pages + 4 API routes).
+- `app/` — Next routes (pages + API routes incl. `/api/impacts/research` = canonical DAG runner).
+- `lib/agents/dag/` — **8-agent DAG** (Baseline → Research → Green Alt ‖ Cost Savings → Green Judge ‖ Cost Judge → Credit Strategy → Executive Report). Shared `llm.ts` + `tools.ts` + `types.ts`.
+- `lib/agent/` — onboarding suite (`onboarding-*.ts`), legacy 12-state close machine (`close.ts`), parallel impact-analysis path (`impacts.ts`, `impact-analysis.ts`).
 - `lib/bunq/` — signed HTTP client, webhook verify, sub-account + payment helpers.
-- `lib/agent/close.ts` — explicit state machine for the monthly close.
 - `lib/classify/` — rule-first + LLM-fallback merchant classifier, merchant cache.
 - `lib/factors/` — hard-coded spend-based emission factors (DEFRA/ADEME/Exiobase-derived).
 - `lib/emissions/estimate.ts` — per-tx point + low/high + confidence; quadrature-sum rollup.
 - `lib/policy/` — Zod-validated policy DSL + evaluator.
 - `lib/credits/` — simulated EU carbon-credit projects (biochar / reforestation / peatland).
+- `lib/tax/` — EIA/MIA/Vamil + EU ETS math feeding credit strategy.
 - `lib/audit/` — SHA-256 hash-chained append-only audit ledger.
 - `lib/anthropic/` — Anthropic SDK wrapper + mock mode.
-- `scripts/` — migrate / seed / reset / bunq bootstrap.
+- `lib/impacts/` — `persistDagRun()`: writes `agentRuns` + `agentMessages` after each DAG execution.
+- `docs/` — `architecture-comparison.md`, `agents/00-overview.md`, per-agent docs.
+- `.forge/specs/` + `.forge/plans/` — shared specs and task frontiers (per-machine state stays gitignored).
+- `research/` — domain briefs that feed the agents (numbered 01..13).
+- `scripts/` — migrate / seed / reset / bunq bootstrap / DAG smoke / LLM probe.
 
 ## What's real vs simulated in the demo
 | Real | Simulated |

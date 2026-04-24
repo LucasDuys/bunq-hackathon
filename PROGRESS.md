@@ -170,3 +170,18 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `fixtures/invoices/` — 3 demo fixtures: KLM, AWS, Albert Heijn with line items (2026-04-25)
 - [x] `scripts/seed.ts` — `seedInvoices()` seeds demo invoices with classification + transaction linking (2026-04-25)
 - [x] `npm install googleapis` — Gmail API dependency added (2026-04-25)
+
+## bunq Sandbox / Live Integration (2026-04-25)
+
+- [x] `scripts/bunq-make-sandbox-user.ts` — mints a fresh sandbox user + API key via `/v1/sandbox-user-person` (2026-04-25)
+- [x] `lib/bunq/context.ts` — file-based persistence (`.bunq-context.json`) for installation token, server pub key, sub-account ids (2026-04-25)
+- [x] `scripts/bunq-bootstrap.ts` — installation → device-server → session-server, persists session in DB and long-lived state in context file; auto-discovers main account id (2026-04-25)
+- [x] `scripts/bunq-create-reserve.ts` — creates the Carbo Reserve sub-account and writes id to context + `orgs.reserve_account_id` (2026-04-25)
+- [x] `scripts/bunq-sugardaddy.ts` — RequestInquiry to `sugardaddy@bunq.com` to top up sandbox balance (2026-04-25)
+- [x] `scripts/dev-live.sh` — boots cloudflared quick tunnel + Next dev server, prints public webhook URL (2026-04-25)
+- [x] Webhook handler now loads server pub key from `.bunq-context.json` (was: empty env var) and dedupes on `bunqTxId` for bunq's 5x retry (2026-04-25)
+- [x] `intraUserTransfer` honors `DRY_RUN` — logs to audit chain instead of moving sandbox money when set; carries `closeRunId` for chain linkage (2026-04-25)
+- [x] `reset-demo.ts` — fixed leftover `pnpm tsx` calls to `npx tsx` (2026-04-25)
+- [x] `scripts/fire-test-event.ts` (`npm run dev:fire`) — POSTs synthetic bunq MUTATION events to the local webhook handler so the demo has live ingestion without any real bunq (2026-04-25)
+- [x] Wired close state machine to actually call `intraUserTransfer` for `reserve_transfer` actions (was: audit-log only). Verified via end-to-end run: `bunq.transfer.dry_run` audit row now follows every `action.reserve_transfer`. (2026-04-25)
+- [x] Auto-execute under-threshold close runs per `CONCEPT.md` "Agentic action": `finalizeEstimates` calls `approveAndExecute("system")` inline when `outcome.requiresApproval` is false; audit row marked `actor: "system", auto: true`. (2026-04-25)
