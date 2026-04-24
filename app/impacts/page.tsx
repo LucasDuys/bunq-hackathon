@@ -11,7 +11,7 @@ import {
   type WorkspaceHeadline,
 } from "@/components/ImpactsWorkspace";
 import { getLatestDagResult, getLatestRecommendations } from "@/lib/impacts/store";
-import { DEFAULT_ORG_ID } from "@/lib/queries";
+import { DEFAULT_ORG_ID, getAllTransactions } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +114,17 @@ export default async function ImpactsPage() {
   const hasData = baselines.length > 0;
   const headline = computeHeadline(baselines);
 
+  // Surfaces "Research my last 90 days" with a merchant count when no data yet.
+  const allTxs = getAllTransactions(DEFAULT_ORG_ID);
+  const ninetyDaysAgo = Math.floor(Date.now() / 1000) - 90 * 24 * 60 * 60;
+  const recentMerchants = new Set(
+    allTxs
+      .filter((t) => t.timestamp >= ninetyDaysAgo)
+      .map((t) => (t.merchantNorm ?? t.merchantRaw ?? "").toLowerCase()),
+  );
+  recentMerchants.delete("");
+  const recentMerchantCount = recentMerchants.size;
+
   const matrixPoints: MatrixPoint[] = baselines.flatMap((b) =>
     b.alternatives.map((a) => ({
       id: a.id,
@@ -186,16 +197,21 @@ export default async function ImpactsPage() {
               className="text-[17px] font-normal"
               style={{ color: "var(--fg-primary)", letterSpacing: "-0.16px" }}
             >
-              No impact research yet
+              {recentMerchantCount > 0
+                ? "Research my last 90 days"
+                : "No impact research yet"}
             </h2>
             <p
               className="text-[13px] max-w-md"
               style={{ color: "var(--fg-secondary)" }}
             >
-              Run impact research to analyse the last 90 days of spend across cloud, travel,
-              utilities, food and procurement, and surface realistic alternatives — with sources,
-              confidence, and a CFO-grade net impact number.
+              The agents analyse cloud, travel, utilities, food and procurement and surface
+              realistic alternatives — with sources, confidence, and a CFO-grade net impact
+              number.
             </p>
+            {recentMerchantCount > 0 && (
+              <CodeLabel>{recentMerchantCount} merchants in scope</CodeLabel>
+            )}
           </CardBody>
         </Card>
       ) : (

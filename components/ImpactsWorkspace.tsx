@@ -20,7 +20,10 @@ import { ImpactMatrix, type MatrixPoint } from "@/components/ImpactMatrix";
 import { ScenarioPlanner, type PlannableAlternative } from "@/components/ScenarioPlanner";
 import type { Quadrant } from "@/lib/agent/impacts";
 import type { DagRunResult, ResearchResult, ResearchedAlternative } from "@/lib/agents/dag/types";
+import { schemesForCategory } from "@/lib/tax";
 import { fmtEur, fmtKg } from "@/lib/utils";
+
+type Lens = "co2" | "eur";
 
 /* ─────────── Types surfaced from the page ─────────── */
 
@@ -171,6 +174,71 @@ const TabButton = ({
   </button>
 );
 
+/* ─────────── Lens toggle ─────────── */
+
+const LensToggle = ({ lens, onChange }: { lens: Lens; onChange: (l: Lens) => void }) => {
+  const Btn = ({ value, label }: { value: Lens; label: string }) => {
+    const active = lens === value;
+    return (
+      <button
+        type="button"
+        onClick={() => onChange(value)}
+        aria-pressed={active}
+        className="inline-flex items-center justify-center h-7 px-3 text-[12px] font-medium tabular-nums rounded-full transition-[background,color] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-green)]"
+        style={{
+          color: active ? "var(--fg-primary)" : "var(--fg-muted)",
+          background: active ? "var(--bg-button)" : "transparent",
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+  return (
+    <div
+      className="inline-flex items-center gap-0.5 rounded-full p-0.5 ml-1"
+      role="group"
+      aria-label="Lens"
+      style={{
+        background: "var(--bg-inset)",
+        border: "1px solid var(--border-default)",
+      }}
+    >
+      <Btn value="co2" label="CO₂e" />
+      <Btn value="eur" label="€" />
+    </div>
+  );
+};
+
+/* ─────────── Tax-scheme chip ─────────── */
+
+const TaxSchemeChips = ({ category }: { category: string }) => {
+  const schemes = useMemo(() => schemesForCategory(category), [category]);
+  if (schemes.length === 0) return null;
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+      {schemes.map((s) => (
+        <span
+          key={s.id}
+          className="inline-flex items-center gap-1 rounded-full px-2 py-[2px] text-[11px] font-mono uppercase tracking-[0.04em]"
+          style={{
+            color: "var(--brand-green-link)",
+            border: "1px solid var(--brand-green-border)",
+            background: "transparent",
+          }}
+          title={s.description}
+        >
+          <BadgeCheck className="h-3 w-3" aria-hidden />
+          {s.id}
+          {s.method === "pct_of_investment" && (
+            <span style={{ color: "var(--fg-muted)" }}>· {(s.rate * 100).toFixed(1)}%</span>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 /* ─────────── Hero briefing ─────────── */
 
 const HeroBriefing = ({
@@ -178,14 +246,27 @@ const HeroBriefing = ({
   headline,
   baselines,
   action,
+  lens,
+  onLensChange,
 }: {
   dag: DagRunResult | null;
   headline: WorkspaceHeadline;
   baselines: WorkspaceBaseline[];
   action: React.ReactNode;
+  lens: Lens;
+  onLensChange: (l: Lens) => void;
 }) => {
   const netEur = dag?.executiveReport.kpis.net_company_scale_financial_impact_eur ?? 0;
   const co2eKg = (dag?.executiveReport.kpis.emissions_reduced_tco2e ?? 0) * 1000;
+  // Headline-derived fallback when DAG hasn't run. Negative deltas in the
+  // headline mean reductions; flip sign for display.
+  const headlineCo2eAvoidableKg = Math.max(
+    0,
+    -(headline.winWinCo2 + headline.payCo2),
+  );
+  const headlineEurUpside = -(headline.winWinEur) + Math.max(0, -headline.payEur);
+  const heroCo2eKg = co2eKg > 0 ? co2eKg : headlineCo2eAvoidableKg;
+  const heroEur = netEur !== 0 ? netEur : headlineEurUpside;
   const confidence = dag?.executiveReport.kpis.confidence ?? headline.avgConfidence;
   const narrative = dag?.executiveReport.executive_summary ?? "";
   const jurisdiction = dag?.creditStrategy.jurisdiction;
@@ -195,7 +276,7 @@ const HeroBriefing = ({
     <Card className="relative overflow-hidden">
       <div className="relative grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 p-8">
         <div className="flex flex-col gap-5 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Sparkles className="h-4 w-4" style={{ color: "var(--green-bright)" }} aria-hidden />
             <span
               className="text-[11px] uppercase tracking-[0.14em] font-normal"
@@ -204,6 +285,7 @@ const HeroBriefing = ({
               Carbon CFO briefing · {dag?.executiveReport.analysis_period ?? "latest run"}
             </span>
             {taxReviewRequired ? <Badge tone="warning">Tax advisor review</Badge> : null}
+            <LensToggle lens={lens} onChange={onLensChange} />
           </div>
           <div className="flex items-baseline gap-3 flex-wrap">
             <div
@@ -211,16 +293,23 @@ const HeroBriefing = ({
               style={{
                 fontSize: "clamp(56px, 7vw, 88px)",
                 letterSpacing: "-0.03em",
-                color: netEur >= 0 ? "var(--green-bright)" : "var(--red)",
+                color:
+                  lens === "co2"
+                    ? "var(--green-bright)"
+                    : heroEur >= 0
+                      ? "var(--green-bright)"
+                      : "var(--red)",
               }}
             >
-              {signedEur(netEur)}
+              {lens === "co2" ? fmtKg(heroCo2eKg) : signedEur(heroEur)}
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-mute)] font-normal">
-                Net / yr
+                {lens === "co2" ? "Avoidable / yr" : "Net / yr"}
               </span>
-              <span className="text-xs text-[var(--text-dim)]">after tax, credits & ETS</span>
+              <span className="text-xs text-[var(--text-dim)]">
+                {lens === "co2" ? "across surfaced switches" : "after tax, credits & ETS"}
+              </span>
             </div>
           </div>
           {narrative ? (
@@ -647,6 +736,7 @@ const BaselineDetail = ({
           <h3 className="text-xl font-normal tracking-tight truncate">
             {baseline.merchantLabel}
           </h3>
+          <TaxSchemeChips category={baseline.category} />
         </div>
         <div className="flex items-center gap-6 shrink-0">
           <div className="flex flex-col">
@@ -1270,13 +1360,21 @@ export const ImpactsWorkspace = ({
   action: React.ReactNode;
 }) => {
   const [tab, setTab] = useState<TabKey>("overview");
+  const [lens, setLens] = useState<Lens>("co2");
 
   const limitations = dag?.executiveReport.limitations ?? [];
   const researchResultsCount = dag?.research?.results.length ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
-      <HeroBriefing dag={dag} headline={headline} baselines={baselines} action={action} />
+      <HeroBriefing
+        dag={dag}
+        headline={headline}
+        baselines={baselines}
+        action={action}
+        lens={lens}
+        onLensChange={setLens}
+      />
 
       <div
         className="sticky top-14 z-20 -mx-2 px-2 py-2 flex items-center gap-2 overflow-x-auto"
