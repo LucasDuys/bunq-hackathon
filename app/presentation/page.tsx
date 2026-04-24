@@ -1,9 +1,12 @@
 "use client";
 
+import { notFound } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import sampleRun from "@/fixtures/demo-runs/sample-run.json";
 import styles from "./presentation.module.css";
 import type { DagRunResult, AgentName } from "@/lib/agents/dag/types";
+
+const DEMO_ENABLED = process.env.NEXT_PUBLIC_DEMO === "1";
 
 const run = sampleRun as unknown as DagRunResult;
 
@@ -208,6 +211,7 @@ function Nav({ active, onJump }: { active: string; onJump: (id: string) => void 
 }
 
 export default function PresentationPage() {
+  if (!DEMO_ENABLED) notFound();
   const active = useActiveSection();
   const exec = run.executiveReport;
   const tCO2e = (kg: number) => (kg / 1000).toFixed(1);

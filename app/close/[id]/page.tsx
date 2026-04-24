@@ -1,14 +1,18 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   AlertCircle,
+  ArrowRight,
   Calculator,
   CheckCircle2,
+  FileText,
   ShieldCheck,
   Tags,
   Zap,
 } from "lucide-react";
 import {
   Badge,
+  Button,
   Card,
   CardBody,
   CardHeader,
@@ -20,11 +24,19 @@ import {
 import { CloseActions } from "@/components/CloseActions";
 import { fmtEur, fmtKg } from "@/lib/utils";
 import {
+  DEFAULT_ORG_ID,
   getAuditForRun,
   getCloseRun,
   getQuestionsForRun,
 } from "@/lib/queries";
+import { verifyChain } from "@/lib/audit/append";
 import type { ProposedAction } from "@/lib/agent/close";
+
+type CreditMixRow = {
+  project: { id: string; name: string };
+  tonnes: number;
+  eur: number;
+};
 
 export const dynamic = "force-dynamic";
 
@@ -114,6 +126,14 @@ export default async function CloseRunPage({
     ? (JSON.parse(run.proposedActions) as ProposedAction[])
     : null;
 
+  const creditMix: CreditMixRow[] = run.creditRecommendation
+    ? (JSON.parse(run.creditRecommendation) as CreditMixRow[])
+    : [];
+  const totalTonnes = creditMix.reduce((s, m) => s + m.tonnes, 0);
+  const showTerminalPanel =
+    currentPhaseIdx >= PHASES.findIndex((p) => p.key === "READY");
+  const chain = showTerminalPanel ? verifyChain(DEFAULT_ORG_ID) : null;
+
   const confidenceInitial = run.initialConfidence ?? 0;
   const confidenceFinal = run.finalConfidence ?? confidenceInitial;
   const confidenceDelta = confidenceFinal - confidenceInitial;
@@ -134,16 +154,16 @@ export default async function CloseRunPage({
     <div className="relative z-[1] flex flex-col gap-12">
       {/* ─── Sticky 6-dot progress rail ─── */}
       <div
-        className="sticky top-[56px] z-10 -mx-6 px-6 py-5"
+        className="sticky top-[56px] z-10 -mx-6 px-6 py-5 backdrop-blur"
         style={{
-          background: "var(--bg-canvas)",
+          background: "var(--bg-translucent)",
           borderBottom: "1px solid var(--border-faint)",
         }}
       >
         <div className="flex items-center justify-between gap-6 max-w-[1200px] mx-auto">
           <div className="flex flex-col gap-2 min-w-0">
             <CodeLabel>Monthly close · {run.month}</CodeLabel>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <h1
                 className="text-[24px] leading-[1.1] tracking-[-0.015em] m-0"
                 style={{ color: "var(--fg-primary)" }}
@@ -156,6 +176,12 @@ export default async function CloseRunPage({
               >
                 {id.slice(0, 12)}…
               </span>
+              <Link href={`/report/${run.month}`} className="ml-1">
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  <FileText className="h-3.5 w-3.5" />
+                  Export CSRD
+                </Button>
+              </Link>
             </div>
           </div>
 
@@ -490,6 +516,136 @@ export default async function CloseRunPage({
           </CardBody>
         </Card>
       </section>
+
+      {/* ─── Terminal panel — reserve + credits + audit chain ─── */}
+      {showTerminalPanel && (
+        <section className="flex flex-col gap-6">
+          <div className="flex items-center gap-3">
+            <CodeLabel>Loop closed</CodeLabel>
+            <div className="flex-1 h-px" style={{ background: "var(--border-faint)" }} />
+          </div>
+
+          <Card>
+            <CardHeader>
+              <div>
+                <CodeLabel className="block mb-2">Reserve · credits · ledger</CodeLabel>
+                <CardTitle>What happens after approval</CardTitle>
+              </div>
+              {chain && (
+                <Link href="/ledger" className="shrink-0">
+                  <Badge tone={chain.valid ? "positive" : "danger"}>
+                    {chain.valid
+                      ? `Audit chain · verified${chain.count != null ? ` · ${chain.count}` : ""}`
+                      : `Audit chain · broken at id=${chain.brokenAtId}`}
+                  </Badge>
+                </Link>
+              )}
+            </CardHeader>
+            <CardBody className="flex flex-col gap-6">
+              {/* Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Stat
+                  label="Reserve"
+                  value={run.reserveEur != null ? fmtEur(run.reserveEur, 0) : "—"}
+                  sub={
+                    run.approved
+                      ? "Transferred"
+                      : run.reserveEur != null
+                        ? "Awaiting approval"
+                        : "Not yet computed"
+                  }
+                  tone={run.approved ? "positive" : undefined}
+                />
+                <Stat
+                  label="Top credit project"
+                  value={creditMix[0]?.project.name ?? "—"}
+                  sub={
+                    creditMix[0]
+                      ? `${creditMix[0].tonnes.toFixed(2)} t · ${fmtEur(creditMix[0].eur, 0)}`
+                      : "Pending recommendation"
+                  }
+                />
+                <Stat
+                  label="Projected coverage"
+                  value={totalTonnes > 0 ? `${totalTonnes.toFixed(2)} t` : "—"}
+                  sub={
+                    creditMix.length > 0
+                      ? `${creditMix.length} EU project${creditMix.length === 1 ? "" : "s"}`
+                      : undefined
+                  }
+                />
+              </div>
+
+              {/* Mini credit-mix list */}
+              {creditMix.length > 0 && (
+                <div
+                  className="rounded-[8px]"
+                  style={{ border: "1px solid var(--border-faint)" }}
+                >
+                  <div
+                    className="grid grid-cols-[1fr_auto_auto] gap-x-6 px-4 py-2.5"
+                    style={{ borderBottom: "1px solid var(--border-faint)" }}
+                  >
+                    <CodeLabel>Project</CodeLabel>
+                    <CodeLabel className="text-right">Tonnes</CodeLabel>
+                    <CodeLabel className="text-right">Allocation</CodeLabel>
+                  </div>
+                  {creditMix.slice(0, 3).map((m, i) => (
+                    <div
+                      key={m.project.id}
+                      className="grid grid-cols-[1fr_auto_auto] gap-x-6 px-4 py-2.5 items-center"
+                      style={{
+                        borderBottom:
+                          i < Math.min(creditMix.length, 3) - 1
+                            ? "1px solid var(--border-faint)"
+                            : "none",
+                      }}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className="w-[6px] h-[6px] rounded-full shrink-0"
+                          style={{ background: "var(--brand-green)" }}
+                        />
+                        <span
+                          className="text-[13px] truncate"
+                          style={{ color: "var(--fg-primary)" }}
+                        >
+                          {m.project.name}
+                        </span>
+                      </div>
+                      <span
+                        className="text-[13px] tabular-nums text-right"
+                        style={{ color: "var(--fg-secondary)" }}
+                      >
+                        {m.tonnes.toFixed(2)} t
+                      </span>
+                      <span
+                        className="text-[13px] tabular-nums text-right w-[100px]"
+                        style={{ color: "var(--fg-primary)" }}
+                      >
+                        {fmtEur(m.eur, 0)}
+                      </span>
+                    </div>
+                  ))}
+                  {creditMix.length > 3 && (
+                    <Link
+                      href="/reserve"
+                      className="flex items-center justify-between px-4 py-2.5 text-[12px] group"
+                      style={{
+                        borderTop: "1px solid var(--border-faint)",
+                        color: "var(--fg-muted)",
+                      }}
+                    >
+                      <span>+{creditMix.length - 3} more in catalogue</span>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    </Link>
+                  )}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        </section>
+      )}
     </div>
   );
 }

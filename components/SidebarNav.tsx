@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  Activity,
   BookOpen,
-  Layers,
   LayoutDashboard,
   Leaf,
   type LucideIcon,
@@ -25,7 +25,6 @@ const GROUPS: Group[] = [
     label: "Workspace",
     items: [
       { href: "/", label: "Overview", icon: LayoutDashboard },
-      { href: "/categories", label: "Categories", icon: Layers },
       { href: "/impacts", label: "Impacts", icon: Target },
     ],
   },
@@ -39,8 +38,15 @@ const GROUPS: Group[] = [
 ];
 
 type OnboardingLink = { href: string; label: string } | null;
+type CloseLink = { href: string; label: string; month: string } | null;
 
-export const SidebarNav = ({ onboardingLink }: { onboardingLink: OnboardingLink }) => {
+export const SidebarNav = ({
+  onboardingLink,
+  closeLink,
+}: {
+  onboardingLink: OnboardingLink;
+  closeLink: CloseLink;
+}) => {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -155,6 +161,25 @@ export const SidebarNav = ({ onboardingLink }: { onboardingLink: OnboardingLink 
               </ul>
             </div>
           ))}
+
+          {closeLink && (
+            <div className="mt-6">
+              <div className="px-2.5 mb-2 code-label">In progress</div>
+              <Link href={closeLink.href} className="sidebar-onboarding-link">
+                <Activity
+                  className="h-[15px] w-[15px] shrink-0"
+                  style={{ color: "var(--brand-green)" }}
+                />
+                <span className="flex-1 truncate">{closeLink.label}</span>
+                <span
+                  className="code-label tabular-nums shrink-0"
+                  style={{ color: "var(--brand-green-link)" }}
+                >
+                  {closeLink.month}
+                </span>
+              </Link>
+            </div>
+          )}
 
           {onboardingLink && (
             <div className="mt-6">

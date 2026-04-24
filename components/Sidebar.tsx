@@ -1,18 +1,33 @@
 import { getActiveRunForOrg, getLatestRunForOrg } from "@/lib/agent/onboarding";
-import { DEFAULT_ORG_ID, getActivePolicyRaw } from "@/lib/queries";
+import { DEFAULT_ORG_ID, getActivePolicyRaw, getLatestCloseRun } from "@/lib/queries";
 import { SidebarNav } from "./SidebarNav";
 
+const TERMINAL_CLOSE_STATES = new Set(["COMPLETED", "FAILED"]);
+
 export const Sidebar = () => {
-  const activeRun = getActiveRunForOrg(DEFAULT_ORG_ID);
-  const latestRun = getLatestRunForOrg(DEFAULT_ORG_ID);
+  const activeOnboarding = getActiveRunForOrg(DEFAULT_ORG_ID);
+  const latestOnboarding = getLatestRunForOrg(DEFAULT_ORG_ID);
   const hasPolicy = !!getActivePolicyRaw(DEFAULT_ORG_ID);
-  const showOnboardingLink = !!activeRun || !hasPolicy || !latestRun;
+  const showOnboardingLink = !!activeOnboarding || !hasPolicy || !latestOnboarding;
   const onboardingLink = showOnboardingLink
     ? {
-        href: activeRun ? `/onboarding/${activeRun.id}` : "/onboarding",
-        label: activeRun ? "Continue onboarding" : "Start onboarding",
+        href: activeOnboarding ? `/onboarding/${activeOnboarding.id}` : "/onboarding",
+        label: activeOnboarding ? "Continue onboarding" : "Start onboarding",
       }
     : null;
 
-  return <SidebarNav onboardingLink={onboardingLink} />;
+  const latestClose = getLatestCloseRun(DEFAULT_ORG_ID);
+  const activeClose =
+    latestClose && !TERMINAL_CLOSE_STATES.has(latestClose.state) ? latestClose : null;
+  const closeLink = activeClose
+    ? {
+        href: `/close/${activeClose.id}`,
+        label: activeClose.state === "AWAITING_APPROVAL" || activeClose.state === "PROPOSED"
+          ? "Review & approve"
+          : "Continue close",
+        month: activeClose.month,
+      }
+    : null;
+
+  return <SidebarNav onboardingLink={onboardingLink} closeLink={closeLink} />;
 };
