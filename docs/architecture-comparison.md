@@ -1,56 +1,95 @@
 # Architecture comparison — today vs proposed
 
-> Side-by-side of the current linear close machine (`ARCHITECTURE.md`) and the proposed 7-agent DAG (`docs/agents/00-overview.md`).
-> Reference: `C:\Users\20243455\Downloads\carbon_autopilot_agentic_system (2).md`.
+> Reflects the post-merge state on `lucasduys` after `matrix` + `matrix-onboarding` landed.
+> Original 7-agent plan: `C:\Users\20243455\Downloads\carbon_autopilot_agentic_system (2).md`.
+> Per-agent system prompts + I/O schemas: `docs/agents/00-overview.md` and `docs/agents/0X-*.md`.
+> Forge specs: `.forge/specs/spec-baseline-agent.md`, `.forge/specs/spec-dag-hardening.md` (next-round).
 
 ## Summary
 
-Today the monthly close is a 12-state orchestrator with **two** LLM touchpoints (refinement questions + CSRD narrative) and all estimation/allocation done in deterministic code. The proposal keeps the 12-state orchestrator as the outer loop and replaces those two touchpoints with a **7-agent DAG** — proposal agents (Green Alt, Cost Savings) validated by judge agents (Green Judge, Cost Judge), strategy synthesis (Credit & Incentive), and a composing report agent. Math stays deterministic; the agents propose and validate, code calculates.
+The original plan was a 7-agent DAG replacing the legacy 12-state close machine's two LLM touchpoints. The shipped reality is an **8-agent DAG** (Research was inserted between Baseline and the proposal pair) plus a new onboarding suite, all behind `POST /api/impacts/research`. Two parallel agent tracks still exist (`lib/agent/impacts.ts` and `lib/agent/impact-analysis.ts`) and the legacy close machine is unchanged.
 
-## Side-by-side
+## Today (post-merge — reality)
 
-| Concern | Today | Proposed |
-|---|---|---|
-| **Ingest** | `app/api/webhook/bunq/route.ts` + `lib/bunq/webhook.ts` — RSA-SHA256 verified, idempotent | Unchanged |
-| **Merchant normalization** | `lib/classify/merchant.ts` — strip/normalize | Unchanged (fed to Baseline) |
-| **Classification** | `lib/classify/{rules,cache,llm}.ts` — rules → cache → Haiku | Unchanged; Baseline consumes classified rows |
-| **Spend-based emission** | `lib/emissions/estimate.ts` — point + range + confidence | Unchanged; Baseline summarizes |
-| **Cluster uncertainty** | `lib/agent/close.ts::CLUSTER` state — uncertainty tiers | Unchanged; Baseline's `priority_targets` consume cluster output |
-| **Refinement Q&A** | `lib/agent/questions.ts` — one Sonnet call per run | **Replaced** by Green Alt + Cost Savings proposing structured recommendations (not questions) |
-| **Green recommendations** | Not present | **New:** `lib/agents/dag/greenAlternatives.ts` |
-| **Cost recommendations** | Not present | **New:** `lib/agents/dag/costSavings.ts` |
-| **Validation / judging** | Not present | **New:** `greenJudge.ts` + `costJudge.ts` (parallel) |
-| **Policy evaluation** | `lib/policy/evaluate.ts` — pure deterministic | Unchanged; exposed as `compareAgainstPolicy` tool to judges |
-| **Credit projects** | `lib/credits/projects.ts` — 3 EU projects seeded | Extended: `creditStrategy.ts` consumes project metadata + jurisdiction table to build CFO-grade impact |
-| **Tax / incentive** | Not present | **New:** absorbed into `creditStrategy.ts` (no standalone tax agent — reduces context overhead) |
-| **Report** | `lib/agent/narrative.ts` — one Sonnet call, prose narrative | **Replaced** by `executiveReport.ts` — structured KPI block + top-N + matrix + CSRD export |
-| **PDF render** | Not implemented | Added: deterministic renderer driven by `executiveReport.ts` payload |
-| **Audit** | `lib/audit/append.ts` + migration triggers — SHA256 chain, UPDATE/DELETE blocked | Unchanged; each agent verdict is a new audit event type (`agent.<name>.run`) |
-| **Dashboard** | `app/page.tsx`, `app/report/[month]/page.tsx` | Unchanged shell; consumes Executive Report payload |
+```
+                        ┌─── greenAlternatives (Sonnet) ─┐
+baseline ─► research ──┤                                 ├─► greenJudge (Sonnet) ─┐
+(SQL only) (Sonnet +    └─── costSavings    (Sonnet) ────┴─► costJudge  (Sonnet) ─┤
+            web_search)                                                            │
+                                                                                   ▼
+                                                              creditStrategy (Sonnet + math)
+                                                                                   │
+                                                                                   ▼
+                                                              executiveReport (Sonnet, optional)
+```
 
-## Migration order
+- 8 agents · Sequential / parallel / parallel / sequential / sequential.
+- Entry point: `POST /api/impacts/research` → `runDag()` → persisted via `lib/impacts/store`.
+- Recordkeeping: every run + every agent message audited in `agentRuns` + `agentMessages` tables; web searches in `webSearchAudit`; research outputs cached 30d in `researchCache`.
 
-1. **Types + contracts** (`lib/agents/dag/types.ts`) — no behavior change, just schemas. Unblocks everything.
-2. **Per-agent stubs** returning from `fixtures/demo-runs/*.json`. Presentation page can already replay.
-3. **Baseline agent** — thinnest agent, wraps existing emission/classification aggregates.
-4. **Green Alternatives + Cost Savings** (parallel) — real Anthropic calls; add `findLowerCarbonAlternative` + `detectRecurringSpend` tool stubs.
-5. **Green Judge + Cost Judge** (parallel) — wire `validateMath` + `compareAgainstPolicy` tools.
-6. **Credit & Incentive Strategy** — combines judge outputs with `lib/credits/projects.ts` + jurisdiction table.
-7. **Executive Report** — replaces `lib/agent/narrative.ts`. Update `app/report/[month]/page.tsx` to consume structured payload.
-8. **State machine rewiring** — `lib/agent/close.ts::QUESTIONS_GENERATED` state replaced by `runDag()`. `AWAITING_ANSWERS` becomes optional (only if any agent returns `required_context_question`).
-9. **Audit event types** — extend `lib/audit/append.ts` with `agent.<name>.run` events.
+## Side-by-side: original plan vs reality
+
+| Agent | Original plan | Reality post-merge | Status |
+|---|---|---|---|
+| **01 Baseline** | Hybrid: deterministic agg + Haiku tool_use enhance | **Pure deterministic**, no LLM. `reason_for_priority_detail` from canned `reasons.ts` lookup. | Lost LLM enhance pass — likely intentional since downstream Sonnet does the reasoning. Detail strings regressed from context-aware to canned. |
+| **NEW Research** | not in plan | Sonnet + native `web_search_20250305` tool + 2 custom Zod tools (`record_alternative`, `lookup_emission_factor`). 30-day cache keyed on `(category, jurisdiction, policyDigest, week)`. | Net new node. Inserted between baseline and proposal agents to feed real-citation alternatives into Green Alt + Cost Savings. |
+| **02 Green Alternatives** | Sonnet, propose lower-carbon alts | Sonnet plain JSON completion. **Tools pre-resolved** (`findLowerCarbonAlternative` + researchedPool merged before LLM call). | Faithful, but architecture is "code finds candidates → LLM ranks + writes prose" rather than "LLM calls tools at will." Saves tokens. |
+| **03 Cost Savings** | Sonnet, propose cost wins | Sonnet plain JSON completion. Calls `detectRecurringSpend` + `findCostSaving` before LLM. | Faithful. Same pre-resolve pattern. |
+| **04 Green Judge** | Sonnet, evaluate proposals | Sonnet plain JSON completion **+ hard rule in code: zero-sources → auto-rejected regardless of LLM verdict**. Math re-verified in code. | **Drifted** — judges are validators, not authorities. Documented honestly here. |
+| **05 Cost Judge** | Sonnet, evaluate proposals | Same drift as Green Judge. Math re-checked in code; LLM verdict can be silently overridden. | **Drifted** — same. |
+| **06 Credit Strategy** | Sonnet, compute company-scale impact | Sonnet for prose labels only. **All math deterministic in code** (compute() lines 89–167). No audit logging. | Faithful in shape; missing audit hook. |
+| **07 Executive Report** | Sonnet, compose CFO report | Numbers deterministic; Sonnet only for optional summary prose. | Faithful, lighter than original. |
 
 ## What stays the same
 
-- `lib/audit/*` — append-only SHA256 hash chain, UPDATE/DELETE triggers. Every agent run is an audit event.
-- `lib/bunq/*` — all 8 endpoints (installation → device → session → webhook → payments → accounts → insights).
-- `lib/db/schema.ts` — 13 existing tables. We **may** add `agent_runs` and `agent_messages` tables for per-call observability, but the demo doesn't require them.
-- 12-state orchestrator in `lib/agent/close.ts` — still the outer loop. The DAG fires inside its LLM-bearing states.
+- `lib/audit/append.ts` — append-only SHA-256 hash chain.
+- `lib/bunq/*` — 8 endpoints (installation → device → session → webhook → payments → accounts → insights).
+- `lib/db/schema.ts` core 13 tables — preserved. **5 new tables added**: `impactRecommendations`, `agentRuns`, `agentMessages`, `researchCache`, `webSearchAudit`. (Plus `onboardingRuns` + `onboardingQa` for the onboarding suite.)
+- `lib/policy/evaluate.ts` — deterministic policy engine.
+- `lib/factors/index.ts` + `lib/emissions/estimate.ts` — Baseline's foundation.
 - `DESIGN.md` — every UI change still reads tokens from it.
-- `lib/emissions/estimate.ts` — spend-based calc + confidence ranges. Baseline agent consumes, does not replace.
-- `lib/policy/evaluate.ts` — still the deterministic policy engine.
 
-## Agents that are scoped OUT of scaffold
+## What changed (since pre-merge)
 
-- **Dedicated Tax / Incentive Judge** — merged into Cost Judge to keep context budget tight. If tax logic grows, split it back out.
-- **Spend-based refinement questions** — replaced entirely by Green/Cost agents. We may keep the `refinement_qa` table for future `required_context_question` responses from the agents.
+| Concern | Before | Now |
+|---|---|---|
+| Agent count | 7 (planned), 1 real, 6 stubs | 8 real (Research is new) |
+| Shared LLM helper | none | `lib/agents/dag/llm.ts` — `callAgent`, `callAgentWithTools`, `isMock`. Prompt cache built in. |
+| Tool layer | none | `lib/agents/dag/tools.ts` — 18 helpers (SQL queries, factor lookups, recurring detection, alternative templates, jurisdiction tax + carbon-price tables) |
+| DAG persistence | nothing | `agentRuns` (full DagRunResult JSON) + `agentMessages` (per-call I/O) + `researchCache` + `webSearchAudit` |
+| Entry point | `/api/baseline/run` | `/api/impacts/research` runs the full 8-agent DAG (route name misleading) |
+| Mock fallback | per-agent ad hoc | uniform: each agent has a `buildMock()` deterministic path keyed off `isMock()` |
+
+## Parallel agent paths (still present, still unconsolidated)
+
+| Path | Lines | Entry | Uses |
+|---|---|---|---|
+| **Canonical 8-agent DAG** | 4,077 | `POST /api/impacts/research` | `lib/agents/dag/*` + `lib/agents/dag/tools.ts` |
+| `lib/agent/impacts.ts` | 414 | called from `/impacts` (page render) | `lib/tax/*` + `GREEN_ALTERNATIVES`, **does NOT call runDag()** |
+| `lib/agent/impact-analysis.ts` | 269 | unwired (no current route) | `lib/tax/*` + `lib/benchmarks` |
+| **Onboarding suite** | 1,371 | `/api/onboarding/*` | own LLM stack, not in DAG |
+| **Legacy close machine** | 295 + ~100 | `/api/close/*` | `lib/agent/questions.ts` + `lib/agent/narrative.ts`, **does NOT call runDag()** |
+
+## Migration order — what's left
+
+1. **Hardening** (next spec):
+   - Add audit logging to credit strategy.
+   - Fix `researchCache` cross-org leakage (add `orgId` or content-only fields to the key).
+   - Surface mock-fallback signal in audit + dashboard.
+   - Document judge-as-validator contract.
+2. **Annual-savings forecaster** (next spec): given an org's monthly spend distribution, project annual savings + payback under different switch-adoption rates. Currently the report tells you what *this* month would save; sales/CFO want "if you spend €X/mo, you save €Y/year."
+3. **Path consolidation:** decide between the canonical DAG and `lib/agent/impacts.ts`. Either retire `impacts.ts` (folding its `CategoryAnalysis` into Baseline's output) or keep two paths and document when to use each.
+4. **Legacy close-machine integration:** swap `lib/agent/close.ts::QUESTIONS_GENERATED` + `narrative.ts` for a `runDag()` call. The 12-state machine remains the orchestrator; the DAG replaces both legacy LLM touchpoints.
+5. **Onboarding ↔ DAG bridge:** the onboarding suite produces a draft policy + emission factor overrides. Wire those outputs into the canonical `policies` + `merchantCategoryCache` tables so the DAG picks them up.
+6. **Presentation page:** stop replaying the JSON fixture; call `/api/impacts/research` and render real `DagRunResult` data.
+
+## Imbalances called out for the record
+
+| Risk | Where | Mitigation in next spec |
+|---|---|---|
+| Judge LLM verdict overridden in code | `greenJudge.ts:160-161, 253` and `costJudge.ts:150-156` | Document explicitly that judges are validators; surface the override count per run |
+| Credit Strategy has no audit trail | `creditStrategy.ts` (no `ctx.auditLog` call) | Add `agent.credit_strategy.run` audit event with input + output digest |
+| Multi-tenant `researchCache` leakage | `researchCache` PK is `(category, jurisdiction, policyDigest, week)` — no `orgId` | Either add `orgId` to PK (loses amortization) or strip URLs to org-neutral fields before cache write |
+| Silent mock fallback masks API degradation | every proposal agent's `if (isMock())` branch | Emit `agent.<name>.fallback_to_mock` audit event + dashboard tile |
+| Two parallel agent paths | `runDag()` vs `impacts.ts` | Pick one in the next spec; deprecate the other |
+| Old close machine LLM still fires | `questions.ts` + `narrative.ts` | Replace with `runDag()` call inside `close.ts::QUESTIONS_GENERATED` |
