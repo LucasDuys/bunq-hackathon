@@ -1,0 +1,4324 @@
+{
+  "Response": [
+    {
+      "Payment": {
+        "id": 325681936,
+        "created": "2026-02-23 16:18:45.000000",
+        "updated": "2026-02-23 16:18:45.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-677.87",
+          "currency": "EUR"
+        },
+        "description": "Coolblue B.V. electronics",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "0def33e95b0949c0",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Coolblue",
+          "label_monetary_account": {
+            "display_name": "Coolblue",
+            "merchant_category_code": "5732"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "electronics"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 909037759,
+        "created": "2026-02-23 18:19:19.000000",
+        "updated": "2026-02-23 18:19:19.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-12.56",
+          "currency": "EUR"
+        },
+        "description": "NOTION LABS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "eca726d5679a4383",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Notion",
+          "label_monetary_account": {
+            "display_name": "Notion",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 456681425,
+        "created": "2026-02-25 12:47:23.000000",
+        "updated": "2026-02-25 12:47:23.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-54.66",
+          "currency": "EUR"
+        },
+        "description": "UBER * EATS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "918e6964d3ae4906",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber Eats",
+          "label_monetary_account": {
+            "display_name": "Uber Eats",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 827296111,
+        "created": "2026-02-25 16:36:06.000000",
+        "updated": "2026-02-25 16:36:06.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-249.18",
+          "currency": "EUR"
+        },
+        "description": "KLM Royal Dutch Airlines",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "75ef424fe4584bd4",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "KLM",
+          "label_monetary_account": {
+            "display_name": "KLM",
+            "merchant_category_code": "4511"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "travel_air"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 121882877,
+        "created": "2026-02-26 14:12:18.000000",
+        "updated": "2026-02-26 14:12:18.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-19.09",
+          "currency": "EUR"
+        },
+        "description": "Vodafone NL",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "7c4c76d019d74f42",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Vodafone",
+          "label_monetary_account": {
+            "display_name": "Vodafone",
+            "merchant_category_code": "4814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "utility_telco"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 773715057,
+        "created": "2026-02-27 10:09:20.000000",
+        "updated": "2026-02-27 10:09:20.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-84.16",
+          "currency": "EUR"
+        },
+        "description": "OPENAI API",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "51355c8f64b2447b",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "OpenAI",
+          "label_monetary_account": {
+            "display_name": "OpenAI",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 612957813,
+        "created": "2026-02-27 15:55:59.000000",
+        "updated": "2026-02-27 15:55:59.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-93.86",
+          "currency": "EUR"
+        },
+        "description": "easyJet Airline",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "229e98f69f1547be",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "easyJet",
+          "label_monetary_account": {
+            "display_name": "easyJet",
+            "merchant_category_code": "4511"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "travel_air"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 133729406,
+        "created": "2026-02-28 14:04:08.000000",
+        "updated": "2026-02-28 14:04:08.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-89.32",
+          "currency": "EUR"
+        },
+        "description": "Jumbo Supermarkten",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "727cbc3fd83340e7",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Jumbo",
+          "label_monetary_account": {
+            "display_name": "Jumbo",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 235591568,
+        "created": "2026-02-28 16:44:17.000000",
+        "updated": "2026-02-28 16:44:17.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-28.19",
+          "currency": "EUR"
+        },
+        "description": "Shell NL Amsterdam",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "9862e89050b246b7",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Shell",
+          "label_monetary_account": {
+            "display_name": "Shell",
+            "merchant_category_code": "5541"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "fuel"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 798086909,
+        "created": "2026-02-28 18:14:05.000000",
+        "updated": "2026-02-28 18:14:05.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-65.67",
+          "currency": "EUR"
+        },
+        "description": "AH to go Amsterdam CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "bb2c7c62b5a2475e",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 882893941,
+        "created": "2026-03-01 12:34:47.000000",
+        "updated": "2026-03-01 12:34:47.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-14.54",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "17e3da604cbc425c",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 228727266,
+        "created": "2026-03-01 14:25:37.000000",
+        "updated": "2026-03-01 14:25:37.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-18.08",
+          "currency": "EUR"
+        },
+        "description": "UBER * EATS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ec5f32f7e56c4e92",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber Eats",
+          "label_monetary_account": {
+            "display_name": "Uber Eats",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 788785773,
+        "created": "2026-03-01 15:22:43.000000",
+        "updated": "2026-03-01 15:22:43.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-424.14",
+          "currency": "EUR"
+        },
+        "description": "Coolblue B.V. electronics",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "802e3f75284744c2",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Coolblue",
+          "label_monetary_account": {
+            "display_name": "Coolblue",
+            "merchant_category_code": "5732"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "electronics"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 739830322,
+        "created": "2026-03-01 19:24:49.000000",
+        "updated": "2026-03-01 19:24:49.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-19.51",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "9c4f8e4a0e134048",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 260199682,
+        "created": "2026-03-02 08:09:26.000000",
+        "updated": "2026-03-02 08:09:26.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-57.07",
+          "currency": "EUR"
+        },
+        "description": "Jumbo Supermarkten",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "2930ca1c61154ff0",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Jumbo",
+          "label_monetary_account": {
+            "display_name": "Jumbo",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 138684919,
+        "created": "2026-03-02 11:34:51.000000",
+        "updated": "2026-03-02 11:34:51.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-4.16",
+          "currency": "EUR"
+        },
+        "description": "GITHUB INC",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "47b747ef513549fe",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "GitHub",
+          "label_monetary_account": {
+            "display_name": "GitHub",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 726713347,
+        "created": "2026-03-02 20:42:06.000000",
+        "updated": "2026-03-02 20:42:06.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-15.13",
+          "currency": "EUR"
+        },
+        "description": "NOTION LABS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "dd2945477f5d42f3",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Notion",
+          "label_monetary_account": {
+            "display_name": "Notion",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 690907304,
+        "created": "2026-03-02 21:51:34.000000",
+        "updated": "2026-03-02 21:51:34.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-57.38",
+          "currency": "EUR"
+        },
+        "description": "Shell NL Amsterdam",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "b1793be013184190",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Shell",
+          "label_monetary_account": {
+            "display_name": "Shell",
+            "merchant_category_code": "5541"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "fuel"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 174316370,
+        "created": "2026-03-03 22:52:13.000000",
+        "updated": "2026-03-03 22:52:13.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-19.36",
+          "currency": "EUR"
+        },
+        "description": "NOTION LABS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "e76957c86c664d55",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Notion",
+          "label_monetary_account": {
+            "display_name": "Notion",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 881913386,
+        "created": "2026-03-04 08:25:48.000000",
+        "updated": "2026-03-04 08:25:48.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-129.37",
+          "currency": "EUR"
+        },
+        "description": "Albert Heijn 1234 Utrecht",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "fcdac9ff29c64124",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 469319644,
+        "created": "2026-03-04 18:54:55.000000",
+        "updated": "2026-03-04 18:54:55.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-17.42",
+          "currency": "EUR"
+        },
+        "description": "Lidl Nederland",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "927b2dddd1e64be7",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Lidl",
+          "label_monetary_account": {
+            "display_name": "Lidl",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 851044796,
+        "created": "2026-03-06 13:29:48.000000",
+        "updated": "2026-03-06 13:29:48.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-11.41",
+          "currency": "EUR"
+        },
+        "description": "UBER * TRIP",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "339ebaa3da10402a",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber",
+          "label_monetary_account": {
+            "display_name": "Uber",
+            "merchant_category_code": "4121"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "travel_rideshare"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 740086326,
+        "created": "2026-03-06 20:38:43.000000",
+        "updated": "2026-03-06 20:38:43.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-119.36",
+          "currency": "EUR"
+        },
+        "description": "Jumbo Supermarkten",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "e9ccc1328c4247e6",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Jumbo",
+          "label_monetary_account": {
+            "display_name": "Jumbo",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 523076025,
+        "created": "2026-03-07 07:58:39.000000",
+        "updated": "2026-03-07 07:58:39.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-52.82",
+          "currency": "EUR"
+        },
+        "description": "UBER * EATS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "a8cd0c0107384c54",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber Eats",
+          "label_monetary_account": {
+            "display_name": "Uber Eats",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 153992714,
+        "created": "2026-03-08 21:11:09.000000",
+        "updated": "2026-03-08 21:11:09.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-82.49",
+          "currency": "EUR"
+        },
+        "description": "Jumbo Supermarkten",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "2a0fe902695743f5",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Jumbo",
+          "label_monetary_account": {
+            "display_name": "Jumbo",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 906341966,
+        "created": "2026-03-09 07:57:58.000000",
+        "updated": "2026-03-09 07:57:58.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-90.74",
+          "currency": "EUR"
+        },
+        "description": "ANTHROPIC API",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "d8b229a34f3143da",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Anthropic",
+          "label_monetary_account": {
+            "display_name": "Anthropic",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 845122940,
+        "created": "2026-03-09 14:24:39.000000",
+        "updated": "2026-03-09 14:24:39.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-5.37",
+          "currency": "EUR"
+        },
+        "description": "GITHUB INC",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "68f02492814146be",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "GitHub",
+          "label_monetary_account": {
+            "display_name": "GitHub",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 857704655,
+        "created": "2026-03-10 21:35:47.000000",
+        "updated": "2026-03-10 21:35:47.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-44.45",
+          "currency": "EUR"
+        },
+        "description": "Vodafone NL",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "725e986d0205415f",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Vodafone",
+          "label_monetary_account": {
+            "display_name": "Vodafone",
+            "merchant_category_code": "4814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "utility_telco"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 378304807,
+        "created": "2026-03-10 22:28:53.000000",
+        "updated": "2026-03-10 22:28:53.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-11.58",
+          "currency": "EUR"
+        },
+        "description": "GITHUB INC",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "538a64c64a4c420f",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "GitHub",
+          "label_monetary_account": {
+            "display_name": "GitHub",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 653462378,
+        "created": "2026-03-11 09:18:34.000000",
+        "updated": "2026-03-11 09:18:34.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-81.51",
+          "currency": "EUR"
+        },
+        "description": "OPENAI API",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "a183d9bc799d4d5a",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "OpenAI",
+          "label_monetary_account": {
+            "display_name": "OpenAI",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 967797300,
+        "created": "2026-03-12 15:39:43.000000",
+        "updated": "2026-03-12 15:39:43.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-5.29",
+          "currency": "EUR"
+        },
+        "description": "Starbucks Schiphol",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "9569cb8e08b44b36",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Starbucks",
+          "label_monetary_account": {
+            "display_name": "Starbucks",
+            "merchant_category_code": "5814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 860229059,
+        "created": "2026-03-12 16:00:44.000000",
+        "updated": "2026-03-12 16:00:44.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-325.59",
+          "currency": "EUR"
+        },
+        "description": "KLM Royal Dutch Airlines",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "bdace37dee484d7b",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "KLM",
+          "label_monetary_account": {
+            "display_name": "KLM",
+            "merchant_category_code": "4511"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "travel_air"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 861052404,
+        "created": "2026-03-13 15:02:56.000000",
+        "updated": "2026-03-13 15:02:56.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-1083.93",
+          "currency": "EUR"
+        },
+        "description": "Coolblue B.V. electronics",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "68e47d00fc2646a1",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Coolblue",
+          "label_monetary_account": {
+            "display_name": "Coolblue",
+            "merchant_category_code": "5732"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "electronics"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 552991960,
+        "created": "2026-03-13 21:08:07.000000",
+        "updated": "2026-03-13 21:08:07.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-29.89",
+          "currency": "EUR"
+        },
+        "description": "Lidl Nederland",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "649e9d92e62f49df",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Lidl",
+          "label_monetary_account": {
+            "display_name": "Lidl",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 841541582,
+        "created": "2026-03-14 09:37:30.000000",
+        "updated": "2026-03-14 09:37:30.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-1132.40",
+          "currency": "EUR"
+        },
+        "description": "Coolblue B.V. electronics",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "bcd7762c2b6c4e72",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Coolblue",
+          "label_monetary_account": {
+            "display_name": "Coolblue",
+            "merchant_category_code": "5732"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "electronics"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 918739736,
+        "created": "2026-03-14 11:23:47.000000",
+        "updated": "2026-03-14 11:23:47.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-31.71",
+          "currency": "EUR"
+        },
+        "description": "Vodafone NL",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ee12000d2146410e",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Vodafone",
+          "label_monetary_account": {
+            "display_name": "Vodafone",
+            "merchant_category_code": "4814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "utility_telco"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 821218382,
+        "created": "2026-03-14 16:25:57.000000",
+        "updated": "2026-03-14 16:25:57.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-39.23",
+          "currency": "EUR"
+        },
+        "description": "NS Reizigers intercity",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ef36e45d94f6439e",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "NS",
+          "label_monetary_account": {
+            "display_name": "NS",
+            "merchant_category_code": "4112"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "travel_rail"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 210373808,
+        "created": "2026-03-15 14:42:49.000000",
+        "updated": "2026-03-15 14:42:49.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-164.33",
+          "currency": "EUR"
+        },
+        "description": "Albert Heijn 1234 Utrecht",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "5e2144521dc745db",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 313500298,
+        "created": "2026-03-17 07:35:21.000000",
+        "updated": "2026-03-17 07:35:21.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-15.21",
+          "currency": "EUR"
+        },
+        "description": "AH to go Amsterdam CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "6f80c3aa0e0d4218",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 808705238,
+        "created": "2026-03-17 14:01:09.000000",
+        "updated": "2026-03-17 14:01:09.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-81.58",
+          "currency": "EUR"
+        },
+        "description": "Bol.com B.V.",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "c5d9d73b3f714cb6",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Bol.com",
+          "label_monetary_account": {
+            "display_name": "Bol.com",
+            "merchant_category_code": "5999"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "retail"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 966040317,
+        "created": "2026-03-17 16:14:00.000000",
+        "updated": "2026-03-17 16:14:00.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-100.93",
+          "currency": "EUR"
+        },
+        "description": "Jumbo Supermarkten",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "70537228c2f64e2f",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Jumbo",
+          "label_monetary_account": {
+            "display_name": "Jumbo",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 890779946,
+        "created": "2026-03-18 14:08:21.000000",
+        "updated": "2026-03-18 14:08:21.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-65.10",
+          "currency": "EUR"
+        },
+        "description": "AH to go Amsterdam CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ed62c0f9175a4f14",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 724440558,
+        "created": "2026-03-18 16:42:31.000000",
+        "updated": "2026-03-18 16:42:31.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-321.82",
+          "currency": "EUR"
+        },
+        "description": "KLM Royal Dutch Airlines",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "92c6e300e4bc4837",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "KLM",
+          "label_monetary_account": {
+            "display_name": "KLM",
+            "merchant_category_code": "4511"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "travel_air"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 755338677,
+        "created": "2026-03-18 21:36:34.000000",
+        "updated": "2026-03-18 21:36:34.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-86.71",
+          "currency": "EUR"
+        },
+        "description": "Shell NL Amsterdam",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "8060ba95af844bf2",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Shell",
+          "label_monetary_account": {
+            "display_name": "Shell",
+            "merchant_category_code": "5541"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "fuel"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 925159146,
+        "created": "2026-03-18 22:39:28.000000",
+        "updated": "2026-03-18 22:39:28.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-19.39",
+          "currency": "EUR"
+        },
+        "description": "Thuisbezorgd.nl",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ef43244d6bbc450d",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Thuisbezorgd",
+          "label_monetary_account": {
+            "display_name": "Thuisbezorgd",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 537077308,
+        "created": "2026-03-18 22:51:28.000000",
+        "updated": "2026-03-18 22:51:28.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-14.91",
+          "currency": "EUR"
+        },
+        "description": "NOTION LABS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "9830af478bed4cbf",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Notion",
+          "label_monetary_account": {
+            "display_name": "Notion",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 945436943,
+        "created": "2026-03-19 15:10:17.000000",
+        "updated": "2026-03-19 15:10:17.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-33.65",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "a5ba1676952644c5",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 740563507,
+        "created": "2026-03-20 08:06:53.000000",
+        "updated": "2026-03-20 08:06:53.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-41.13",
+          "currency": "EUR"
+        },
+        "description": "UBER * EATS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "9d4caac805d24af3",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber Eats",
+          "label_monetary_account": {
+            "display_name": "Uber Eats",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 899925830,
+        "created": "2026-03-20 11:15:55.000000",
+        "updated": "2026-03-20 11:15:55.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-30.39",
+          "currency": "EUR"
+        },
+        "description": "Vodafone NL",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "e817bef57efc4499",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Vodafone",
+          "label_monetary_account": {
+            "display_name": "Vodafone",
+            "merchant_category_code": "4814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "utility_telco"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 214257751,
+        "created": "2026-03-20 12:32:27.000000",
+        "updated": "2026-03-20 12:32:27.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-35.42",
+          "currency": "EUR"
+        },
+        "description": "UBER * EATS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "f5132b6ff69540f9",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber Eats",
+          "label_monetary_account": {
+            "display_name": "Uber Eats",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 415143362,
+        "created": "2026-03-20 17:07:51.000000",
+        "updated": "2026-03-20 17:07:51.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-34.31",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "a9b89afe58b34133",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 154544899,
+        "created": "2026-03-20 22:16:37.000000",
+        "updated": "2026-03-20 22:16:37.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-8.14",
+          "currency": "EUR"
+        },
+        "description": "Starbucks Schiphol",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "c6d88b1dda124a95",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Starbucks",
+          "label_monetary_account": {
+            "display_name": "Starbucks",
+            "merchant_category_code": "5814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 458153605,
+        "created": "2026-03-21 08:00:41.000000",
+        "updated": "2026-03-21 08:00:41.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-29.44",
+          "currency": "EUR"
+        },
+        "description": "Vodafone NL",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "3210fc77753d45dc",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Vodafone",
+          "label_monetary_account": {
+            "display_name": "Vodafone",
+            "merchant_category_code": "4814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "utility_telco"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 919795579,
+        "created": "2026-03-21 11:13:13.000000",
+        "updated": "2026-03-21 11:13:13.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-9.34",
+          "currency": "EUR"
+        },
+        "description": "Starbucks Schiphol",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "266290d739384b68",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Starbucks",
+          "label_monetary_account": {
+            "display_name": "Starbucks",
+            "merchant_category_code": "5814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 448195935,
+        "created": "2026-03-21 14:43:26.000000",
+        "updated": "2026-03-21 14:43:26.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-35.80",
+          "currency": "EUR"
+        },
+        "description": "UBER * EATS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "2fae228c3cec4e54",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber Eats",
+          "label_monetary_account": {
+            "display_name": "Uber Eats",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 347538338,
+        "created": "2026-03-21 16:16:51.000000",
+        "updated": "2026-03-21 16:16:51.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-172.25",
+          "currency": "EUR"
+        },
+        "description": "Bol.com B.V.",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "65afb0f4085e410a",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Bol.com",
+          "label_monetary_account": {
+            "display_name": "Bol.com",
+            "merchant_category_code": "5999"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "retail"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 965241839,
+        "created": "2026-03-22 07:48:52.000000",
+        "updated": "2026-03-22 07:48:52.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-20.13",
+          "currency": "EUR"
+        },
+        "description": "UBER * TRIP",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "25118b15ecb04132",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber",
+          "label_monetary_account": {
+            "display_name": "Uber",
+            "merchant_category_code": "4121"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "travel_rideshare"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 460613550,
+        "created": "2026-03-22 14:17:41.000000",
+        "updated": "2026-03-22 14:17:41.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-107.71",
+          "currency": "EUR"
+        },
+        "description": "AWS EMEA Cloud Services",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "6507a7f88f134490",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "AWS",
+          "label_monetary_account": {
+            "display_name": "AWS",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 678998028,
+        "created": "2026-03-22 22:13:56.000000",
+        "updated": "2026-03-22 22:13:56.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-68.99",
+          "currency": "EUR"
+        },
+        "description": "Jumbo Supermarkten",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "63785e12b03c4928",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Jumbo",
+          "label_monetary_account": {
+            "display_name": "Jumbo",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 349957310,
+        "created": "2026-03-23 09:54:22.000000",
+        "updated": "2026-03-23 09:54:22.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-13.29",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "4b5d90c35c764992",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 707665448,
+        "created": "2026-03-24 10:50:18.000000",
+        "updated": "2026-03-24 10:50:18.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-65.78",
+          "currency": "EUR"
+        },
+        "description": "Lidl Nederland",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "1f7ce54ce40c4e91",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Lidl",
+          "label_monetary_account": {
+            "display_name": "Lidl",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 244193987,
+        "created": "2026-03-24 10:56:10.000000",
+        "updated": "2026-03-24 10:56:10.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-32.15",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "dc69d07bb5a84c4b",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 422468580,
+        "created": "2026-03-25 10:46:35.000000",
+        "updated": "2026-03-25 10:46:35.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-35.46",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "46cd409b775b4f22",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 636045484,
+        "created": "2026-03-25 13:41:09.000000",
+        "updated": "2026-03-25 13:41:09.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-18.52",
+          "currency": "EUR"
+        },
+        "description": "NOTION LABS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "3186393f4fab4973",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Notion",
+          "label_monetary_account": {
+            "display_name": "Notion",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 524971817,
+        "created": "2026-03-25 14:16:05.000000",
+        "updated": "2026-03-25 14:16:05.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-39.30",
+          "currency": "EUR"
+        },
+        "description": "Shell NL Amsterdam",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "22d0ad1848474d7e",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Shell",
+          "label_monetary_account": {
+            "display_name": "Shell",
+            "merchant_category_code": "5541"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "fuel"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 171069472,
+        "created": "2026-03-25 19:17:31.000000",
+        "updated": "2026-03-25 19:17:31.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-30.19",
+          "currency": "EUR"
+        },
+        "description": "UBER * TRIP",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "8649d2d5117b4d3b",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber",
+          "label_monetary_account": {
+            "display_name": "Uber",
+            "merchant_category_code": "4121"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "travel_rideshare"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 649136331,
+        "created": "2026-03-25 20:38:16.000000",
+        "updated": "2026-03-25 20:38:16.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-178.11",
+          "currency": "EUR"
+        },
+        "description": "Bol.com B.V.",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "823eaa7dbb8a4c19",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Bol.com",
+          "label_monetary_account": {
+            "display_name": "Bol.com",
+            "merchant_category_code": "5999"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "retail"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 327761953,
+        "created": "2026-03-26 12:31:16.000000",
+        "updated": "2026-03-26 12:31:16.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-52.61",
+          "currency": "EUR"
+        },
+        "description": "easyJet Airline",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "67825f25f7624d96",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "easyJet",
+          "label_monetary_account": {
+            "display_name": "easyJet",
+            "merchant_category_code": "4511"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "travel_air"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 574765466,
+        "created": "2026-03-26 21:28:42.000000",
+        "updated": "2026-03-26 21:28:42.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-15.28",
+          "currency": "EUR"
+        },
+        "description": "NOTION LABS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "491052005d2d48b7",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Notion",
+          "label_monetary_account": {
+            "display_name": "Notion",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 362298393,
+        "created": "2026-03-28 09:56:58.000000",
+        "updated": "2026-03-28 09:56:58.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-54.48",
+          "currency": "EUR"
+        },
+        "description": "OPENAI API",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "2fc49e67110c4870",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "OpenAI",
+          "label_monetary_account": {
+            "display_name": "OpenAI",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 690975123,
+        "created": "2026-03-28 20:47:46.000000",
+        "updated": "2026-03-28 20:47:46.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-118.73",
+          "currency": "EUR"
+        },
+        "description": "ANTHROPIC API",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "03c547cf57794796",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Anthropic",
+          "label_monetary_account": {
+            "display_name": "Anthropic",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 795294275,
+        "created": "2026-03-30 09:32:33.000000",
+        "updated": "2026-03-30 09:32:33.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-133.47",
+          "currency": "EUR"
+        },
+        "description": "Bol.com B.V.",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "6d1a463c52854328",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Bol.com",
+          "label_monetary_account": {
+            "display_name": "Bol.com",
+            "merchant_category_code": "5999"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "retail"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 481469012,
+        "created": "2026-03-30 12:23:14.000000",
+        "updated": "2026-03-30 12:23:14.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-366.06",
+          "currency": "EUR"
+        },
+        "description": "Coolblue B.V. electronics",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "948b039ebdca494a",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Coolblue",
+          "label_monetary_account": {
+            "display_name": "Coolblue",
+            "merchant_category_code": "5732"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "electronics"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 174684276,
+        "created": "2026-03-30 13:45:14.000000",
+        "updated": "2026-03-30 13:45:14.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-8.98",
+          "currency": "EUR"
+        },
+        "description": "GITHUB INC",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "d6cdad07303f4042",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "GitHub",
+          "label_monetary_account": {
+            "display_name": "GitHub",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 162196678,
+        "created": "2026-03-30 16:15:23.000000",
+        "updated": "2026-03-30 16:15:23.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-16.61",
+          "currency": "EUR"
+        },
+        "description": "AH to go Amsterdam CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "a8195ec0914949a1",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 711072118,
+        "created": "2026-03-31 12:39:21.000000",
+        "updated": "2026-03-31 12:39:21.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-327.54",
+          "currency": "EUR"
+        },
+        "description": "IKEA Delft",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "cdb5bfa9e06b472f",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "IKEA",
+          "label_monetary_account": {
+            "display_name": "IKEA",
+            "merchant_category_code": "5712"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "furniture"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 941889393,
+        "created": "2026-04-01 15:59:55.000000",
+        "updated": "2026-04-01 15:59:55.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-32.05",
+          "currency": "EUR"
+        },
+        "description": "UBER * EATS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "25a3cd747e3f4fbf",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber Eats",
+          "label_monetary_account": {
+            "display_name": "Uber Eats",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 829223044,
+        "created": "2026-04-01 17:42:10.000000",
+        "updated": "2026-04-01 17:42:10.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-245.97",
+          "currency": "EUR"
+        },
+        "description": "IKEA Delft",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "bb3b57e007804997",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "IKEA",
+          "label_monetary_account": {
+            "display_name": "IKEA",
+            "merchant_category_code": "5712"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "furniture"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 354194771,
+        "created": "2026-04-03 11:59:40.000000",
+        "updated": "2026-04-03 11:59:40.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-19.03",
+          "currency": "EUR"
+        },
+        "description": "GITHUB INC",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "783f55341dd046d4",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "GitHub",
+          "label_monetary_account": {
+            "display_name": "GitHub",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 236674237,
+        "created": "2026-04-03 16:35:39.000000",
+        "updated": "2026-04-03 16:35:39.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-19.07",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "1a494a42a5744500",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 914073098,
+        "created": "2026-04-03 22:35:46.000000",
+        "updated": "2026-04-03 22:35:46.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-40.34",
+          "currency": "EUR"
+        },
+        "description": "Jumbo Supermarkten",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "27c490f7cce94db7",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Jumbo",
+          "label_monetary_account": {
+            "display_name": "Jumbo",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 187946147,
+        "created": "2026-04-04 15:53:02.000000",
+        "updated": "2026-04-04 15:53:02.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-77.64",
+          "currency": "EUR"
+        },
+        "description": "Shell NL Amsterdam",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "5c94d0807b984840",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Shell",
+          "label_monetary_account": {
+            "display_name": "Shell",
+            "merchant_category_code": "5541"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "fuel"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 926561919,
+        "created": "2026-04-04 19:57:19.000000",
+        "updated": "2026-04-04 19:57:19.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-53.33",
+          "currency": "EUR"
+        },
+        "description": "IKEA Delft",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "93d11225b0674b7e",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "IKEA",
+          "label_monetary_account": {
+            "display_name": "IKEA",
+            "merchant_category_code": "5712"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "furniture"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 682624278,
+        "created": "2026-04-04 20:21:44.000000",
+        "updated": "2026-04-04 20:21:44.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-6.21",
+          "currency": "EUR"
+        },
+        "description": "Starbucks Schiphol",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "5695877bd9df4910",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Starbucks",
+          "label_monetary_account": {
+            "display_name": "Starbucks",
+            "merchant_category_code": "5814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 430989881,
+        "created": "2026-04-05 11:02:32.000000",
+        "updated": "2026-04-05 11:02:32.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-14.63",
+          "currency": "EUR"
+        },
+        "description": "NOTION LABS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "88c60a91f91047d6",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Notion",
+          "label_monetary_account": {
+            "display_name": "Notion",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 541417711,
+        "created": "2026-04-05 18:27:19.000000",
+        "updated": "2026-04-05 18:27:19.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-17.75",
+          "currency": "EUR"
+        },
+        "description": "Lidl Nederland",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "3b410a7de1d64309",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Lidl",
+          "label_monetary_account": {
+            "display_name": "Lidl",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 341266931,
+        "created": "2026-04-07 10:15:20.000000",
+        "updated": "2026-04-07 10:15:20.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-804.87",
+          "currency": "EUR"
+        },
+        "description": "AWS EMEA Cloud Services",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "eb9584c894234d70",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "AWS",
+          "label_monetary_account": {
+            "display_name": "AWS",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 917364173,
+        "created": "2026-04-08 17:21:34.000000",
+        "updated": "2026-04-08 17:21:34.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-423.09",
+          "currency": "EUR"
+        },
+        "description": "Coolblue B.V. electronics",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "c14cf0e716d746fe",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Coolblue",
+          "label_monetary_account": {
+            "display_name": "Coolblue",
+            "merchant_category_code": "5732"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "electronics"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 907308348,
+        "created": "2026-04-08 17:59:37.000000",
+        "updated": "2026-04-08 17:59:37.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-26.66",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "584de773308f4e6e",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 976803188,
+        "created": "2026-04-09 14:12:14.000000",
+        "updated": "2026-04-09 14:12:14.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-1052.35",
+          "currency": "EUR"
+        },
+        "description": "Coolblue B.V. electronics",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "d13a230b0df343f4",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Coolblue",
+          "label_monetary_account": {
+            "display_name": "Coolblue",
+            "merchant_category_code": "5732"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "electronics"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 575209597,
+        "created": "2026-04-09 17:48:49.000000",
+        "updated": "2026-04-09 17:48:49.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-46.52",
+          "currency": "EUR"
+        },
+        "description": "Lidl Nederland",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "97adb6b3c089449e",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Lidl",
+          "label_monetary_account": {
+            "display_name": "Lidl",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 530613729,
+        "created": "2026-04-10 13:55:47.000000",
+        "updated": "2026-04-10 13:55:47.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-33.29",
+          "currency": "EUR"
+        },
+        "description": "UBER * EATS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "51ada72ee06e46b0",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Uber Eats",
+          "label_monetary_account": {
+            "display_name": "Uber Eats",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 488896443,
+        "created": "2026-04-11 10:27:09.000000",
+        "updated": "2026-04-11 10:27:09.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-73.42",
+          "currency": "EUR"
+        },
+        "description": "AH to go Amsterdam CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "aaeeb95f46794ad6",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 118514813,
+        "created": "2026-04-11 21:50:47.000000",
+        "updated": "2026-04-11 21:50:47.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-10.14",
+          "currency": "EUR"
+        },
+        "description": "Starbucks Schiphol",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "03d7f670cff344a5",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Starbucks",
+          "label_monetary_account": {
+            "display_name": "Starbucks",
+            "merchant_category_code": "5814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 645276696,
+        "created": "2026-04-12 12:03:34.000000",
+        "updated": "2026-04-12 12:03:34.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-115.55",
+          "currency": "EUR"
+        },
+        "description": "Albert Heijn 1234 Utrecht",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "db748d66ce0f4440",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 994027897,
+        "created": "2026-04-14 16:06:33.000000",
+        "updated": "2026-04-14 16:06:33.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-75.72",
+          "currency": "EUR"
+        },
+        "description": "Shell NL Amsterdam",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "3834bf47d3c64601",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Shell",
+          "label_monetary_account": {
+            "display_name": "Shell",
+            "merchant_category_code": "5541"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "fuel"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 698509918,
+        "created": "2026-04-14 21:03:44.000000",
+        "updated": "2026-04-14 21:03:44.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-124.57",
+          "currency": "EUR"
+        },
+        "description": "IKEA Delft",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "c23a9077f40e4cbf",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "IKEA",
+          "label_monetary_account": {
+            "display_name": "IKEA",
+            "merchant_category_code": "5712"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "furniture"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 356888294,
+        "created": "2026-04-14 22:40:59.000000",
+        "updated": "2026-04-14 22:40:59.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-25.49",
+          "currency": "EUR"
+        },
+        "description": "Vodafone NL",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "f99693c4ed974167",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Vodafone",
+          "label_monetary_account": {
+            "display_name": "Vodafone",
+            "merchant_category_code": "4814"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "utility_telco"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 448059918,
+        "created": "2026-04-15 07:38:49.000000",
+        "updated": "2026-04-15 07:38:49.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-20.21",
+          "currency": "EUR"
+        },
+        "description": "GITHUB INC",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "50b715d5827a476f",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "GitHub",
+          "label_monetary_account": {
+            "display_name": "GitHub",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 909134796,
+        "created": "2026-04-16 07:05:40.000000",
+        "updated": "2026-04-16 07:05:40.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-126.08",
+          "currency": "EUR"
+        },
+        "description": "Albert Heijn 1234 Utrecht",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "fa94ba8d2df74696",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 553035110,
+        "created": "2026-04-16 09:37:46.000000",
+        "updated": "2026-04-16 09:37:46.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-29.70",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "e0b8ea2ccc404860",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 506448196,
+        "created": "2026-04-16 10:59:07.000000",
+        "updated": "2026-04-16 10:59:07.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-138.11",
+          "currency": "EUR"
+        },
+        "description": "Albert Heijn 1234 Utrecht",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "6601bcba071240d8",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 332341238,
+        "created": "2026-04-16 12:12:12.000000",
+        "updated": "2026-04-16 12:12:12.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-15.31",
+          "currency": "EUR"
+        },
+        "description": "NS Reizigers intercity",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "cda4058620c24b6a",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "NS",
+          "label_monetary_account": {
+            "display_name": "NS",
+            "merchant_category_code": "4112"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "travel_rail"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 563102056,
+        "created": "2026-04-16 13:23:02.000000",
+        "updated": "2026-04-16 13:23:02.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-48.03",
+          "currency": "EUR"
+        },
+        "description": "AH to go Amsterdam CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "e7d3a9d520944d43",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 966616964,
+        "created": "2026-04-16 16:39:22.000000",
+        "updated": "2026-04-16 16:39:22.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-280.96",
+          "currency": "EUR"
+        },
+        "description": "KLM Royal Dutch Airlines",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "8053647f385945fd",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "KLM",
+          "label_monetary_account": {
+            "display_name": "KLM",
+            "merchant_category_code": "4511"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "travel_air"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 223847257,
+        "created": "2026-04-16 17:01:23.000000",
+        "updated": "2026-04-16 17:01:23.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-37.40",
+          "currency": "EUR"
+        },
+        "description": "La Place Utrecht CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "2c716ff168fa4a80",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "La Place",
+          "label_monetary_account": {
+            "display_name": "La Place",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "food_service"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 873869166,
+        "created": "2026-04-17 07:43:35.000000",
+        "updated": "2026-04-17 07:43:35.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-52.68",
+          "currency": "EUR"
+        },
+        "description": "OPENAI API",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "e8185b5149f64503",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "OpenAI",
+          "label_monetary_account": {
+            "display_name": "OpenAI",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 402533494,
+        "created": "2026-04-17 11:17:16.000000",
+        "updated": "2026-04-17 11:17:16.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-81.18",
+          "currency": "EUR"
+        },
+        "description": "Lidl Nederland",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "13d43dffe4a34d4e",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Lidl",
+          "label_monetary_account": {
+            "display_name": "Lidl",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 666585408,
+        "created": "2026-04-17 12:16:06.000000",
+        "updated": "2026-04-17 12:16:06.000000",
+        "monetary_account_id": 4822,
+        "amount": {
+          "value": "-55.61",
+          "currency": "EUR"
+        },
+        "description": "Thuisbezorgd.nl",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ad50bf1f2ff14595",
+        "alias": {
+          "iban": "NL24BUNQ2034567891",
+          "display_name": "Sofia Jansen",
+          "label_user": {
+            "display_name": "Sofia Jansen",
+            "uuid": "user-4822"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Thuisbezorgd",
+          "label_monetary_account": {
+            "display_name": "Thuisbezorgd",
+            "merchant_category_code": "5812"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "food_delivery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 335602191,
+        "created": "2026-04-17 14:31:49.000000",
+        "updated": "2026-04-17 14:31:49.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-269.89",
+          "currency": "EUR"
+        },
+        "description": "IKEA Delft",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ad885d1a8ee64465",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "IKEA",
+          "label_monetary_account": {
+            "display_name": "IKEA",
+            "merchant_category_code": "5712"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "furniture"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 336456621,
+        "created": "2026-04-17 14:37:50.000000",
+        "updated": "2026-04-17 14:37:50.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-50.57",
+          "currency": "EUR"
+        },
+        "description": "easyJet Airline",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ce3635222a104f7f",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "easyJet",
+          "label_monetary_account": {
+            "display_name": "easyJet",
+            "merchant_category_code": "4511"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "travel_air"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 303901283,
+        "created": "2026-04-17 22:09:02.000000",
+        "updated": "2026-04-17 22:09:02.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-450.72",
+          "currency": "EUR"
+        },
+        "description": "KLM Royal Dutch Airlines",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "3d16fbe2dd484bdb",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "KLM",
+          "label_monetary_account": {
+            "display_name": "KLM",
+            "merchant_category_code": "4511"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "travel_air"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 677280546,
+        "created": "2026-04-18 10:04:12.000000",
+        "updated": "2026-04-18 10:04:12.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-43.29",
+          "currency": "EUR"
+        },
+        "description": "AH to go Amsterdam CS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ef0e2b4b22f94092",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Albert Heijn",
+          "label_monetary_account": {
+            "display_name": "Albert Heijn",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 847704681,
+        "created": "2026-04-19 13:45:37.000000",
+        "updated": "2026-04-19 13:45:37.000000",
+        "monetary_account_id": 4821,
+        "amount": {
+          "value": "-393.45",
+          "currency": "EUR"
+        },
+        "description": "AWS EMEA Cloud Services",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "23384876ad1c4e68",
+        "alias": {
+          "iban": "NL24BUNQ2034567890",
+          "display_name": "Daan de Vries",
+          "label_user": {
+            "display_name": "Daan de Vries",
+            "uuid": "user-4821"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "AWS",
+          "label_monetary_account": {
+            "display_name": "AWS",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "engineering",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 614015466,
+        "created": "2026-04-19 16:30:59.000000",
+        "updated": "2026-04-19 16:30:59.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-79.82",
+          "currency": "EUR"
+        },
+        "description": "Lidl Nederland",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "efd9982f128b4839",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Lidl",
+          "label_monetary_account": {
+            "display_name": "Lidl",
+            "merchant_category_code": "5411"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "grocery"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 436730606,
+        "created": "2026-04-20 08:47:16.000000",
+        "updated": "2026-04-20 08:47:16.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-40.78",
+          "currency": "EUR"
+        },
+        "description": "NS Reizigers intercity",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "213328915b2f467f",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "NS",
+          "label_monetary_account": {
+            "display_name": "NS",
+            "merchant_category_code": "4112"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "travel_rail"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 335493870,
+        "created": "2026-04-20 19:23:48.000000",
+        "updated": "2026-04-20 19:23:48.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-13.14",
+          "currency": "EUR"
+        },
+        "description": "NOTION LABS",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "9a2cbcbd37be4ba3",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Notion",
+          "label_monetary_account": {
+            "display_name": "Notion",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 363598427,
+        "created": "2026-04-21 15:20:57.000000",
+        "updated": "2026-04-21 15:20:57.000000",
+        "monetary_account_id": 4824,
+        "amount": {
+          "value": "-411.37",
+          "currency": "EUR"
+        },
+        "description": "AWS EMEA Cloud Services",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "565fa08c70324273",
+        "alias": {
+          "iban": "NL24BUNQ2034567893",
+          "display_name": "Eva Visser",
+          "label_user": {
+            "display_name": "Eva Visser",
+            "uuid": "user-4824"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "AWS",
+          "label_monetary_account": {
+            "display_name": "AWS",
+            "merchant_category_code": "7372"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "sales",
+          "merchant_category": "software"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 110899674,
+        "created": "2026-04-21 15:35:30.000000",
+        "updated": "2026-04-21 15:35:30.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-48.82",
+          "currency": "EUR"
+        },
+        "description": "Shell NL Amsterdam",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "1be5e9532de04170",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Shell",
+          "label_monetary_account": {
+            "display_name": "Shell",
+            "merchant_category_code": "5541"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "fuel"
+        }
+      }
+    },
+    {
+      "Payment": {
+        "id": 979717936,
+        "created": "2026-04-22 10:49:21.000000",
+        "updated": "2026-04-22 10:49:21.000000",
+        "monetary_account_id": 4823,
+        "amount": {
+          "value": "-50.26",
+          "currency": "EUR"
+        },
+        "description": "Bol.com B.V.",
+        "type": "MASTERCARD",
+        "sub_type": "PAYMENT",
+        "merchant_reference": "ca7fc1149ef046d2",
+        "alias": {
+          "iban": "NL24BUNQ2034567892",
+          "display_name": "Rik Bakker",
+          "label_user": {
+            "display_name": "Rik Bakker",
+            "uuid": "user-4823"
+          }
+        },
+        "counterparty_alias": {
+          "iban": null,
+          "display_name": "Bol.com",
+          "label_monetary_account": {
+            "display_name": "Bol.com",
+            "merchant_category_code": "5999"
+          }
+        },
+        "_hackathon_metadata": {
+          "employee_team": "operations",
+          "merchant_category": "retail"
+        }
+      }
+    }
+  ]
+}
