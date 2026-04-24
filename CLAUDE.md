@@ -32,6 +32,9 @@ Hackathon build of **Carbon Autopilot**: monthly carbon-close system for bunq Bu
 `research/` has 12 practical briefs (400–800 words each). Every non-obvious design choice has a matching brief.
 Read the relevant brief before changing the code it informs. Update the brief's **Decisions for this build** list when you change the code.
 
+## What's not done
+See [`todo.md`](./todo.md) for unfinished work — scope cuts, de-risked integrations (live bunq, live Anthropic), polish items, and a pointer to a Wise-style [design.md](https://getdesign.md/wise/design-md) spec we haven't written yet. When picking up new work, check todo.md first.
+
 ## Commands
 ```
 pnpm dev          # Next dev server

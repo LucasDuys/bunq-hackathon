@@ -10,6 +10,8 @@
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
     "reset": "tsx scripts/reset-demo.ts",
+    "bunq:keygen": "tsx scripts/bunq-keygen.ts",
+    "bunq:register": "tsx scripts/register-webhook.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
