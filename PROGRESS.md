@@ -50,6 +50,17 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Nav updated with Tax savings link (2026-04-24)
 - [x] `research/13-tax-savings-incentives.md` — Full research brief: NL/EU schemes, category switch savings, demo numbers (2026-04-24)
 
+## Environmental Impact Analysis (Ben)
+
+- [x] `lib/benchmarks.ts` — Industry benchmark data (Exiobase sector averages) for 8 spending categories (2026-04-24)
+- [x] `lib/agent/impact-analysis.ts` — Claude Sonnet impact analysis agent: benchmark comparison, switch opportunity ranking, AI narrative generation with mock mode (2026-04-24)
+- [x] `app/api/impact/analyze/route.ts` — API route to trigger impact analysis (2026-04-24)
+- [x] `components/BenchmarkChart.tsx` — Horizontal bar chart comparing user intensity vs industry average per category (2026-04-24)
+- [x] `components/ImpactSimulator.tsx` — "What if" client-side simulator: toggle spending switches and see projected CO₂e + EUR savings update live (2026-04-24)
+- [x] `app/impact/page.tsx` — Full impact analysis page: KPIs, AI narrative, benchmark chart, top 5 switches, what-if simulator, methodology (2026-04-24)
+- [x] Dashboard impact CTA card with top switch opportunity + CO₂e avoidable per year (2026-04-24)
+- [x] Nav updated with Impact link (2026-04-24)
+
 ## Documentation
 
 - [x] DESIGN.md — 500+ line visual/animation spec (2026-04-23)

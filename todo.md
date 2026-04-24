@@ -10,6 +10,18 @@ Mock mode works end-to-end, but we haven't driven live traffic through either ex
 - [ ] **Cloudflare Tunnel in front of `/api/webhook/bunq`** — register webhook via `pnpm bunq:register`, ingest a real sandbox payment, and confirm the MUTATION lands in our `transactions` table with a correct signature check.
 - [ ] **`sugardaddy@bunq.com` seeding** — use the sandbox bot to auto-accept RequestInquiries and pre-populate the sandbox user's balance so the Carbon Reserve transfer actually moves money on-screen in the bunq app.
 
+## Tax Savings & CO₂ Analysis Agent (Ben — next phase)
+
+Tax incentive data layer is shipped (`lib/tax/`). Next steps to make it demo-ready and impressive:
+
+- [x] **CO₂ environment impact analysis agent** — Claude-powered agent that takes a company's monthly transaction data and produces a narrative analysis: "Your travel spend is 3x the industry average for your size. Switching 50% of flights to rail saves €X and Y tonnes." Use Sonnet 4.6, output structured JSON + natural language. New file: `lib/agent/impact-analysis.ts`.
+- [ ] **Tax savings integration into monthly close** — add a `CALCULATE_TAX_SAVINGS` step after `APPLY_POLICY` in the close state machine. Store `taxSavingsEur` on the `close_runs` row. Include in the CSRD narrative.
+- [x] **"What if" simulator UI** — `/impact` page includes a client-side simulator: user toggles spending switches and sees projected CO₂e + EUR savings update live. Pure client-side math using existing factor table.
+- [x] **Industry benchmark comparison** — show "your tCO₂e/€ is X vs. industry average Y" per category. Hardcode benchmarks from Exiobase sector averages. Visual: bar chart with "you" vs "average".
+- [ ] **Annual tax savings report page** — `/tax-savings/annual`: aggregate 12 months, show total EIA/MIA/Vamil deductions claimable, with "how to claim" links to RVO.nl portals.
+- [ ] **Per-transaction tax badge on categories page** — on `/categories`, show a small "€X saveable" tag next to categories that have green alternatives.
+- [ ] **Concrete demo scenario** — seed data that tells a story: company spending €200k/month, show €30k+ annual savings. Pre-compute the "€300M across bunq business base" extrapolation for the pitch slide.
+
 ## Features in the spec but de-scoped for MVP
 
 - [ ] **Optional invoice upload for large/ambiguous spend** — spec allows it as a refinement path alongside questions. Multimodal (PDF + image) Claude parse → auto-apply category. The `refinement_qa` schema can hold it as-is; need an upload endpoint and UI card.
