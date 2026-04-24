@@ -63,8 +63,20 @@ Hackathon build of **Carbo**: agentic carbon accounting for bunq Business.
 | `lib/env.ts` | Environment config |
 | `lib/queries.ts` | Read queries (dashboard data) |
 | `lib/audit/append.ts` | Audit log (SHA-256 hash chain) |
+| `lib/invoices/storage.ts` | Invoice file save/read/base64 |
+| `lib/invoices/extract.ts` | Claude Sonnet multimodal invoice extraction + Zod schema |
+| `lib/invoices/process.ts` | Invoice processing pipeline (extract → classify → link → store) |
+| `lib/invoices/gmail.ts` | Gmail API polling client for forwarded invoices |
+| `app/api/invoices/upload/route.ts` | Invoice upload endpoint (FormData) |
+| `app/api/invoices/route.ts` | List invoices |
+| `app/api/invoices/[id]/route.ts` | Invoice detail + line items |
+| `app/api/invoices/[id]/link/route.ts` | Manual transaction linking |
+| `app/api/invoices/gmail/poll/route.ts` | Gmail poll trigger |
+| `app/invoices/page.tsx` | Invoice list page with upload UI |
+| `app/invoices/[id]/page.tsx` | Invoice detail page |
 | `scripts/` | migrate / seed / reset / bunq bootstrap |
 | `fixtures/` | Synthetic bunq transactions + Agribalyse emission factors |
+| `fixtures/invoices/` | Demo invoice extraction fixtures (KLM, AWS, Albert Heijn) |
 | `DESIGN.md` | UI design system and component specs |
 
 ## What's not done

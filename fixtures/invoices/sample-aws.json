@@ -1,0 +1,41 @@
+{
+  "merchant": "AWS EMEA SARL",
+  "invoiceNumber": "AWS-2026-03-EU-0847291",
+  "invoiceDate": "2026-03-31",
+  "dueDate": "2026-04-30",
+  "lineItems": [
+    {
+      "description": "EC2 compute — eu-west-1 (m5.xlarge × 720h)",
+      "quantity": 720,
+      "unitPriceCents": 201,
+      "amountCents": 144720,
+      "vatRatePct": 21,
+      "vatCents": 30391,
+      "category": "cloud"
+    },
+    {
+      "description": "S3 standard storage — 2.4 TB",
+      "quantity": 1,
+      "unitPriceCents": 52000,
+      "amountCents": 52000,
+      "vatRatePct": 21,
+      "vatCents": 10920,
+      "category": "cloud"
+    },
+    {
+      "description": "CloudFront CDN — 180 GB transfer",
+      "quantity": 1,
+      "unitPriceCents": 37280,
+      "amountCents": 37280,
+      "vatRatePct": 21,
+      "vatCents": 7829,
+      "category": "cloud"
+    }
+  ],
+  "subtotalCents": 234000,
+  "vatCents": 49140,
+  "totalCents": 234000,
+  "currency": "EUR",
+  "confidence": 0.95,
+  "notes": "Monthly cloud infrastructure — production workload"
+}

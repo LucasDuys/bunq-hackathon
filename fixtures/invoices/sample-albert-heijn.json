@@ -1,0 +1,50 @@
+{
+  "merchant": "Albert Heijn 1411",
+  "invoiceNumber": null,
+  "invoiceDate": "2026-04-18",
+  "dueDate": null,
+  "lineItems": [
+    {
+      "description": "AH Biologisch brood volkoren 800g",
+      "quantity": 3,
+      "unitPriceCents": 289,
+      "amountCents": 867,
+      "vatRatePct": 9,
+      "vatCents": 78,
+      "category": "food"
+    },
+    {
+      "description": "AH Verse melk halfvol 1L",
+      "quantity": 4,
+      "unitPriceCents": 129,
+      "amountCents": 516,
+      "vatRatePct": 9,
+      "vatCents": 46,
+      "category": "food"
+    },
+    {
+      "description": "Douwe Egberts koffie bonen 500g",
+      "quantity": 2,
+      "unitPriceCents": 699,
+      "amountCents": 1398,
+      "vatRatePct": 9,
+      "vatCents": 126,
+      "category": "food"
+    },
+    {
+      "description": "Droog/wasserij middelen mix",
+      "quantity": 1,
+      "unitPriceCents": 1549,
+      "amountCents": 1549,
+      "vatRatePct": 21,
+      "vatCents": 325,
+      "category": "retail"
+    }
+  ],
+  "subtotalCents": 4330,
+  "vatCents": 575,
+  "totalCents": 4330,
+  "currency": "EUR",
+  "confidence": 0.78,
+  "notes": "Office groceries receipt — some items hard to read"
+}

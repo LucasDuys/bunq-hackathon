@@ -43,7 +43,9 @@ Tax incentive data layer is shipped (`lib/tax/`). Next steps to make it demo-rea
 
 ## Features in the spec but de-scoped for MVP
 
-- [ ] **Optional invoice upload for large/ambiguous spend** — spec allows it as a refinement path alongside questions. Multimodal (PDF + image) Claude parse → auto-apply category. The `refinement_qa` schema can hold it as-is; need an upload endpoint and UI card.
+- [x] **Invoice upload + ingestion pipeline** — multimodal (PDF + image) Claude Sonnet extraction → Zod-validated structured data → DB storage + file persistence. Upload API, list/detail API, manual linking API, drag-and-drop UI, `/invoices` page. (2026-04-25)
+- [x] **Gmail invoice forwarding** — `googleapis` polling client, OAuth2, attachment download, dedup via `gmail_message_id`. Poll trigger API + env vars. Mock mode works without credentials. (2026-04-25)
+- [ ] **Gmail OAuth setup script** — one-time browser-based flow to get refresh token. Document in README.
 - [ ] **Voice refinement** — "this was a team dinner." Claude voice → text → treat as a free-text refinement. Nice-to-have.
 - [ ] **Visual/narrative dashboard summary** — an LLM-written paragraph at the top of `/` contextualizing the month. Share a prompt with `generateCsrdNarrative` but target the overview reader, not auditors.
 - [x] **Onboarding flow** — agentic onboarding lives at `/onboarding`. Three tracks: generate (short interview), upload existing policy (PDF/DOCX/MD/YAML/JSON), or mix (upload + fill gaps). Activates policy, creates Carbo Reserve + Credits sub-accounts, seeds a first close. See `lib/agent/onboarding.ts`. Remaining v2 polish: pressure-test live-mode Sonnet PDF parsing on real ESG docs; add a `/settings/policy` re-edit flow so a completed onboarding can be tweaked without starting a new run; wire authentication so the `DEFAULT_ORG_ID` assumption goes away.
