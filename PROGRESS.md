@@ -61,6 +61,19 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Dashboard impact CTA card with top switch opportunity + CO₂e avoidable per year (2026-04-24)
 - [x] Nav updated with Impact link (2026-04-24)
 
+## Frontend — UI Overhaul (Ben)
+
+- [x] `app/globals.css` — Full design token system: near-black palette, green accents, border/shadow tokens, ca-card gradient class, keyframe animations (pulse-dot, shimmer, slide-up, bar-grow, count-flash), reduced-motion support (2026-04-24)
+- [x] `components/ui.tsx` — Redesigned primitives: Card (ca-card), Stat (Instrument Serif numbers), Badge (toned), Button (pill-shaped gradient), ConfidenceBar (glow effect), new KpiChip + PulseDot components (2026-04-24)
+- [x] `app/layout.tsx` — Instrument Serif font loading, dark-only body, widened max-width (2026-04-24)
+- [x] `components/TrendChart.tsx` — Green gradient fill, dark tooltip with backdrop blur, removed grid strokes (2026-04-24)
+- [x] `app/page.tsx` — Hero reserve card with radial glow, KPI chip column, pipeline explanation, category spend bars (2026-04-24)
+- [x] `app/categories/page.tsx` — Stagger animations, gradient share bars with glow (2026-04-24)
+- [x] `app/close/[id]/page.tsx` — Pipeline steps as grid cards with green active state + pulse (2026-04-24)
+- [x] `app/ledger/page.tsx` — Consistent dark theme tokens (2026-04-24)
+- [x] `app/reserve/page.tsx` — Serif stat cards, gradient credit project cards (2026-04-24)
+- [x] `app/report/[month]/page.tsx` — Dark theme, serif E1-7 stats, styled methodology section (2026-04-24)
+
 ## Documentation
 
 - [x] DESIGN.md — 500+ line visual/animation spec (2026-04-23)
