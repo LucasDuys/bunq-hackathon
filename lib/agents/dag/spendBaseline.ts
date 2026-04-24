@@ -78,7 +78,7 @@ const nextAgentFor = (b: Bucket): "green_alternatives_agent" | "cost_savings_age
   return "both";
 };
 
-export async function run(input: BaselineInput, _ctx: AgentContext): Promise<BaselineOutput> {
+export async function run(input: BaselineInput, _ctx?: AgentContext): Promise<BaselineOutput> {
   const now = new Date();
   const sinceSec = Math.floor(now.getTime() / 1000) - LOOKBACK_DAYS * 86_400;
   const rows = db

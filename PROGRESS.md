@@ -129,3 +129,15 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Agent doc `docs/agents/08-research.md` + DAG overview updated (2026-04-25)
 - [x] `/impacts` gains Research-evidence KPI card (clusters, sources, web-search spend, freshness) and `ScenarioPlanner` slider — "adopt top N switches → projected Δ cost + Δ CO₂e + avg confidence" (2026-04-25)
 - [x] Smoke script `scripts/smoke-research.ts` — mock-mode DAG E2E check; second run confirms cache hits (2026-04-25)
+
+## Merge — matrix → merge-branch (2026-04-25)
+
+- [x] Merged `matrix` into `merge-branch` — onboarding agent tracks, `/impacts` matrix page, research agent DAG node, and evidence-weighted judges now land on the shared branch (2026-04-25)
+- [x] Consolidated duplicate impact surfaces: dropped legacy `/impact` page + `/api/impact/analyze` route, `components/ImpactSimulator.tsx`, `components/BenchmarkChart.tsx` in favor of matrix's `/impacts` + `ImpactMatrix` + `ScenarioPlanner` + `RunImpactResearch` (2026-04-25)
+- [x] Removed orphaned baseline-agent helpers after accepting matrix's deterministic spendBaseline: `lib/agents/dag/reasons.ts`, `lib/agents/dag/routing.ts`, `lib/agents/dag/__tests__/spendBaseline.test.ts`, `scripts/baseline-mock-run.ts` (fields they assumed were collapsed into matrix's enriched `PriorityTarget`) (2026-04-25)
+- [x] Kept tax-savings feature (`lib/tax/*`, `app/tax-savings`, `getTaxSavingsForMonth`) and `lib/agent/impact-analysis.ts` since the home KPI row still depends on `buildCategoryAnalyses` (2026-04-25)
+- [x] Nav split into server `Nav.tsx` (queries onboarding + policy state) + client `NavLinks.tsx` (pathname-based active pill) so the onboarding link stays accurate without round-tripping through a status API (2026-04-25)
+- [x] `app/globals.css` now carries both design systems: the dark-first Carbo tokens from merge-branch *and* matrix's semantic aliases (`--fg-*`, `--bg-surface*`, `--status-*`, `--quadrant-*`, `--brand-forest-*`, `--brand-mint-*`) so `ImpactMatrix`/`ScenarioPlanner` render against the same palette without raw hex (2026-04-25)
+- [x] Home page keeps the polished dark hero and adds matrix's onboarding banner (themed to the dark palette) when `hasPolicy=false` or an onboarding run is active (2026-04-25)
+- [x] `spendBaseline.run` ctx parameter relaxed to optional so `/api/baseline/run` + dag smoke callers keep working alongside the DAG entry (2026-04-25)
+- [x] `npx tsc --noEmit` green end-to-end after merge (2026-04-25)
