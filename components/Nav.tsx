@@ -4,6 +4,7 @@ import { Leaf } from "lucide-react";
 const items = [
   { href: "/", label: "Overview" },
   { href: "/briefing", label: "Briefing" },
+  { href: "/report/annual/2026", label: "Annual" },
   { href: "/categories", label: "Categories" },
   { href: "/reserve", label: "Reserve" },
   { href: "/ledger", label: "Ledger" },
