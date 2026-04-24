@@ -16,7 +16,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { Button } from "@/components/ui";
+import { Button, CodeLabel, Card, CardBody } from "@/components/ui";
 import { labelFor, type CompanyProfile } from "@/lib/onboarding/profile";
 import type { ParserGap, ParserUnsupported } from "@/lib/onboarding/types";
 import type { Policy } from "@/lib/policy/schema";
@@ -30,7 +30,7 @@ const Stage = ({ children, stepKey }: { children: ReactNode; stepKey: string }) 
   <div
     key={stepKey}
     className="ob-step"
-    style={{ animation: "ob-step-in 380ms cubic-bezier(.22,.8,.2,1) both" }}
+    style={{ animation: "ob-step-in 320ms ease-out both" }}
   >
     {children}
   </div>
@@ -38,39 +38,30 @@ const Stage = ({ children, stepKey }: { children: ReactNode; stepKey: string }) 
 
 const ProgressRail = ({ value }: { value: number }) => (
   <div
-    className="fixed top-0 left-0 right-0 h-[3px] z-40"
-    style={{ background: "rgba(255,255,255,0.04)" }}
+    className="fixed top-0 left-0 right-0 h-[2px] z-40"
+    style={{ background: "var(--border-faint)" }}
     aria-hidden
   >
     <div
       className="h-full"
       style={{
         width: `${Math.max(4, Math.min(100, value * 100))}%`,
-        background: "linear-gradient(90deg, var(--green-soft), var(--green-bright) 70%, var(--green-bright))",
-        boxShadow: "0 0 12px rgba(74,222,128,0.45)",
-        transition: "width 600ms cubic-bezier(.22,.8,.2,1)",
+        background: "var(--brand-green)",
+        transition: "width 500ms ease-out",
       }}
     />
   </div>
 );
 
-const Eyebrow = ({ children }: { children: ReactNode }) => (
-  <div
-    className="text-[11px] uppercase tracking-[0.14em] font-semibold flex items-center gap-2"
-    style={{ color: "var(--green-bright)" }}
-  >
-    <span
-      className="inline-block w-1.5 h-1.5 rounded-full"
-      style={{ background: "var(--green-bright)", boxShadow: "0 0 8px var(--green-bright)" }}
-    />
-    {children}
-  </div>
-);
-
 const Headline = ({ children }: { children: ReactNode }) => (
   <h1
-    className="font-serif text-[44px] md:text-[56px] leading-[1.02] tracking-[-0.02em]"
-    style={{ color: "var(--text)", textWrap: "balance" }}
+    className="text-[36px] md:text-[44px] tracking-[-0.015em] m-0"
+    style={{
+      color: "var(--fg-primary)",
+      fontWeight: 400,
+      lineHeight: 1.1,
+      textWrap: "balance",
+    }}
   >
     {children}
   </h1>
@@ -78,8 +69,8 @@ const Headline = ({ children }: { children: ReactNode }) => (
 
 const Sublead = ({ children }: { children: ReactNode }) => (
   <p
-    className="text-base md:text-lg leading-relaxed max-w-[38rem]"
-    style={{ color: "var(--text-dim)", textWrap: "pretty" }}
+    className="text-[16px] leading-[1.5] max-w-[38rem] m-0"
+    style={{ color: "var(--fg-secondary)", textWrap: "pretty" }}
   >
     {children}
   </p>
@@ -108,7 +99,7 @@ export const OnboardingIntroFlow = ({
   const [error, setError] = useState<string | null>(null);
 
   const stepOrder: IntroStep[] = ["welcome", "company", "track"];
-  const progress = (stepOrder.indexOf(step) + 1) / 8; // ~8 implicit future steps in full flow
+  const progress = (stepOrder.indexOf(step) + 1) / 8;
 
   const go = (next: IntroStep) => {
     setError(null);
@@ -144,44 +135,42 @@ export const OnboardingIntroFlow = ({
       <div className="ob-shell">
         {step === "welcome" && (
           <Stage stepKey="welcome">
-            <div className="flex flex-col items-center text-center gap-8 max-w-2xl mx-auto">
+            <div className="flex flex-col items-start gap-7 max-w-2xl mx-auto w-full">
               <div
-                className="w-16 h-16 rounded-2xl grid place-items-center"
+                className="w-11 h-11 rounded-[12px] grid place-items-center"
                 style={{
-                  background: "linear-gradient(180deg, rgba(74,222,128,0.18), rgba(48,192,111,0.06))",
-                  border: "1px solid rgba(74,222,128,0.22)",
-                  boxShadow: "0 0 40px rgba(74,222,128,0.18)",
+                  background: "var(--bg-inset)",
+                  border: "1px solid var(--border-default)",
+                  color: "var(--brand-green)",
                 }}
               >
-                <Leaf className="h-7 w-7" style={{ color: "var(--green-bright)" }} />
+                <Leaf className="h-5 w-5" />
               </div>
 
-              <Eyebrow>Welcome to Carbo</Eyebrow>
-              <Headline>
-                Your carbon close, <span className="grad-text-green">on autopilot.</span>
-              </Headline>
+              <CodeLabel>Welcome to Carbo</CodeLabel>
+              <Headline>Your carbon close, on autopilot.</Headline>
               <Sublead>
                 In the next few minutes we&apos;ll calibrate Carbo to your business — reserve rules, credit
                 preferences, and CSRD-ready reporting. You approve everything before anything goes live.
               </Sublead>
 
-              <div className="flex flex-col items-center gap-3 mt-2">
-                <Button onClick={() => go("company")} className="gap-2 h-12 px-7 text-[15px]">
+              <div className="flex items-center gap-4 mt-2">
+                <Button onClick={() => go("company")}>
                   Let&apos;s begin
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <div className="text-xs" style={{ color: "var(--text-mute)" }}>
-                  Takes about 3 minutes · nothing activates without approval
-                </div>
+                <span className="text-[12px]" style={{ color: "var(--fg-muted)" }}>
+                  ~3 minutes · nothing activates without approval
+                </span>
               </div>
 
               {hasActivePolicy && (
                 <div
-                  className="mt-6 text-xs px-3 py-1.5 rounded-full"
+                  className="mt-4 text-[13px] px-3 py-2 rounded-[6px]"
                   style={{
-                    color: "var(--amber)",
-                    background: "rgba(217,164,65,0.08)",
-                    border: "1px solid rgba(217,164,65,0.22)",
+                    color: "var(--status-warning)",
+                    border: "1px solid rgba(247,185,85,0.30)",
+                    background: "transparent",
                   }}
                 >
                   A policy is already active for {orgName} — finishing this flow will replace it.
@@ -193,8 +182,8 @@ export const OnboardingIntroFlow = ({
 
         {step === "company" && (
           <Stage stepKey="company">
-            <div className="flex flex-col gap-8 max-w-xl mx-auto w-full">
-              <Eyebrow>Step 1 of 3</Eyebrow>
+            <div className="flex flex-col gap-7 max-w-xl mx-auto w-full">
+              <CodeLabel>Step 1 of 3</CodeLabel>
               <Headline>What&apos;s your company called?</Headline>
               <Sublead>
                 We&apos;ll use this on your policy document and on the dashboard. You can change it later.
@@ -206,30 +195,27 @@ export const OnboardingIntroFlow = ({
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && companyName.trim() && go("track")}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && companyName.trim() && go("track")
+                  }
                   placeholder="Acme BV"
-                  className="w-full bg-transparent font-serif text-[36px] md:text-[44px] tracking-[-0.02em] pb-3 focus-visible:outline-none"
+                  className="w-full bg-transparent text-[32px] md:text-[36px] tracking-[-0.015em] pb-3 focus-visible:outline-none"
                   style={{
-                    color: "var(--text)",
-                    borderBottom: "1px solid var(--border-strong)",
-                    caretColor: "var(--green-bright)",
+                    color: "var(--fg-primary)",
+                    borderBottom: "1px solid var(--border-default)",
+                    caretColor: "var(--brand-green)",
+                    fontWeight: 400,
                   }}
                 />
               </div>
 
               <div className="flex items-center justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={() => go("welcome")}
-                  className="text-sm hover:underline"
-                  style={{ color: "var(--text-mute)" }}
-                >
+                <Button variant="ghost" size="sm" onClick={() => go("welcome")}>
                   ← Back
-                </button>
+                </Button>
                 <Button
                   onClick={() => go("track")}
                   disabled={!companyName.trim()}
-                  className="gap-2 h-12 px-7 text-[15px]"
                 >
                   Continue
                   <ArrowRight className="h-4 w-4" />
@@ -241,21 +227,21 @@ export const OnboardingIntroFlow = ({
 
         {step === "track" && (
           <Stage stepKey="track">
-            <div className="flex flex-col gap-8 max-w-3xl mx-auto w-full">
-              <Eyebrow>Step 2 of 3</Eyebrow>
+            <div className="flex flex-col gap-7 max-w-3xl mx-auto w-full">
+              <CodeLabel>Step 2 of 3</CodeLabel>
               <Headline>How would you like to set things up?</Headline>
               <Sublead>
                 Pick the path that fits you. You can upload an existing policy, have Carbo draft one for you,
                 or blend both.
               </Sublead>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
                 <TrackCard
                   active={track === "generate"}
                   onClick={() => setTrack("generate")}
                   icon={<MessageCircle className="h-5 w-5" />}
                   title="Guide me through it"
-                  blurb="A few short questions and we&apos;ll draft a full policy calibrated to your business."
+                  blurb="A few short questions and we'll draft a full policy calibrated to your business."
                   time="~3 min"
                 />
                 <TrackCard
@@ -277,25 +263,16 @@ export const OnboardingIntroFlow = ({
               </div>
 
               {error && (
-                <div className="text-sm" style={{ color: "var(--red)" }}>
+                <div className="text-[13px]" style={{ color: "var(--status-danger)" }}>
                   {error}
                 </div>
               )}
 
               <div className="flex items-center justify-between pt-4">
-                <button
-                  type="button"
-                  onClick={() => go("company")}
-                  className="text-sm hover:underline"
-                  style={{ color: "var(--text-mute)" }}
-                >
+                <Button variant="ghost" size="sm" onClick={() => go("company")}>
                   ← Back
-                </button>
-                <Button
-                  onClick={start}
-                  disabled={!track || busy}
-                  className="gap-2 h-12 px-7 text-[15px]"
-                >
+                </Button>
+                <Button onClick={start} disabled={!track || busy}>
                   {busy ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
@@ -335,57 +312,53 @@ const TrackCard = ({
   <button
     type="button"
     onClick={onClick}
-    className="ob-track-card text-left flex flex-col gap-3 p-5 rounded-2xl relative"
+    className="ob-track-card text-left flex flex-col gap-3 p-5 rounded-[12px] relative transition-[border-color] duration-150 ease-out"
     data-active={active}
     style={{
-      background: active
-        ? "linear-gradient(180deg, rgba(74,222,128,0.08), rgba(48,192,111,0.02))"
-        : "linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-2) 100%)",
-      border: `1px solid ${active ? "rgba(74,222,128,0.45)" : "var(--border)"}`,
-      boxShadow: active
-        ? "0 0 0 4px rgba(74,222,128,0.08), 0 12px 32px rgba(0,0,0,0.28)"
-        : "var(--shadow-card)",
-      transition: "transform 160ms ease, border-color 160ms, box-shadow 200ms, background 200ms",
+      background: "var(--bg-surface)",
+      border: `1px solid ${
+        active ? "var(--brand-green-border)" : "var(--border-default)"
+      }`,
     }}
   >
     <div className="flex items-center justify-between">
       <div
-        className="w-9 h-9 rounded-xl grid place-items-center"
+        className="w-9 h-9 rounded-[6px] grid place-items-center"
         style={{
-          background: active ? "rgba(74,222,128,0.14)" : "var(--bg-inset)",
-          color: active ? "var(--green-bright)" : "var(--text-dim)",
-          border: `1px solid ${active ? "rgba(74,222,128,0.28)" : "var(--border-faint)"}`,
-          transition: "background 200ms, color 200ms",
+          background: "var(--bg-inset)",
+          border: "1px solid var(--border-faint)",
+          color: active ? "var(--brand-green)" : "var(--fg-secondary)",
         }}
       >
         {icon}
       </div>
-      <span
-        className="text-[10.5px] uppercase tracking-[0.08em] font-semibold"
-        style={{ color: "var(--text-mute)" }}
-      >
-        {time}
-      </span>
+      <CodeLabel>{time}</CodeLabel>
     </div>
-    <div className="font-semibold text-[15px]" style={{ color: "var(--text)" }}>
+    <div className="text-[15px]" style={{ color: "var(--fg-primary)" }}>
       {title}
     </div>
-    <div className="text-[13px] leading-relaxed" style={{ color: "var(--text-dim)" }}>
+    <div
+      className="text-[13px] leading-[1.5]"
+      style={{ color: "var(--fg-secondary)" }}
+    >
       {blurb}
     </div>
     {active && (
       <div
-        className="absolute top-3 right-3 w-5 h-5 rounded-full grid place-items-center"
-        style={{ background: "var(--green-bright)", color: "#08140c" }}
+        className="absolute top-3 right-3 w-4 h-4 rounded-full grid place-items-center"
+        style={{
+          border: "1px solid var(--brand-green)",
+          color: "var(--brand-green)",
+        }}
       >
-        <CheckCircle2 className="h-3.5 w-3.5" />
+        <CheckCircle2 className="h-3 w-3" />
       </div>
     )}
   </button>
 );
 
 /* ────────────────────────────────────────────────────────────
-   Run flow (post-start): upload → interview → draft → review → done
+   Run flow (post-start)
    ──────────────────────────────────────────────────────────── */
 
 type QaKind = "multiple_choice" | "free_text" | "numeric" | "confirm";
@@ -430,9 +403,12 @@ const STATE_WEIGHTS: Record<string, number> = {
 
 export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
   const router = useRouter();
-  const isTransitional = data.state === "UPLOAD_PARSING" || data.state === "DRAFT_POLICY" || data.state === "FINALIZE" || data.state === "SEED_FIRST_CLOSE";
+  const isTransitional =
+    data.state === "UPLOAD_PARSING" ||
+    data.state === "DRAFT_POLICY" ||
+    data.state === "FINALIZE" ||
+    data.state === "SEED_FIRST_CLOSE";
 
-  // Gentle polling when a server-side transition is in flight
   useEffect(() => {
     if (!isTransitional) return;
     const t = setInterval(() => router.refresh(), 1600);
@@ -440,7 +416,8 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
   }, [isTransitional, router]);
 
   const progress = STATE_WEIGHTS[data.state] ?? 0.4;
-  const needsUpload = data.state === "INIT" && (data.track === "upload" || data.track === "mix");
+  const needsUpload =
+    data.state === "INIT" && (data.track === "upload" || data.track === "mix");
   const questionPct = data.pendingQa ? Math.min(1, data.questionCount / 12) : 0;
 
   return (
@@ -448,13 +425,10 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
       <ProgressRail value={progress} />
 
       <div className="ob-shell">
-        {/* Tiny meta strip */}
-        <div className="ob-meta flex items-center justify-between max-w-3xl mx-auto w-full mb-8">
+        <div className="flex items-center justify-between max-w-3xl mx-auto w-full mb-10">
           <div className="flex items-center gap-2.5">
-            <Leaf className="h-4 w-4" style={{ color: "var(--green-bright)" }} />
-            <span className="text-[11px] uppercase tracking-[0.14em] font-semibold" style={{ color: "var(--text-mute)" }}>
-              Setup · {data.orgName}
-            </span>
+            <Leaf className="h-4 w-4" style={{ color: "var(--brand-green)" }} />
+            <CodeLabel>Setup · {data.orgName}</CodeLabel>
           </div>
           {data.state !== "COMPLETED" && <ResetLink runId={data.runId} />}
         </div>
@@ -462,7 +436,7 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
         {needsUpload && (
           <Stage stepKey="upload">
             <div className="flex flex-col gap-7 max-w-2xl mx-auto w-full">
-              <Eyebrow>Upload your policy</Eyebrow>
+              <CodeLabel>Upload your policy</CodeLabel>
               <Headline>Drop in what you already have.</Headline>
               <Sublead>
                 PDF, DOCX, Markdown, YAML, JSON — we&apos;ll parse it, map it to Carbo&apos;s schema, and only ask
@@ -470,7 +444,7 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
               </Sublead>
 
               <UploadDrop runId={data.runId} />
-              <div className="text-xs" style={{ color: "var(--text-mute)" }}>
+              <div className="text-[12px]" style={{ color: "var(--fg-muted)" }}>
                 Max 5 MB · everything stays on your Carbo workspace.
               </div>
             </div>
@@ -486,62 +460,81 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
           </Stage>
         )}
 
-        {data.unsupported.length > 0 && data.pendingQa === null && data.state !== "AWAITING_APPROVAL" && !needsUpload && (
-          <Stage stepKey="unsupported">
-            <div className="flex flex-col gap-5 max-w-2xl mx-auto w-full">
-              <Eyebrow>Heads up</Eyebrow>
-              <Headline>A few things from your document need attention.</Headline>
-              <div className="flex flex-col gap-2.5 mt-2">
-                {data.unsupported.map((u, i) => (
-                  <div
-                    key={i}
-                    className="flex items-start gap-3 p-4 rounded-xl"
-                    style={{
-                      background: "var(--bg-card)",
-                      border: "1px solid var(--border)",
-                    }}
-                  >
+        {data.unsupported.length > 0 &&
+          data.pendingQa === null &&
+          data.state !== "AWAITING_APPROVAL" &&
+          !needsUpload && (
+            <Stage stepKey="unsupported">
+              <div className="flex flex-col gap-5 max-w-2xl mx-auto w-full">
+                <CodeLabel>Heads up</CodeLabel>
+                <Headline>A few things from your document need attention.</Headline>
+                <div className="flex flex-col gap-2.5 mt-2">
+                  {data.unsupported.map((u, i) => (
                     <div
-                      className="mt-0.5 text-[10px] uppercase tracking-wide font-semibold px-2 py-0.5 rounded-full"
+                      key={i}
+                      className="flex items-start gap-3 p-4 rounded-[12px]"
                       style={{
-                        color: u.severity === "error" ? "var(--red)" : "var(--amber)",
-                        background: u.severity === "error" ? "rgba(224,111,111,0.1)" : "rgba(217,164,65,0.1)",
-                        border: `1px solid ${u.severity === "error" ? "rgba(224,111,111,0.24)" : "rgba(217,164,65,0.24)"}`,
+                        background: "var(--bg-surface)",
+                        border: "1px solid var(--border-default)",
                       }}
                     >
-                      {u.severity}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-sm" style={{ color: "var(--text)" }}>
-                        {u.found}
+                      <div
+                        className="mt-0.5 px-2 py-0.5 rounded-full"
+                        style={{
+                          color:
+                            u.severity === "error"
+                              ? "var(--status-danger)"
+                              : "var(--status-warning)",
+                          border: `1px solid ${
+                            u.severity === "error"
+                              ? "rgba(229,72,77,0.30)"
+                              : "rgba(247,185,85,0.30)"
+                          }`,
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "10px",
+                          textTransform: "uppercase",
+                          letterSpacing: "1.2px",
+                        }}
+                      >
+                        {u.severity}
                       </div>
-                      <div className="text-xs mt-0.5" style={{ color: "var(--text-mute)" }}>
-                        {u.note}
+                      <div className="flex-1">
+                        <div
+                          className="text-[14px]"
+                          style={{ color: "var(--fg-primary)" }}
+                        >
+                          {u.found}
+                        </div>
+                        <div
+                          className="text-[12px] mt-0.5"
+                          style={{ color: "var(--fg-muted)" }}
+                        >
+                          {u.note}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          </Stage>
-        )}
+            </Stage>
+          )}
 
         {data.pendingQa && data.state !== "COMPLETED" && (
           <Stage stepKey={`qa-${data.pendingQa.id}`}>
             <div className="flex flex-col gap-7 max-w-2xl mx-auto w-full">
-              <div className="flex items-center justify-between">
-                <Eyebrow>
+              <div className="flex items-center justify-between gap-5">
+                <CodeLabel>
                   Question {data.questionCount} · up to 12
-                </Eyebrow>
+                </CodeLabel>
                 <div
-                  className="flex-1 ml-5 h-[2px] rounded-full overflow-hidden"
-                  style={{ background: "rgba(255,255,255,0.05)" }}
+                  className="flex-1 h-[2px] rounded-full overflow-hidden"
+                  style={{ background: "var(--border-faint)" }}
                 >
                   <div
                     className="h-full"
                     style={{
                       width: `${Math.round(questionPct * 100)}%`,
-                      background: "var(--green-bright)",
+                      background: "var(--brand-green)",
                       transition: "width 400ms ease-out",
                     }}
                   />
@@ -550,9 +543,7 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
 
               <Headline>{data.pendingQa.question}</Headline>
 
-              {data.pendingQa.rationale && (
-                <Sublead>{data.pendingQa.rationale}</Sublead>
-              )}
+              {data.pendingQa.rationale && <Sublead>{data.pendingQa.rationale}</Sublead>}
 
               <AnswerForm
                 runId={data.runId}
@@ -565,22 +556,25 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
               {data.answeredQa.length > 0 && (
                 <details className="mt-4 group">
                   <summary
-                    className="text-xs cursor-pointer select-none inline-flex items-center gap-1.5"
-                    style={{ color: "var(--text-mute)" }}
+                    className="text-[12px] cursor-pointer select-none inline-flex items-center gap-1.5"
+                    style={{ color: "var(--fg-muted)" }}
                   >
                     <Sparkles className="h-3 w-3" />
                     What you&apos;ve told me so far ({data.answeredQa.length})
                   </summary>
                   <div
                     className="mt-3 flex flex-col gap-1.5 pl-4"
-                    style={{ borderLeft: "1px solid var(--border)" }}
+                    style={{ borderLeft: "1px solid var(--border-default)" }}
                   >
                     {data.answeredQa.map((q) => (
-                      <div key={q.id} className="flex justify-between gap-4 text-xs py-1">
-                        <span style={{ color: "var(--text-mute)" }}>{q.question}</span>
+                      <div
+                        key={q.id}
+                        className="flex justify-between gap-4 text-[12px] py-1"
+                      >
+                        <span style={{ color: "var(--fg-muted)" }}>{q.question}</span>
                         <span
-                          className="font-medium truncate max-w-[50%] text-right"
-                          style={{ color: "var(--text-dim)" }}
+                          className="truncate max-w-[50%] text-right"
+                          style={{ color: "var(--fg-secondary)" }}
                         >
                           {q.answer}
                         </span>
@@ -629,25 +623,25 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
           </Stage>
         )}
 
-        {/* Profile peek — unobtrusive footer once we have any */}
         {Object.keys(data.profile).length > 0 && data.state !== "COMPLETED" && (
-          <div className="max-w-2xl mx-auto w-full mt-10 pt-6" style={{ borderTop: "1px solid var(--border-faint)" }}>
-            <div className="text-[10px] uppercase tracking-[0.14em] font-semibold mb-3" style={{ color: "var(--text-faint)" }}>
-              What Carbo knows so far
-            </div>
-            <div className="flex flex-wrap gap-2">
+          <div
+            className="max-w-2xl mx-auto w-full mt-10 pt-6"
+            style={{ borderTop: "1px solid var(--border-faint)" }}
+          >
+            <CodeLabel>What Carbo knows so far</CodeLabel>
+            <div className="flex flex-wrap gap-2 mt-3">
               {Object.entries(data.profile).map(([k, v]) => (
                 <span
                   key={k}
-                  className="text-[11px] px-2.5 py-1 rounded-full"
+                  className="text-[12px] px-2.5 py-1 rounded-full"
                   style={{
-                    color: "var(--text-dim)",
-                    background: "var(--bg-card)",
-                    border: "1px solid var(--border)",
+                    color: "var(--fg-secondary)",
+                    background: "transparent",
+                    border: "1px solid var(--border-default)",
                   }}
                 >
-                  <span style={{ color: "var(--text-mute)" }}>{k}</span>
-                  <span className="mx-1" style={{ color: "var(--text-faint)" }}>·</span>
+                  <span style={{ color: "var(--fg-muted)" }}>{k}</span>
+                  <span className="mx-1" style={{ color: "var(--fg-faint)" }}>·</span>
                   {labelFor(k, typeof v === "string" ? v : String(v))}
                 </span>
               ))}
@@ -660,27 +654,26 @@ export const OnboardingRunFlow = ({ data }: { data: OnboardingRunData }) => {
 };
 
 /* ────────────────────────────────────────────────────────────
-   Busy / animated waiting state
+   Busy
    ──────────────────────────────────────────────────────────── */
 
 const BusyScreen = ({ title, subtitle }: { title: string; subtitle: string }) => (
-  <div className="flex flex-col items-center text-center gap-6 max-w-lg mx-auto">
-    <div className="relative">
-      <div
-        className="w-20 h-20 rounded-full"
-        style={{
-          background: "radial-gradient(circle at 50% 40%, rgba(74,222,128,0.18), transparent 70%)",
-          animation: "ob-pulse 2.4s ease-in-out infinite",
-        }}
-      />
+  <div className="flex flex-col items-start gap-6 max-w-lg mx-auto w-full">
+    <div
+      className="w-11 h-11 rounded-[12px] grid place-items-center"
+      style={{
+        background: "var(--bg-inset)",
+        border: "1px solid var(--border-default)",
+      }}
+    >
       <Loader2
-        className="absolute inset-0 m-auto h-6 w-6 animate-spin"
-        style={{ color: "var(--green-bright)" }}
+        className="h-5 w-5 animate-spin"
+        style={{ color: "var(--brand-green)" }}
       />
     </div>
     <Headline>{title}</Headline>
     <Sublead>{subtitle}</Sublead>
-    <div className="ob-dots mt-2" aria-hidden>
+    <div className="ob-dots mt-1" aria-hidden>
       <span />
       <span />
       <span />
@@ -689,7 +682,7 @@ const BusyScreen = ({ title, subtitle }: { title: string; subtitle: string }) =>
 );
 
 /* ────────────────────────────────────────────────────────────
-   Answer form (typeform-style, big + focused)
+   Answer form
    ──────────────────────────────────────────────────────────── */
 
 const AnswerForm = ({
@@ -767,16 +760,19 @@ const AnswerForm = ({
             >
               <span className="flex items-center gap-3">
                 <span className="ob-option-key">{String.fromCharCode(65 + i)}</span>
-                <span className="text-[15px]" style={{ color: "var(--text)" }}>
+                <span className="text-[15px]" style={{ color: "var(--fg-primary)" }}>
                   {o}
                 </span>
               </span>
               {busy === o ? (
-                <Loader2 className="h-4 w-4 animate-spin" style={{ color: "var(--green-bright)" }} />
+                <Loader2
+                  className="h-4 w-4 animate-spin"
+                  style={{ color: "var(--brand-green)" }}
+                />
               ) : (
                 <ArrowRight
                   className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                  style={{ color: "var(--green-bright)" }}
+                  style={{ color: "var(--brand-green)" }}
                 />
               )}
             </button>
@@ -786,7 +782,7 @@ const AnswerForm = ({
 
       {kind === "confirm" && (
         <div className="flex gap-2">
-          <Button disabled={busy !== null} onClick={() => submit("Yes", "yes")} className="gap-2 h-12 px-7">
+          <Button disabled={busy !== null} onClick={() => submit("Yes", "yes")}>
             {busy === "yes" && <Loader2 className="h-4 w-4 animate-spin" />}
             Yes
           </Button>
@@ -794,7 +790,6 @@ const AnswerForm = ({
             variant="secondary"
             disabled={busy !== null}
             onClick={() => submit("No", "no")}
-            className="gap-2 h-12 px-7"
           >
             {busy === "no" && <Loader2 className="h-4 w-4 animate-spin" />}
             No
@@ -812,9 +807,12 @@ const AnswerForm = ({
         >
           <div
             className="flex items-baseline gap-2 py-3 flex-1"
-            style={{ borderBottom: "1px solid var(--border-strong)" }}
+            style={{ borderBottom: "1px solid var(--border-default)" }}
           >
-            <span className="font-serif text-[28px]" style={{ color: "var(--text-mute)" }}>
+            <span
+              className="text-[26px]"
+              style={{ color: "var(--fg-muted)", fontWeight: 400 }}
+            >
               €
             </span>
             <input
@@ -825,13 +823,21 @@ const AnswerForm = ({
               step="any"
               value={text}
               onChange={(e) => setText(e.target.value)}
-              className="bg-transparent outline-none tabular-nums font-serif text-[32px] flex-1 min-w-0"
-              style={{ color: "var(--text)", caretColor: "var(--green-bright)" }}
+              className="bg-transparent outline-none tabular-nums text-[30px] flex-1 min-w-0"
+              style={{
+                color: "var(--fg-primary)",
+                caretColor: "var(--brand-green)",
+                fontWeight: 400,
+              }}
               placeholder="0"
             />
           </div>
-          <Button type="submit" disabled={busy !== null || !text.trim()} className="gap-2 h-12 px-7">
-            {busy !== null ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+          <Button type="submit" disabled={busy !== null || !text.trim()}>
+            {busy !== null ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRight className="h-4 w-4" />
+            )}
             Submit
           </Button>
         </form>
@@ -850,30 +856,41 @@ const AnswerForm = ({
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && text.trim()) submit(text.trim());
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && text.trim())
+                submit(text.trim());
             }}
             rows={3}
             placeholder="Type your answer…"
-            className="w-full bg-transparent p-4 rounded-xl text-[15px] leading-relaxed resize-none focus-visible:outline-none"
+            className="w-full p-4 rounded-[6px] text-[15px] leading-[1.5] resize-none focus-visible:outline-none"
             style={{
-              color: "var(--text)",
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-strong)",
-              caretColor: "var(--green-bright)",
+              color: "var(--fg-primary)",
+              background: "var(--bg-inset)",
+              border: "1px solid var(--border-default)",
+              caretColor: "var(--brand-green)",
             }}
           />
           <div className="flex items-center justify-between">
-            <span className="text-[11px]" style={{ color: "var(--text-faint)" }}>
+            <span className="text-[11px]" style={{ color: "var(--fg-faint)" }}>
               ⌘ + Enter to submit
             </span>
             <div className="flex items-center gap-2">
               {!required && (
-                <Button type="button" variant="ghost" disabled={busy !== null} onClick={skip}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy !== null}
+                  onClick={skip}
+                >
                   Skip
                 </Button>
               )}
-              <Button type="submit" disabled={busy !== null || !text.trim()} className="gap-2 h-11 px-6">
-                {busy !== null ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              <Button type="submit" disabled={busy !== null || !text.trim()}>
+                {busy !== null ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ArrowRight className="h-4 w-4" />
+                )}
                 Submit
               </Button>
             </div>
@@ -886,15 +903,15 @@ const AnswerForm = ({
           type="button"
           disabled={busy !== null}
           onClick={skip}
-          className="text-xs self-start hover:underline disabled:opacity-50"
-          style={{ color: "var(--text-mute)" }}
+          className="text-[12px] self-start hover:underline disabled:opacity-50"
+          style={{ color: "var(--fg-muted)" }}
         >
           Skip this one
         </button>
       )}
 
       {error && (
-        <div className="text-sm" style={{ color: "var(--red)" }}>
+        <div className="text-[13px]" style={{ color: "var(--status-danger)" }}>
           {error}
         </div>
       )}
@@ -903,7 +920,7 @@ const AnswerForm = ({
 };
 
 /* ────────────────────────────────────────────────────────────
-   Upload drop (fullscreen-friendly)
+   Upload
    ──────────────────────────────────────────────────────────── */
 
 const UploadDrop = ({ runId }: { runId: string }) => {
@@ -921,7 +938,10 @@ const UploadDrop = ({ runId }: { runId: string }) => {
     try {
       const form = new FormData();
       form.set("file", file);
-      const resp = await fetch(`/api/onboarding/${runId}/upload`, { method: "POST", body: form });
+      const resp = await fetch(`/api/onboarding/${runId}/upload`, {
+        method: "POST",
+        body: form,
+      });
       if (!resp.ok) {
         const j = await resp.json().catch(() => ({}));
         throw new Error(j.error ?? "Upload failed");
@@ -964,23 +984,22 @@ const UploadDrop = ({ runId }: { runId: string }) => {
       />
       <div className="flex flex-col items-center gap-3 text-center">
         <div
-          className="w-14 h-14 rounded-2xl grid place-items-center"
+          className="w-11 h-11 rounded-[12px] grid place-items-center"
           style={{
-            background: busy ? "rgba(74,222,128,0.14)" : "var(--bg-inset)",
-            border: "1px solid var(--border)",
-            color: busy ? "var(--green-bright)" : "var(--text-dim)",
-            transition: "background 200ms, color 200ms",
+            background: "var(--bg-inset)",
+            border: "1px solid var(--border-default)",
+            color: busy || filename ? "var(--brand-green)" : "var(--fg-secondary)",
           }}
         >
           {busy ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
+            <Loader2 className="h-5 w-5 animate-spin" />
           ) : filename ? (
-            <CheckCircle2 className="h-6 w-6" style={{ color: "var(--green-bright)" }} />
+            <CheckCircle2 className="h-5 w-5" />
           ) : (
-            <Upload className="h-6 w-6" />
+            <Upload className="h-5 w-5" />
           )}
         </div>
-        <div className="text-[15px]" style={{ color: "var(--text)" }}>
+        <div className="text-[15px]" style={{ color: "var(--fg-primary)" }}>
           {busy ? (
             <>Parsing {filename}…</>
           ) : filename ? (
@@ -992,18 +1011,16 @@ const UploadDrop = ({ runId }: { runId: string }) => {
                 type="button"
                 onClick={() => inputRef.current?.click()}
                 className="underline"
-                style={{ color: "var(--green-bright)" }}
+                style={{ color: "var(--brand-green-link)" }}
               >
                 choose one
               </button>
             </>
           )}
         </div>
-        <div className="text-[11px] uppercase tracking-[0.12em]" style={{ color: "var(--text-mute)" }}>
-          PDF · DOCX · MD · YAML · JSON · TXT
-        </div>
+        <CodeLabel>PDF · DOCX · MD · YAML · JSON · TXT</CodeLabel>
         {error && (
-          <div className="text-sm mt-2" style={{ color: "var(--red)" }}>
+          <div className="text-[13px] mt-2" style={{ color: "var(--status-danger)" }}>
             {error}
           </div>
         )}
@@ -1013,7 +1030,7 @@ const UploadDrop = ({ runId }: { runId: string }) => {
 };
 
 /* ────────────────────────────────────────────────────────────
-   Review step
+   Review
    ──────────────────────────────────────────────────────────── */
 
 const ReviewStep = ({
@@ -1038,7 +1055,9 @@ const ReviewStep = ({
     setBusy(true);
     setError(null);
     try {
-      const resp = await fetch(`/api/onboarding/${runId}/approve`, { method: "POST" });
+      const resp = await fetch(`/api/onboarding/${runId}/approve`, {
+        method: "POST",
+      });
       if (!resp.ok) {
         const j = await resp.json().catch(() => ({}));
         throw new Error(j.error ?? "Approval failed");
@@ -1062,7 +1081,7 @@ const ReviewStep = ({
 
   return (
     <div className="flex flex-col gap-7 max-w-3xl mx-auto w-full">
-      <Eyebrow>Final review</Eyebrow>
+      <CodeLabel>Final review</CodeLabel>
       <Headline>Your policy is drafted. Have a look?</Headline>
       <Sublead>
         Nothing is live until you approve. Approving writes your policy, opens the Carbon Reserve sub-account,
@@ -1086,14 +1105,7 @@ const ReviewStep = ({
         />
       </div>
 
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{
-          background: "var(--bg-card)",
-          border: "1px solid var(--border)",
-          boxShadow: "var(--shadow-card)",
-        }}
-      >
+      <Card>
         <div
           className="flex items-center gap-1 px-3 pt-2"
           style={{ borderBottom: "1px solid var(--border-faint)" }}
@@ -1107,8 +1119,8 @@ const ReviewStep = ({
           <button
             type="button"
             onClick={download}
-            className="ml-auto mr-1 mb-0.5 inline-flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md hover:bg-[var(--bg-hover)]"
-            style={{ color: "var(--text-dim)" }}
+            className="ml-auto mr-1 mb-0.5 inline-flex items-center gap-1.5 text-[12px] px-2.5 py-1.5 rounded-[6px]"
+            style={{ color: "var(--fg-secondary)" }}
           >
             <FileText className="h-3.5 w-3.5" /> Download .md
           </button>
@@ -1116,28 +1128,36 @@ const ReviewStep = ({
 
         {view === "rules" && (
           <div className="overflow-x-auto px-5 py-4">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full text-[13px]">
               <thead>
-                <tr className="text-left text-[10px] uppercase tracking-[0.1em]" style={{ color: "var(--text-mute)" }}>
-                  <th className="py-2 pr-4 font-semibold">Category</th>
-                  <th className="py-2 pr-4 font-semibold">Method</th>
-                  <th className="py-2 pr-4 text-right font-semibold">Value</th>
+                <tr className="text-left">
+                  <th className="py-2 pr-4 font-normal">
+                    <CodeLabel>Category</CodeLabel>
+                  </th>
+                  <th className="py-2 pr-4 font-normal">
+                    <CodeLabel>Method</CodeLabel>
+                  </th>
+                  <th className="py-2 pr-4 text-right font-normal">
+                    <CodeLabel>Value</CodeLabel>
+                  </th>
                 </tr>
               </thead>
               <tbody className="tabular-nums">
                 {draft.reserveRules.map((r, i) => (
-                  <tr
-                    key={i}
-                    className="text-[13px]"
-                    style={{ borderTop: "1px solid var(--border-faint)" }}
-                  >
-                    <td className="py-2.5 pr-4 font-medium" style={{ color: "var(--text)" }}>
+                  <tr key={i} style={{ borderTop: "1px solid var(--border-faint)" }}>
+                    <td
+                      className="py-2.5 pr-4"
+                      style={{ color: "var(--fg-primary)" }}
+                    >
                       {r.category}
                     </td>
-                    <td className="py-2.5 pr-4" style={{ color: "var(--text-dim)" }}>
+                    <td className="py-2.5 pr-4" style={{ color: "var(--fg-secondary)" }}>
                       {r.method.replace(/_/g, " ")}
                     </td>
-                    <td className="py-2.5 pr-4 text-right" style={{ color: "var(--text)" }}>
+                    <td
+                      className="py-2.5 pr-4 text-right"
+                      style={{ color: "var(--fg-primary)" }}
+                    >
                       {r.method === "pct_spend"
                         ? `${(r.value * 100).toFixed(2)}%`
                         : r.method === "eur_per_kg_co2e"
@@ -1153,65 +1173,77 @@ const ReviewStep = ({
 
         {view === "doc" && (
           <pre
-            className="whitespace-pre-wrap text-[13px] leading-[1.6] font-mono px-5 py-4 max-h-[420px] overflow-auto"
-            style={{ color: "var(--text-dim)" }}
+            className="whitespace-pre-wrap text-[12px] leading-[1.6] font-mono px-5 py-4 max-h-[420px] overflow-auto m-0"
+            style={{ color: "var(--fg-secondary)" }}
           >
             {markdown}
           </pre>
         )}
-      </div>
+      </Card>
 
       {creditShortlist.length > 0 && (
-        <div
-          className="rounded-2xl p-5"
-          style={{
-            background: "var(--bg-card)",
-            border: "1px solid var(--border)",
-          }}
-        >
-          <div
-            className="text-[10px] uppercase tracking-[0.12em] font-semibold mb-3"
-            style={{ color: "var(--text-mute)" }}
-          >
-            Initial credit shortlist
-          </div>
-          <ul className="flex flex-col gap-2">
-            {creditShortlist.map((id) => {
-              const p = CREDIT_PROJECTS.find((pp) => pp.id === id);
-              if (!p) return (
-                <li key={id} className="text-[11px] font-mono" style={{ color: "var(--text-mute)" }}>
-                  {id}
-                </li>
-              );
-              return (
-                <li key={id} className="flex items-center justify-between text-[13px]">
-                  <span style={{ color: "var(--text)" }}>
-                    {p.name}{" "}
-                    <span style={{ color: "var(--text-mute)" }}>· {p.country}</span>
-                  </span>
-                  <span className="tabular-nums font-semibold" style={{ color: "var(--green-bright)" }}>
-                    €{p.pricePerTonneEur}
-                    <span className="text-[11px]" style={{ color: "var(--text-mute)" }}>/t</span>
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
+        <Card>
+          <CardBody>
+            <CodeLabel>Initial credit shortlist</CodeLabel>
+            <ul className="flex flex-col gap-2 mt-3">
+              {creditShortlist.map((id) => {
+                const p = CREDIT_PROJECTS.find((pp) => pp.id === id);
+                if (!p)
+                  return (
+                    <li
+                      key={id}
+                      className="text-[12px] font-mono"
+                      style={{ color: "var(--fg-muted)" }}
+                    >
+                      {id}
+                    </li>
+                  );
+                return (
+                  <li
+                    key={id}
+                    className="flex items-center justify-between text-[13px]"
+                  >
+                    <span style={{ color: "var(--fg-primary)" }}>
+                      {p.name}{" "}
+                      <span style={{ color: "var(--fg-muted)" }}>· {p.country}</span>
+                    </span>
+                    <span
+                      className="tabular-nums"
+                      style={{ color: "var(--brand-green)" }}
+                    >
+                      €{p.pricePerTonneEur}
+                      <span
+                        className="text-[11px] ml-0.5"
+                        style={{ color: "var(--fg-muted)" }}
+                      >
+                        /t
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </CardBody>
+        </Card>
       )}
 
       {calibrationNotes && (
         <div
-          className="rounded-2xl p-5 text-[13px] leading-relaxed"
+          className="rounded-[12px] p-5 text-[13px] leading-[1.5]"
           style={{
-            background: "rgba(107,155,210,0.04)",
-            border: "1px solid rgba(107,155,210,0.14)",
-            color: "var(--text-dim)",
+            border: "1px solid rgba(95,185,255,0.22)",
+            color: "var(--fg-secondary)",
           }}
         >
           <div
-            className="text-[10px] uppercase tracking-[0.12em] font-semibold mb-2 flex items-center gap-1.5"
-            style={{ color: "var(--blue)" }}
+            className="mb-2 flex items-center gap-1.5"
+            style={{
+              color: "var(--status-info)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "12px",
+              textTransform: "uppercase",
+              letterSpacing: "1.2px",
+            }}
           >
             <Sparkles className="h-3 w-3" /> Calibration notes
           </div>
@@ -1220,26 +1252,29 @@ const ReviewStep = ({
       )}
 
       {error && (
-        <div className="text-sm" style={{ color: "var(--red)" }}>
+        <div className="text-[13px]" style={{ color: "var(--status-danger)" }}>
           {error}
         </div>
       )}
 
       <div
-        className="sticky bottom-4 flex items-center justify-between gap-4 p-4 rounded-2xl"
+        className="sticky bottom-4 flex items-center justify-between gap-4 p-4 rounded-[12px]"
         style={{
-          background: "rgba(20,22,26,0.86)",
+          background: "var(--bg-translucent)",
           backdropFilter: "blur(12px)",
           WebkitBackdropFilter: "blur(12px)",
-          border: "1px solid var(--border-strong)",
-          boxShadow: "var(--shadow-pop)",
+          border: "1px solid var(--border-default)",
         }}
       >
-        <div className="text-xs" style={{ color: "var(--text-mute)" }}>
+        <div className="text-[12px]" style={{ color: "var(--fg-muted)" }}>
           Approving activates Carbo and creates your Carbon Reserve sub-account.
         </div>
-        <Button onClick={approve} disabled={busy} className="gap-2 h-12 px-7 text-[15px]">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+        <Button onClick={approve} disabled={busy}>
+          {busy ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-4 w-4" />
+          )}
           Approve &amp; activate
         </Button>
       </div>
@@ -1247,23 +1282,29 @@ const ReviewStep = ({
   );
 };
 
-const ReviewStat = ({ label, value, accent }: { label: string; value: string; accent?: boolean }) => (
+const ReviewStat = ({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) => (
   <div
-    className="rounded-xl p-4"
+    className="rounded-[12px] p-4 flex flex-col gap-2"
     style={{
-      background: "var(--bg-card)",
-      border: "1px solid var(--border)",
+      background: "var(--bg-surface)",
+      border: "1px solid var(--border-default)",
     }}
   >
+    <CodeLabel>{label}</CodeLabel>
     <div
-      className="text-[10px] uppercase tracking-[0.12em] font-semibold mb-1.5"
-      style={{ color: "var(--text-mute)" }}
-    >
-      {label}
-    </div>
-    <div
-      className="font-serif text-[24px] tabular-nums tracking-[-0.01em]"
-      style={{ color: accent ? "var(--green-bright)" : "var(--text)" }}
+      className="text-[24px] tabular-nums tracking-[-0.01em] leading-none"
+      style={{
+        color: accent ? "var(--brand-green)" : "var(--fg-primary)",
+        fontWeight: 400,
+      }}
     >
       {value}
     </div>
@@ -1283,13 +1324,13 @@ const TabBtn = ({
     type="button"
     onClick={onClick}
     className="relative text-[13px] font-medium px-3 py-2 transition-colors"
-    style={{ color: active ? "var(--text)" : "var(--text-mute)" }}
+    style={{ color: active ? "var(--fg-primary)" : "var(--fg-muted)" }}
   >
     {children}
     {active && (
       <span
         className="absolute left-2 right-2 -bottom-px h-[2px] rounded-full"
-        style={{ background: "var(--green-bright)" }}
+        style={{ background: "var(--brand-green)" }}
       />
     )}
   </button>
@@ -1300,35 +1341,35 @@ const TabBtn = ({
    ──────────────────────────────────────────────────────────── */
 
 const DoneStep = ({ seedCloseRunId }: { seedCloseRunId: string | null }) => (
-  <div className="flex flex-col items-center text-center gap-7 max-w-lg mx-auto">
+  <div className="flex flex-col items-start gap-7 max-w-lg mx-auto w-full">
     <div
-      className="w-20 h-20 rounded-full grid place-items-center"
+      className="w-11 h-11 rounded-[12px] grid place-items-center"
       style={{
-        background: "radial-gradient(circle, rgba(74,222,128,0.22), rgba(74,222,128,0.02) 70%)",
-        animation: "ob-pulse 2.4s ease-in-out infinite",
+        background: "var(--bg-inset)",
+        border: "1px solid var(--brand-green-border)",
+        color: "var(--brand-green)",
       }}
     >
-      <CheckCircle2 className="h-10 w-10" style={{ color: "var(--green-bright)" }} />
+      <CheckCircle2 className="h-5 w-5" />
     </div>
-    <Eyebrow>All set</Eyebrow>
-    <Headline>
-      Carbo is <span className="grad-text-green">live.</span>
-    </Headline>
+    <CodeLabel>All set</CodeLabel>
+    <Headline>Carbo is live.</Headline>
     <Sublead>
-      Your policy is active and your Carbon Reserve sub-account is ready. {seedCloseRunId
+      Your policy is active and your Carbon Reserve sub-account is ready.{" "}
+      {seedCloseRunId
         ? "We seeded a first monthly close so your dashboard has real data right away."
         : "We'll run your first close automatically at month-end once transactions arrive."}
     </Sublead>
     <div className="flex flex-col sm:flex-row gap-3 mt-2">
       <Link href="/">
-        <Button className="gap-2 h-12 px-7 text-[15px]">
+        <Button>
           Open dashboard
           <ArrowRight className="h-4 w-4" />
         </Button>
       </Link>
       {seedCloseRunId && (
         <Link href={`/close/${seedCloseRunId}`}>
-          <Button variant="secondary" className="gap-2 h-12 px-7 text-[15px]">
+          <Button variant="secondary">
             See first close
             <ArrowRight className="h-4 w-4" />
           </Button>
@@ -1339,7 +1380,7 @@ const DoneStep = ({ seedCloseRunId }: { seedCloseRunId: string | null }) => (
 );
 
 /* ────────────────────────────────────────────────────────────
-   Reset / cancel link
+   Reset
    ──────────────────────────────────────────────────────────── */
 
 const ResetLink = ({ runId }: { runId: string }) => {
@@ -1360,8 +1401,14 @@ const ResetLink = ({ runId }: { runId: string }) => {
       type="button"
       onClick={cancel}
       disabled={busy}
-      className="text-[11px] uppercase tracking-[0.12em] font-semibold inline-flex items-center gap-1.5 hover:text-[var(--red)] transition-colors"
-      style={{ color: "var(--text-mute)" }}
+      className="inline-flex items-center gap-1.5 hover:text-[var(--status-danger)] transition-colors"
+      style={{
+        color: "var(--fg-muted)",
+        fontFamily: "var(--font-mono)",
+        fontSize: "12px",
+        textTransform: "uppercase",
+        letterSpacing: "1.2px",
+      }}
     >
       {busy ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
       Start over

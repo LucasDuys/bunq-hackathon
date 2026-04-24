@@ -148,7 +148,7 @@ const TabButton = ({
   <button
     type="button"
     onClick={onClick}
-    className="inline-flex items-center gap-2 rounded-full px-3.5 h-9 text-[13px] font-medium transition-[transform,background,color,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring-accent)]"
+    className="inline-flex items-center gap-2 rounded-full px-3.5 h-9 text-[13px] font-normal transition-[transform,background,color,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring-accent)]"
     style={{
       color: active ? "var(--text)" : "var(--text-dim)",
       background: active ? "var(--bg-card-2)" : "transparent",
@@ -193,20 +193,12 @@ const HeroBriefing = ({
 
   return (
     <Card className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{
-          background:
-            "radial-gradient(900px 320px at 85% 0%, rgba(74,222,128,0.12), transparent 60%), radial-gradient(700px 260px at 10% 100%, rgba(107,155,210,0.08), transparent 55%)",
-        }}
-      />
       <div className="relative grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 p-8">
         <div className="flex flex-col gap-5 min-w-0">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" style={{ color: "var(--green-bright)" }} aria-hidden />
             <span
-              className="text-[11px] uppercase tracking-[0.14em] font-semibold"
+              className="text-[11px] uppercase tracking-[0.14em] font-normal"
               style={{ color: "var(--text-mute)" }}
             >
               Carbon CFO briefing · {dag?.executiveReport.analysis_period ?? "latest run"}
@@ -215,7 +207,7 @@ const HeroBriefing = ({
           </div>
           <div className="flex items-baseline gap-3 flex-wrap">
             <div
-              className="font-serif font-normal tabular-nums leading-none"
+              className="font-normal tabular-nums leading-none"
               style={{
                 fontSize: "clamp(56px, 7vw, 88px)",
                 letterSpacing: "-0.03em",
@@ -225,7 +217,7 @@ const HeroBriefing = ({
               {signedEur(netEur)}
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-mute)] font-semibold">
+              <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-mute)] font-normal">
                 Net / yr
               </span>
               <span className="text-xs text-[var(--text-dim)]">after tax, credits & ETS</span>
@@ -306,11 +298,11 @@ const MetricTile = ({
       border: "1px solid var(--border-faint)",
     }}
   >
-    <div className="text-[10.5px] uppercase tracking-[0.6px] font-semibold text-[var(--text-mute)]">
+    <div className="text-[10.5px] uppercase tracking-[0.6px] font-normal text-[var(--text-mute)]">
       {label}
     </div>
     <div
-      className="font-serif text-[24px] leading-none tabular-nums"
+      className="text-[24px] leading-none tabular-nums"
       style={{
         color:
           tone === "positive"
@@ -363,7 +355,7 @@ const TopRecommendations = ({ dag }: { dag: DagRunResult }) => {
                     >
                       #{r.rank}
                     </span>
-                    <span className="font-medium text-[var(--text)]">{r.title}</span>
+                    <span className="font-normal text-[var(--text)]">{r.title}</span>
                     {r.approval_required ? (
                       <Badge tone="warning">Approval required</Badge>
                     ) : null}
@@ -552,7 +544,7 @@ const SwitchesExplorer = ({ baselines }: { baselines: WorkspaceBaseline[] }) => 
                         {b.alternatives.length} alts
                       </span>
                     </div>
-                    <div className="font-medium text-[14px] text-[var(--text)] truncate">
+                    <div className="font-normal text-[14px] text-[var(--text)] truncate">
                       {b.merchantLabel}
                     </div>
                     <div className="flex items-center justify-between tabular-nums text-[12px]">
@@ -652,7 +644,7 @@ const BaselineDetail = ({
               <Badge tone="default">{baseline.subCategory.replace(/_/g, " ")}</Badge>
             )}
           </div>
-          <h3 className="text-xl font-semibold tracking-tight truncate">
+          <h3 className="text-xl font-normal tracking-tight truncate">
             {baseline.merchantLabel}
           </h3>
         </div>
@@ -661,7 +653,7 @@ const BaselineDetail = ({
             <span className="text-[10.5px] uppercase tracking-wide text-[var(--text-mute)]">
               Spend / yr
             </span>
-            <span className="font-serif text-[22px] leading-none tabular-nums">
+            <span className="text-[22px] leading-none tabular-nums">
               {fmtEur(baseline.annualSpendEur, 0)}
             </span>
           </div>
@@ -669,7 +661,7 @@ const BaselineDetail = ({
             <span className="text-[10.5px] uppercase tracking-wide text-[var(--text-mute)]">
               CO₂e / yr
             </span>
-            <span className="font-serif text-[22px] leading-none tabular-nums">
+            <span className="text-[22px] leading-none tabular-nums">
               {fmtKg(baseline.annualCo2eKg)}
             </span>
             <ConfidenceBar value={baseline.confidence} />
@@ -691,7 +683,7 @@ const BaselineDetail = ({
                   style={{ background: QUADRANT_COLOR[q] }}
                 />
                 <span
-                  className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+                  className="text-[11px] font-normal uppercase tracking-[0.08em]"
                   style={{ color: QUADRANT_COLOR[q] }}
                 >
                   {QUADRANT_LABEL[q]}
@@ -732,7 +724,7 @@ const AltRow = ({ alt, quadrantColor }: { alt: WorkspaceAlt; quadrantColor: stri
       >
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span className="font-medium text-[14px] text-[var(--text)]">{alt.name}</span>
+            <span className="font-normal text-[14px] text-[var(--text)]">{alt.name}</span>
             <span className="text-[10px] uppercase tracking-wide text-[var(--text-mute)]">
               {alt.type}
             </span>
@@ -943,7 +935,7 @@ const ResearchInspector = ({
                       }}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-[13.5px] truncate text-[var(--text)]">
+                        <span className="font-normal text-[13.5px] truncate text-[var(--text)]">
                           {label}
                         </span>
                         {r.cache_hit ? (
@@ -1005,7 +997,7 @@ const ClusterDetail = ({
         <div className="text-[10.5px] uppercase tracking-[0.6px] text-[var(--text-mute)] mb-1">
           Cluster
         </div>
-        <h3 className="text-lg font-semibold tracking-tight truncate">{label}</h3>
+        <h3 className="text-lg font-normal tracking-tight truncate">{label}</h3>
         <div className="flex items-center gap-4 text-[11px] text-[var(--text-mute)] mt-1.5 tabular-nums">
           <span>{result.alternatives.length} alternatives</span>
           <span>·</span>
@@ -1045,7 +1037,7 @@ const ResearchedAltCard = ({ alt }: { alt: ResearchedAlternative }) => {
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-[14.5px] text-[var(--text)]">{alt.name}</span>
+            <span className="font-normal text-[14.5px] text-[var(--text)]">{alt.name}</span>
             {alt.vendor && (
               <span className="text-[11px] text-[var(--text-mute)]">· {alt.vendor}</span>
             )}
@@ -1119,9 +1111,9 @@ const ResearchedAltCard = ({ alt }: { alt: ResearchedAlternative }) => {
               key={f}
               className="inline-flex items-center gap-1 rounded-full px-2 py-0.5"
               style={{
-                background: "var(--amber-deep)",
-                color: "var(--amber)",
-                border: "1px solid rgba(217,164,65,0.22)",
+                background: "transparent",
+                color: "var(--status-warning)",
+                border: "1px solid rgba(247,185,85,0.30)",
               }}
             >
               <Flag className="h-2.5 w-2.5" aria-hidden />
@@ -1131,7 +1123,7 @@ const ResearchedAltCard = ({ alt }: { alt: ResearchedAlternative }) => {
       </div>
       {alt.sources.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <div className="text-[10.5px] uppercase tracking-[0.6px] font-semibold text-[var(--text-mute)]">
+          <div className="text-[10.5px] uppercase tracking-[0.6px] font-normal text-[var(--text-mute)]">
             Evidence
           </div>
           <ul className="flex flex-col gap-1.5">
@@ -1150,7 +1142,7 @@ const ResearchedAltCard = ({ alt }: { alt: ResearchedAlternative }) => {
                   <FileSearch className="h-3.5 w-3.5 mt-0.5 text-[var(--text-mute)]" aria-hidden />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[12.5px] font-medium text-[var(--text)] truncate">
+                      <span className="text-[12.5px] font-normal text-[var(--text)] truncate">
                         {s.title}
                       </span>
                       <span className="text-[10.5px] text-[var(--text-mute)]">
@@ -1290,7 +1282,7 @@ export const ImpactsWorkspace = ({
         className="sticky top-14 z-20 -mx-2 px-2 py-2 flex items-center gap-2 overflow-x-auto"
         style={{
           background:
-            "linear-gradient(180deg, var(--bg) 0%, var(--bg) 60%, transparent 100%)",
+            "linear-gradient(180deg, var(--bg-canvas) 0%, var(--bg-canvas) 60%, transparent 100%)",
           backdropFilter: "blur(8px)",
         }}
       >
@@ -1371,7 +1363,7 @@ export const ImpactsWorkspace = ({
               style={{ color: "var(--green-bright)" }}
               aria-hidden
             />
-            <h2 className="text-base font-semibold">No DAG run persisted yet</h2>
+            <h2 className="text-base font-normal">No DAG run persisted yet</h2>
             <p className="text-sm text-[var(--text-dim)] max-w-md mx-auto">
               Run impact research to populate the research inspector with web-sourced evidence per
               cluster.

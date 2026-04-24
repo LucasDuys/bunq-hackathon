@@ -1,6 +1,6 @@
 import { Target } from "lucide-react";
 import type { Quadrant } from "@/lib/agent/impacts";
-import { Card, CardBody } from "@/components/ui";
+import { Card, CardBody, CodeLabel } from "@/components/ui";
 import type { MatrixPoint } from "@/components/ImpactMatrix";
 import { RunImpactResearch } from "@/components/RunImpactResearch";
 import type { PlannableAlternative } from "@/components/ScenarioPlanner";
@@ -154,27 +154,44 @@ export default async function ImpactsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-6">
+      <div className="flex items-start justify-between gap-6 flex-wrap">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Impact workspace</h1>
-          <p className="text-sm text-[var(--text-dim)] mt-1 max-w-[64ch]">
+          <CodeLabel>Impact workspace</CodeLabel>
+          <h1
+            className="text-[32px] font-normal leading-[1.00] tracking-[-0.015em] mt-2"
+            style={{ color: "var(--fg-primary)" }}
+          >
+            Impact workspace
+          </h1>
+          <p
+            className="text-[14px] mt-2 max-w-[64ch]"
+            style={{ color: "var(--fg-secondary)" }}
+          >
             Where swapping a vendor or policy cuts the most CO₂e per euro — grounded in DEFRA,
             Ember and vendor sustainability pages, judged by our green and cost LLM panels.
           </p>
         </div>
-        {!hasData && <RunImpactResearch hasData={hasData} />}
+        <RunImpactResearch hasData={hasData} />
       </div>
 
       {!hasData ? (
         <Card>
-          <CardBody className="py-12 text-center space-y-3">
+          <CardBody className="py-14 text-center flex flex-col items-center gap-3">
             <Target
-              className="h-8 w-8 mx-auto"
-              style={{ color: "var(--green-bright)" }}
+              className="h-8 w-8"
+              style={{ color: "var(--brand-green)" }}
               aria-hidden
             />
-            <h2 className="text-base font-semibold">No impact research yet</h2>
-            <p className="text-sm text-[var(--text-dim)] max-w-md mx-auto">
+            <h2
+              className="text-[17px] font-normal"
+              style={{ color: "var(--fg-primary)", letterSpacing: "-0.16px" }}
+            >
+              No impact research yet
+            </h2>
+            <p
+              className="text-[13px] max-w-md"
+              style={{ color: "var(--fg-secondary)" }}
+            >
               Run impact research to analyse the last 90 days of spend across cloud, travel,
               utilities, food and procurement, and surface realistic alternatives — with sources,
               confidence, and a CFO-grade net impact number.

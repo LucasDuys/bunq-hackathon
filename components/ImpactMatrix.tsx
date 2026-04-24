@@ -78,8 +78,8 @@ const MatrixTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
   const good = "text-[var(--status-success)]";
   const bad = "text-[var(--status-danger)]";
   return (
-    <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] p-3 text-xs max-w-xs" style={{ boxShadow: "0 0 0 1px var(--border-default)" }}>
-      <div className="font-medium text-[var(--fg-primary)] mb-0.5">{p.altName}</div>
+    <div className="rounded-[12px] border border-[var(--border-default)] bg-[var(--bg-surface)] p-3 text-xs max-w-xs">
+      <div className="text-[var(--fg-primary)] mb-0.5">{p.altName}</div>
       <div className="text-[var(--fg-muted)] mb-2">from {p.baselineLabel}</div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 tabular-nums">
         <span className="text-[var(--fg-muted)]">Cost</span>
@@ -96,10 +96,11 @@ const MatrixTooltip = ({ active, payload }: { active?: boolean; payload?: Toolti
         <span className="capitalize">{p.feasibility.replace(/_/g, " ")}</span>
       </div>
       <div
-        className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium"
+        className="mt-2 inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px]"
         style={{
-          backgroundColor: `color-mix(in srgb, ${quadrantVar[p.quadrant]} 15%, transparent)`,
+          backgroundColor: `color-mix(in srgb, ${quadrantVar[p.quadrant]} 12%, transparent)`,
           color: quadrantVar[p.quadrant],
+          border: "1px solid var(--border-faint)",
         }}
       >
         <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: quadrantVar[p.quadrant] }} />
@@ -139,16 +140,16 @@ export const ImpactMatrix = ({ points }: { points: MatrixPoint[] }) => {
         <ScatterChart margin={{ top: 24, right: 32, bottom: 48, left: 56 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-default)" />
           <ReferenceArea x1={-xBound} x2={0} y1={-yBound} y2={0} fill={quadrantTintVar.win_win} fillOpacity={1} stroke="none">
-            <Label value="Win-win" position="insideBottomLeft" offset={12} fill={quadrantVar.win_win} fontSize={11} fontWeight={600} />
+            <Label value="Win-win" position="insideBottomLeft" offset={12} fill={quadrantVar.win_win} fontSize={11} fontWeight={400} />
           </ReferenceArea>
           <ReferenceArea x1={0} x2={xBound} y1={-yBound} y2={0} fill={quadrantTintVar.pay_to_decarbonize} fillOpacity={1} stroke="none">
-            <Label value="Pay to decarbonize" position="insideBottomRight" offset={12} fill={quadrantVar.pay_to_decarbonize} fontSize={11} fontWeight={600} />
+            <Label value="Pay to decarbonize" position="insideBottomRight" offset={12} fill={quadrantVar.pay_to_decarbonize} fontSize={11} fontWeight={400} />
           </ReferenceArea>
           <ReferenceArea x1={-xBound} x2={0} y1={0} y2={yBound} fill={quadrantTintVar.status_quo_trap} fillOpacity={1} stroke="none">
-            <Label value="Status-quo trap" position="insideTopLeft" offset={12} fill={quadrantVar.status_quo_trap} fontSize={11} fontWeight={600} />
+            <Label value="Status-quo trap" position="insideTopLeft" offset={12} fill={quadrantVar.status_quo_trap} fontSize={11} fontWeight={400} />
           </ReferenceArea>
           <ReferenceArea x1={0} x2={xBound} y1={0} y2={yBound} fill={quadrantTintVar.avoid} fillOpacity={1} stroke="none">
-            <Label value="Avoid" position="insideTopRight" offset={12} fill={quadrantVar.avoid} fontSize={11} fontWeight={600} />
+            <Label value="Avoid" position="insideTopRight" offset={12} fill={quadrantVar.avoid} fontSize={11} fontWeight={400} />
           </ReferenceArea>
           <ReferenceLine x={0} stroke="var(--border-strong)" strokeWidth={1} />
           <ReferenceLine y={0} stroke="var(--border-strong)" strokeWidth={1} />
