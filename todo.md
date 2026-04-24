@@ -2,6 +2,22 @@
 
 Everything the plan called for but we didn't ship — organized by blast radius. Hackathon MVP is functional; this is the list for anyone (or future-you) picking up after the demo.
 
+## Matrix DAG (commit `b5b4c5e`) — follow-ups
+
+The 7-agent DAG (`lib/agents/dag/`) now runs end-to-end behind `/impacts`. Deterministic baseline → parallel Green Alt + Cost Savings (Sonnet 4.6, cached system prompts) → parallel Green Judge + Cost Judge → Credit Strategy → Executive Report. Plan + budget in `plans/matrix-dag.md`. What this branch did **not** ship:
+
+- [ ] **No live web search.** Alternatives come from a curated seed library in `lib/agents/dag/tools.ts` (`GREEN_TEMPLATES` / `COST_TEMPLATES`). Sources are public URLs (DEFRA / Ember / Pure Energie / Flexera / Poore & Nemecek) cited as references, **not** live fetches. If we want live evidence, add a `WebFetch`-backed tool + caching layer and let Green Alt resolve candidate alternatives via tool-use instead of a pre-baked template list.
+- [ ] **No Anthropic `tool_use` loop.** Tools are dispatched in code *before* each Sonnet call and their results land in the user message. Swap to a true tool-use loop if we want agents to bounded-iteratively pull `getHistoricalSpendByMerchant`, `lookupBarcodeProduct`, etc. — `env.maxToolCalls=8` already exists as a guard.
+- [ ] **`agent_messages` table populated.** Schema + migration shipped; no writer wired up. `llm.ts` already returns `tokensIn / tokensOut / cached` — plumb those into an insert per call so we get a per-call trace instead of only the final `DagRunResult` JSON.
+- [ ] **`/agents/[runId]` inspector page.** Full payload is persisted in `agent_runs.dag_payload`; no UI yet. Useful for debugging live-mode regressions.
+- [ ] **PDF render of `executiveReport.pdf_render_payload`.** Stub field only; no renderer. Plumb into the existing report flow once the dashboard story is signed off.
+- [ ] **Hook the DAG into `lib/agent/close.ts`.** Today the close flow still uses the single-Sonnet question generator + narrative. `docs/architecture-comparison.md` calls for replacing `QUESTIONS_GENERATED` with `runDag()`; keep `AWAITING_ANSWERS` as an optional state triggered only when any agent returns `required_context_question`.
+- [ ] **Live-mode smoke test.** `ANTHROPIC_MOCK=0 ANTHROPIC_API_KEY=sk-... npm run dev` + `POST /api/impacts/research` — verify Zod parsing under real Sonnet output, confirm cache hit rate via `cache_read_input_tokens`, confirm mock fallback engages cleanly on parse error.
+- [ ] **Jurisdiction table hardcoded.** `lib/agents/dag/tools.ts::JURISDICTIONS` covers NL/DE/FR/EU with 2024 rates + a flat €80/tCO₂e ETS assumption. No sector-specific ETS exposure. Replace with a signed data source (EC ETS auction results + national tax lookup) when we move past hackathon scope.
+- [ ] **Design tokens migration only partial.** `/impacts` + `components/ImpactMatrix.tsx` now reference `var(--status-*)` / `var(--quadrant-*)` from `app/globals.css`. The rest of the app (Nav, dashboard, close pages, `components/ui.tsx`) still uses raw `emerald-*` / `zinc-*`. Needs a full DESIGN.md migration PR — see "UI / UX polish" below.
+- [ ] **Recurring-spend detector is coarse.** `detectRecurringSpend` uses a month-bucket set count over 6 months (≥3 months = recurring). No variance / amount-stability check. Good enough for demo; swap for a proper periodicity detector before production.
+- [ ] **Implementation cost = 0 everywhere.** `creditStrategy.ts::IMPLEMENTATION_COST_DEFAULT` is hard-coded to 0 because we don't want to invent numbers. Payback-period math consequently always returns 0. Wire a small per-alternative-type implementation-cost table when the UX calls for it.
+
 ## Not yet wired to real services
 Mock mode works end-to-end, but we haven't driven live traffic through either external dependency.
 
