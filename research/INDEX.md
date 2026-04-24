@@ -17,3 +17,4 @@ Each brief ends with a **Decisions for this build** list that the code reference
 | 10 | [Append-only ledger](./10-append-only-ledger.md) | `lib/audit/append.ts` + migrate triggers |
 | 11 | [Impact matrix](./11-impact-matrix.md) | `app/categories/page.tsx` |
 | 12 | [Demo choreography](./12-demo-choreography.md) | `scripts/reset-demo.ts` |
+| 13 | [Tax savings & incentives](./13-tax-savings-incentives.md) | `lib/tax/*`, `app/tax-savings/page.tsx` |

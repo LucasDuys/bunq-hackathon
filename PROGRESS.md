@@ -39,13 +39,110 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Base UI components: Card, Stat, Badge, Button, ConfidenceBar, Nav (2026-04-23)
 - [x] Start Close button wired to backend (2026-04-23)
 
+## Tax Savings & Incentives (Ben)
+
+- [x] `lib/tax/incentives.ts` — Dutch EIA/MIA/Vamil + EU ETS scheme definitions with rates, thresholds, sources (2026-04-24)
+- [x] `lib/tax/alternatives.ts` — Green alternative mappings per emission factor (flight→train, gas→electric, meat→plant, etc.) with price ratios (2026-04-24)
+- [x] `lib/tax/savings.ts` — Per-transaction + monthly rollup tax savings calculator (2026-04-24)
+- [x] `lib/queries.ts` — `getTaxSavingsForMonth()` query wired to tax module (2026-04-24)
+- [x] `app/tax-savings/page.tsx` — Full tax savings page: scheme breakdown, category recommendations, switch tips (2026-04-24)
+- [x] Dashboard tax savings card with €79,952 annual projection + link to detail page (2026-04-24)
+- [x] Nav updated with Tax savings link (2026-04-24)
+- [x] `research/13-tax-savings-incentives.md` — Full research brief: NL/EU schemes, category switch savings, demo numbers (2026-04-24)
+
+## Environmental Impact Analysis (Ben)
+
+- [x] `lib/benchmarks.ts` — Industry benchmark data (Exiobase sector averages) for 8 spending categories (2026-04-24)
+- [x] `lib/agent/impact-analysis.ts` — Claude Sonnet impact analysis agent: benchmark comparison, switch opportunity ranking, AI narrative generation with mock mode (2026-04-24)
+- [x] `app/api/impact/analyze/route.ts` — API route to trigger impact analysis (2026-04-24)
+- [x] `components/BenchmarkChart.tsx` — Horizontal bar chart comparing user intensity vs industry average per category (2026-04-24)
+- [x] `components/ImpactSimulator.tsx` — "What if" client-side simulator: toggle spending switches and see projected CO₂e + EUR savings update live (2026-04-24)
+- [x] `app/impact/page.tsx` — Full impact analysis page: KPIs, AI narrative, benchmark chart, top 5 switches, what-if simulator, methodology (2026-04-24)
+- [x] Dashboard impact CTA card with top switch opportunity + CO₂e avoidable per year (2026-04-24)
+- [x] Nav updated with Impact link (2026-04-24)
+
+## Frontend — UI Overhaul (Ben)
+
+- [x] `app/globals.css` — Full design token system: near-black palette, green accents, border/shadow tokens, ca-card gradient class, keyframe animations (pulse-dot, shimmer, slide-up, bar-grow, count-flash), reduced-motion support (2026-04-24)
+- [x] `components/ui.tsx` — Redesigned primitives: Card (ca-card), Stat (Instrument Serif numbers), Badge (toned), Button (pill-shaped gradient), ConfidenceBar (glow effect), new KpiChip + PulseDot components (2026-04-24)
+- [x] `app/layout.tsx` — Instrument Serif font loading, dark-only body, widened max-width (2026-04-24)
+- [x] `components/TrendChart.tsx` — Green gradient fill, dark tooltip with backdrop blur, removed grid strokes (2026-04-24)
+- [x] `app/page.tsx` — Hero reserve card with radial glow, KPI chip column, pipeline explanation, category spend bars (2026-04-24)
+- [x] `app/categories/page.tsx` — Stagger animations, gradient share bars with glow (2026-04-24)
+- [x] `app/close/[id]/page.tsx` — Pipeline steps as grid cards with green active state + pulse (2026-04-24)
+- [x] `app/ledger/page.tsx` — Consistent dark theme tokens (2026-04-24)
+- [x] `app/reserve/page.tsx` — Serif stat cards, gradient credit project cards (2026-04-24)
+- [x] `app/report/[month]/page.tsx` — Dark theme, serif E1-7 stats, styled methodology section (2026-04-24)
+
+## UI Polish & Fixes (Ben)
+
+- [x] `app/globals.css` — Section divider CSS (gradient lines, label centering), bunq accent colors (--blue, --purple + soft variants), class-based plain divider (replaced broken `:has()` pseudo-class) (2026-04-24)
+- [x] `components/ui.tsx` — SectionDivider + DonutChart components added (2026-04-24)
+- [x] `components/TrendChart.tsx` — Conditional dual-axis (spend line only when data exists), domain fallback for empty CO₂e, custom legend, formatter type fix (2026-04-24)
+- [x] Section dividers added to all pages: dashboard, impact, tax-savings, categories, close, ledger, reserve, report (2026-04-24)
+- [x] `app/tax-savings/page.tsx` — Converted from light Tailwind classes to dark-theme CSS variables (2026-04-24)
+- [x] `app/impact/page.tsx` — Section dividers between all content blocks (2026-04-24)
+
+## Backend — Baseline Agent (Lucas)
+
+- [x] `lib/agents/dag/spendBaseline.ts` — Spend & emissions baseline agent with structured output via Anthropic tool_use (2026-04-24)
+- [x] `lib/agents/dag/` — DAG routing, reasons, types infrastructure (2026-04-24)
+- [x] `scripts/dag-smoke.ts` — DAG smoke test script (2026-04-24)
+- [x] `app/api/baseline/run/route.ts` — API route for baseline agent (2026-04-24)
+
 ## Documentation
 
-- [x] DESIGN.md — 500+ line visual/animation spec (2026-04-23)
+- [x] DESIGN.md — 14-section visual/animation spec, Wise + bunq-inspired (2026-04-23)
 - [x] Research docs for agent design and LLM ops (2026-04-23)
 - [x] PROGRESS.md created (2026-04-24)
+- [x] TODO.md updated — marked completed UI/impact items, added logging note (2026-04-25)
 
-## bunq Sandbox / Live Integration
+## Onboarding
+
+- [x] Agentic onboarding state machine with 11 states, DB-persisted, audit-event on every transition (`lib/agent/onboarding.ts`) (2026-04-24)
+- [x] Two new tables: `onboarding_runs`, `onboarding_qa`, with indexes (`lib/db/schema.ts`, `scripts/migrate.ts`) (2026-04-24)
+- [x] Three-track UX: generate from interview, upload existing policy, mix (upload + refine) (`app/onboarding/page.tsx`) (2026-04-24)
+- [x] LLM interviewer (Sonnet) with deterministic fallback plan — 15-question topic tree, skip logic, profile accumulation (`lib/agent/onboarding-interviewer.ts`) (2026-04-24)
+- [x] LLM drafter (Sonnet) produces Zod-valid Policy + CSRD-flavoured markdown document + calibration notes (`lib/agent/onboarding-drafter.ts`) (2026-04-24)
+- [x] LLM parser for uploaded policies — PDF via Sonnet multimodal, DOCX via adm-zip, MD/YAML/JSON/TXT native (`lib/agent/onboarding-parser.ts`) (2026-04-24)
+- [x] Profile → calibrated policy heuristics (ambition / travel / cloud multipliers, sector-aware procurement) (`lib/onboarding/calibration.ts`) (2026-04-24)
+- [x] Deterministic markdown renderer for auditor-ready policy docs (`lib/onboarding/markdown.ts`) (2026-04-24)
+- [x] Finalization writes policy row, deactivates prior, mocks/creates bunq sub-accounts, seeds first close run (2026-04-24)
+- [x] API routes: `/api/onboarding/start`, `[runId]/upload`, `[runId]/answer`, `[runId]/approve`, `[runId]/revise`, `[runId]/cancel` (2026-04-24)
+- [x] OnboardingClient.tsx — track picker, MC/numeric/free-text/confirm answer form, drag-drop upload, draft preview with rules-table + markdown view + .md download, approve + reset controls (2026-04-24)
+- [x] Dashboard banner + Nav link shown when no active policy or active onboarding run exists (2026-04-24)
+- [x] Example policy fixture at `fixtures/example-policy.md` to demo the upload path (2026-04-24)
+
+## Research Agent (plans/matrix-research.md)
+
+- [x] Env vars: `RESEARCH_DISABLED`, `RESEARCH_MAX_SEARCHES_PER_CLUSTER=3`, `RESEARCH_CACHE_TTL_DAYS=30`, `RESEARCH_CONCURRENCY=4`, `RESEARCH_MAX_CLUSTERS=20` (`lib/env.ts`) (2026-04-25)
+- [x] New tables `research_cache` + `web_search_audit`, plus `server_tool_use_count` + `web_search_requests` on `agent_messages` (schema + migration) (2026-04-25)
+- [x] New types: `EvidenceSource`, `ResearchedAlternative`, `ResearchResult`, `ResearchOutput`, `ResearchedPool` (`lib/agents/dag/types.ts`) (2026-04-25)
+- [x] `callAgentWithTools()` wrapper around `beta.messages.toolRunner` — extracts `web_search_requests`, citation blocks, server-tool-use count (`lib/agents/dag/llm.ts`) (2026-04-25)
+- [x] Research Agent (`lib/agents/dag/research.ts`): native `web_search_20250305` + 2 `betaZodTool`s (`lookup_emission_factor`, terminal `record_alternative`); 4-wide concurrent fan-out; per-cluster sha256 cache with 30-day TTL and ISO-week bucket; fallback ladder live → cache → template → empty; mock mode synthesizes from `GREEN_TEMPLATES` deterministically (2026-04-25)
+- [x] Incumbent resolver (`getIncumbentMerchant` in `lib/agents/dag/tools.ts`) — Research Agent skips "Switch to X" when X is the incumbent (2026-04-25)
+- [x] Green/Cost agents accept `researchedPool?` — prefer researched over template candidates; source provenance flows through (`greenAlternatives.ts`, `costSavings.ts`) (2026-04-25)
+- [x] Green/Cost Judges gain `evidence_quality` — weighted by source count, trusted-domain hits, freshness; zero-source rows auto-rejected regardless of self-score (`greenJudge.ts`, `costJudge.ts`) (2026-04-25)
+- [x] `runDag` inserts research between baseline and proposal fan-out; emits `agent.research.run` + `agent.research.cache_hit` audit events with URL fingerprints (`lib/agents/dag/index.ts`) (2026-04-25)
+- [x] Executive Report gains `evidence_source_count` + `web_search_spend_eur` KPIs; limitations surface clusters with no viable alternative (`lib/agents/dag/executiveReport.ts`) (2026-04-25)
+- [x] `persistDagRun` joins researched sources onto the flattened `impact_recommendations` rows so the UI renders real citation chips (2026-04-25)
+- [x] Agent doc `docs/agents/08-research.md` + DAG overview updated (2026-04-25)
+- [x] `/impacts` gains Research-evidence KPI card (clusters, sources, web-search spend, freshness) and `ScenarioPlanner` slider — "adopt top N switches → projected Δ cost + Δ CO₂e + avg confidence" (2026-04-25)
+- [x] Smoke script `scripts/smoke-research.ts` — mock-mode DAG E2E check; second run confirms cache hits (2026-04-25)
+
+## Merge — matrix → merge-branch (2026-04-25)
+
+- [x] Merged `matrix` into `merge-branch` — onboarding agent tracks, `/impacts` matrix page, research agent DAG node, and evidence-weighted judges now land on the shared branch (2026-04-25)
+- [x] Consolidated duplicate impact surfaces: dropped legacy `/impact` page + `/api/impact/analyze` route, `components/ImpactSimulator.tsx`, `components/BenchmarkChart.tsx` in favor of matrix's `/impacts` + `ImpactMatrix` + `ScenarioPlanner` + `RunImpactResearch` (2026-04-25)
+- [x] Removed orphaned baseline-agent helpers after accepting matrix's deterministic spendBaseline: `lib/agents/dag/reasons.ts`, `lib/agents/dag/routing.ts`, `lib/agents/dag/__tests__/spendBaseline.test.ts`, `scripts/baseline-mock-run.ts` (fields they assumed were collapsed into matrix's enriched `PriorityTarget`) (2026-04-25)
+- [x] Kept tax-savings feature (`lib/tax/*`, `app/tax-savings`, `getTaxSavingsForMonth`) and `lib/agent/impact-analysis.ts` since the home KPI row still depends on `buildCategoryAnalyses` (2026-04-25)
+- [x] Nav split into server `Nav.tsx` (queries onboarding + policy state) + client `NavLinks.tsx` (pathname-based active pill) so the onboarding link stays accurate without round-tripping through a status API (2026-04-25)
+- [x] `app/globals.css` now carries both design systems: the dark-first Carbo tokens from merge-branch *and* matrix's semantic aliases (`--fg-*`, `--bg-surface*`, `--status-*`, `--quadrant-*`, `--brand-forest-*`, `--brand-mint-*`) so `ImpactMatrix`/`ScenarioPlanner` render against the same palette without raw hex (2026-04-25)
+- [x] Home page keeps the polished dark hero and adds matrix's onboarding banner (themed to the dark palette) when `hasPolicy=false` or an onboarding run is active (2026-04-25)
+- [x] `spendBaseline.run` ctx parameter relaxed to optional so `/api/baseline/run` + dag smoke callers keep working alongside the DAG entry (2026-04-25)
+- [x] `npx tsc --noEmit` green end-to-end after merge (2026-04-25)
+
+## bunq Sandbox / Live Integration (2026-04-25)
 
 - [x] `scripts/bunq-make-sandbox-user.ts` — mints a fresh sandbox user + API key via `/v1/sandbox-user-person` (2026-04-25)
 - [x] `lib/bunq/context.ts` — file-based persistence (`.bunq-context.json`) for installation token, server pub key, sub-account ids (2026-04-25)
@@ -54,7 +151,8 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `scripts/bunq-sugardaddy.ts` — RequestInquiry to `sugardaddy@bunq.com` to top up sandbox balance (2026-04-25)
 - [x] `scripts/dev-live.sh` — boots cloudflared quick tunnel + Next dev server, prints public webhook URL (2026-04-25)
 - [x] Webhook handler now loads server pub key from `.bunq-context.json` (was: empty env var) and dedupes on `bunqTxId` for bunq's 5x retry (2026-04-25)
-- [x] `intraUserTransfer` honors `DRY_RUN` — logs to audit chain instead of moving sandbox money when set (2026-04-25)
+- [x] `intraUserTransfer` honors `DRY_RUN` — logs to audit chain instead of moving sandbox money when set; carries `closeRunId` for chain linkage (2026-04-25)
 - [x] `reset-demo.ts` — fixed leftover `pnpm tsx` calls to `npx tsx` (2026-04-25)
 - [x] `scripts/fire-test-event.ts` (`npm run dev:fire`) — POSTs synthetic bunq MUTATION events to the local webhook handler so the demo has live ingestion without any real bunq (2026-04-25)
 - [x] Wired close state machine to actually call `intraUserTransfer` for `reserve_transfer` actions (was: audit-log only). Verified via end-to-end run: `bunq.transfer.dry_run` audit row now follows every `action.reserve_transfer`. (2026-04-25)
+- [x] Auto-execute under-threshold close runs per `CONCEPT.md` "Agentic action": `finalizeEstimates` calls `approveAndExecute("system")` inline when `outcome.requiresApproval` is false; audit row marked `actor: "system", auto: true`. (2026-04-25)

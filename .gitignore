@@ -9,7 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+env.local
 # testing
 /coverage
 
@@ -48,3 +48,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# forge: per-machine state stays local; shared artefacts (specs, plans, collab) commit.
+/.forge/*
+!/.forge/collab/
+!/.forge/collab/**
+!/.forge/specs/
+!/.forge/specs/**
+!/.forge/plans/
+!/.forge/plans/**
