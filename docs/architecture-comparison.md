@@ -89,7 +89,7 @@ baseline ─► research ──┤                                 ├─► gre
 |---|---|---|
 | Judge LLM verdict overridden in code | `greenJudge.ts:160-161, 253` and `costJudge.ts:150-156` | Document explicitly that judges are validators; surface the override count per run |
 | Credit Strategy has no audit trail | `creditStrategy.ts` (no `ctx.auditLog` call) | Add `agent.credit_strategy.run` audit event with input + output digest |
-| Multi-tenant `researchCache` leakage | `researchCache` PK is `(category, jurisdiction, policyDigest, week)` — no `orgId` | Either add `orgId` to PK (loses amortization) or strip URLs to org-neutral fields before cache write |
+| Multi-tenant `researchCache` leakage | `researchCache` PK is `(category, jurisdiction, policyDigest, week)` — no `orgId` | **Resolved (R003, option B):** `research.ts::orgNeutralizeForCache` strips per-row source URLs to a `https://{domain}` prefix on cache insert + nulls snippets. Multi-tenant amortization preserved; cross-tenant reads only see domain-only evidence. Live (current invocation) results keep full URLs without round-tripping through the cache. PK + schema unchanged. |
 | Silent mock fallback masks API degradation | every proposal agent's `if (isMock())` branch | Emit `agent.<name>.fallback_to_mock` audit event + dashboard tile |
 | Two parallel agent paths | `runDag()` vs `impacts.ts` | Pick one in the next spec; deprecate the other |
 | Old close machine LLM still fires | `questions.ts` + `narrative.ts` | Replace with `runDag()` call inside `close.ts::QUESTIONS_GENERATED` |

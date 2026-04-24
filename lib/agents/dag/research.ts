@@ -140,6 +140,25 @@ const readCache = (key: string): ResearchedAlternative[] | null => {
   }
 };
 
+// R003 — strip per-row identifying detail before persisting to the multi-tenant
+// research_cache. Cache rows are keyed by (category, jurisdiction, policyDigest, week)
+// without orgId, so two NL orgs on the default policy share rows. We keep the
+// amortization benefit but neutralize the payload: source URLs collapse to
+// `https://{domain}`, snippets drop, vendor URLs collapse to the same prefix.
+// Live (non-cached) runs still return full URLs from the in-flight invocation.
+const orgNeutralizeForCache = (alts: ResearchedAlternative[]): ResearchedAlternative[] =>
+  alts.map((a) => ({
+    ...a,
+    url: a.url ? `https://${new URL(a.url).hostname.replace(/^www\./, "")}` : null,
+    sources: a.sources.map((s) => ({
+      title: s.domain || s.title,
+      url: s.domain ? `https://${s.domain}` : s.url,
+      snippet: null,
+      domain: s.domain,
+      fetched_at: s.fetched_at,
+    })),
+  }));
+
 const writeCache = (params: {
   key: string;
   orgId: string;
@@ -153,6 +172,7 @@ const writeCache = (params: {
 }): void => {
   const ttl = env.researchCacheTtlDays * 86_400;
   const sourcesCount = params.alternatives.reduce((s, a) => s + a.sources.length, 0);
+  const neutralized = orgNeutralizeForCache(params.alternatives);
   db.insert(researchCache)
     .values({
       cacheKey: params.key,
@@ -162,7 +182,7 @@ const writeCache = (params: {
       jurisdiction: params.jurisdiction,
       policyDigest: params.policyDigest,
       weekBucket: params.weekBucket,
-      alternativesJson: JSON.stringify(params.alternatives),
+      alternativesJson: JSON.stringify(neutralized),
       sourcesCount,
       searchRequestsUsed: params.searchesUsed,
       ttlSec: ttl,
@@ -170,7 +190,7 @@ const writeCache = (params: {
     .onConflictDoUpdate({
       target: researchCache.cacheKey,
       set: {
-        alternativesJson: JSON.stringify(params.alternatives),
+        alternativesJson: JSON.stringify(neutralized),
         sourcesCount,
         searchRequestsUsed: params.searchesUsed,
         createdAt: Math.floor(Date.now() / 1000),
