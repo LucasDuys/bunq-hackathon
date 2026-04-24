@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git pull *)",
+      "Bash(git fetch *)",
+      "WebSearch",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(git rebase *)",
+      "Bash(git checkout *)",
+      "Bash(npx tsc *)",
+      "Bash(pnpm typecheck *)",
+      "Bash(npm run *)",
+      "PowerShell(pnpm typecheck *)",
+      "PowerShell(corepack enable *)",
+      "PowerShell(Get-Command *)",
+      "PowerShell(npx tsc --noEmit 2>&1 | Select-Object -First 60)",
+      "PowerShell(npx -p typescript tsc --noEmit 2>&1 | Select-Object -First 60)",
+      "Bash(git merge *)",
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(mkdir -p design-bundle)",
+      "Bash(tar xzf *)",
+      "Bash(git cherry-pick *)",
+      "Bash(curl *)",
+      "WebFetch(domain:localhost)",
+      "Bash(python -m json.tool)",
+      "Bash(git stash *)",
+      "Bash(git diff *)"
+    ]
+  }
+}

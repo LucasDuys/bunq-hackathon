@@ -73,6 +73,7 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `app/ledger/page.tsx` — Consistent dark theme tokens (2026-04-24)
 - [x] `app/reserve/page.tsx` — Serif stat cards, gradient credit project cards (2026-04-24)
 - [x] `app/report/[month]/page.tsx` — Dark theme, serif E1-7 stats, styled methodology section (2026-04-24)
+
 ## Documentation
 
 - [x] DESIGN.md — 500+ line visual/animation spec (2026-04-23)
