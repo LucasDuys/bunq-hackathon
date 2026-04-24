@@ -83,8 +83,16 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `app/tax-savings/page.tsx` — Converted from light Tailwind classes to dark-theme CSS variables (2026-04-24)
 - [x] `app/impact/page.tsx` — Section dividers between all content blocks (2026-04-24)
 
+## Backend — Baseline Agent (Lucas)
+
+- [x] `lib/agents/dag/spendBaseline.ts` — Spend & emissions baseline agent with structured output via Anthropic tool_use (2026-04-24)
+- [x] `lib/agents/dag/` — DAG routing, reasons, types infrastructure (2026-04-24)
+- [x] `scripts/dag-smoke.ts` — DAG smoke test script (2026-04-24)
+- [x] `app/api/baseline/run/route.ts` — API route for baseline agent (2026-04-24)
+
 ## Documentation
 
-- [x] DESIGN.md — 500+ line visual/animation spec (2026-04-23)
+- [x] DESIGN.md — 14-section visual/animation spec, Wise + bunq-inspired (2026-04-23)
 - [x] Research docs for agent design and LLM ops (2026-04-23)
 - [x] PROGRESS.md created (2026-04-24)
+- [x] TODO.md updated — marked completed UI/impact items, added logging note (2026-04-25)

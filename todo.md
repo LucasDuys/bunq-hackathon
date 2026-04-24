@@ -14,10 +14,10 @@ Mock mode works end-to-end, but we haven't driven live traffic through either ex
 
 Tax incentive data layer is shipped (`lib/tax/`). Next steps to make it demo-ready and impressive:
 
-- [x] **CO₂ environment impact analysis agent** — Claude-powered agent that takes a company's monthly transaction data and produces a narrative analysis: "Your travel spend is 3x the industry average for your size. Switching 50% of flights to rail saves €X and Y tonnes." Use Sonnet 4.6, output structured JSON + natural language. New file: `lib/agent/impact-analysis.ts`.
+- [x] **CO₂ environment impact analysis agent** — Claude Sonnet agent: benchmark comparison, switch ranking, AI narrative. `lib/agent/impact-analysis.ts` (2026-04-24)
+- [x] **"What if" simulator UI** — `/impact` page with client-side toggle simulator (2026-04-24)
+- [x] **Industry benchmark comparison** — bar chart "you vs. industry" per category from Exiobase averages (2026-04-24)
 - [ ] **Tax savings integration into monthly close** — add a `CALCULATE_TAX_SAVINGS` step after `APPLY_POLICY` in the close state machine. Store `taxSavingsEur` on the `close_runs` row. Include in the CSRD narrative.
-- [x] **"What if" simulator UI** — `/impact` page includes a client-side simulator: user toggles spending switches and sees projected CO₂e + EUR savings update live. Pure client-side math using existing factor table.
-- [x] **Industry benchmark comparison** — show "your tCO₂e/€ is X vs. industry average Y" per category. Hardcode benchmarks from Exiobase sector averages. Visual: bar chart with "you" vs "average".
 - [ ] **Annual tax savings report page** — `/tax-savings/annual`: aggregate 12 months, show total EIA/MIA/Vamil deductions claimable, with "how to claim" links to RVO.nl portals.
 - [ ] **Per-transaction tax badge on categories page** — on `/categories`, show a small "€X saveable" tag next to categories that have green alternatives.
 - [ ] **Concrete demo scenario** — seed data that tells a story: company spending €200k/month, show €30k+ annual savings. Pre-compute the "€300M across bunq business base" extrapolation for the pitch slide.
@@ -66,18 +66,19 @@ Tax incentive data layer is shipped (`lib/tax/`). Next steps to make it demo-rea
 
 ## UI / UX polish
 
-The UI is functional but not brand-built. Reference: [getdesign.md Wise design example](https://getdesign.md/wise/design-md) — the kind of fintech-grade design spec we'd adopt if this ships.
+DESIGN.md is written (14-section spec). Dark theme, design tokens, section dividers, and core component overhaul are done. Remaining polish:
 
-- [ ] **DESIGN.md** — write the full 9-section visual design spec (colour system, typography, spacing, motion, iconography, illustration direction, writing tone, accessibility commitments, component library). Use the `design-system` skill's 9-section Google Stitch format.
-- [ ] **Brand-aware palette** — currently stock zinc + emerald. Pick a proper palette (our domain: trust + nature + bank). Light + dark parity.
-- [ ] **Typography pairing** — Geist Sans/Mono is the default. Try Inter / IBM Plex Sans for a bank-y feel.
+- [x] **DESIGN.md** — 14-section Stitch-format visual design spec: Wise + bunq-inspired, dark-first, full token system (2026-04-24)
+- [x] **Brand-aware palette** — near-black + forest-green + bunq Easy Green accents, with blue/purple bunq plan accents (2026-04-24)
+- [x] **Dark mode audit** — all pages converted to CSS variable dark theme, section dividers added throughout (2026-04-24)
+- [ ] **Typography migration** — DESIGN.md specifies Montserrat + Inter + Fragment Mono (bunq stack). Currently using Geist + Instrument Serif. Needs one PR to swap fonts.
 - [ ] **Micro-interactions on the close pipeline** — when a state transitions, animate the step icon. Right now it just re-renders.
 - [ ] **Refinement-question UX polish** — option cards with the sub-category's typical emission range, so user sees the consequence of their answer before clicking.
 - [ ] **Impact matrix interactivity** — click a row to expand into the month's actual spend spread across the spectrum. Visual hook is half there.
-- [ ] **Chart accessibility** — Recharts needs aria-labels + keyboard navigation + non-colour differentiation. See `web-accessibility` skill.
-- [ ] **Dark mode audit** — every page should look right in dark. Most do; confidence bars and impact badges need contrast check.
+- [ ] **Chart accessibility** — Recharts needs aria-labels + keyboard navigation + non-colour differentiation.
 - [ ] **Mobile layout** — no explicit mobile work done. Overview breaks at <600px.
 - [ ] **Confidence range visual** — show the low/point/high as a range bar, not just a point number. Users understand bars faster than ±uncertainty strings.
+- [ ] **Observability / logging** — console logs only right now. Anthropic SDK call logging, bunq call logging, close-run timing. Low priority but noted.
 
 ## Demo / go-live
 
