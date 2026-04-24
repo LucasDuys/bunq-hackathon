@@ -25,7 +25,6 @@ Nail down which bunq API primitives we use, which we avoid, and the non-obvious 
 
 ### Money movement
 - **Intra-user transfers between sub-accounts = immediate, zero per-call approval.** This is the core primitive that makes enterprise single-user flows work.
-- **Cross-user transfers** require a manual RequestInquiry accept. We don't use them.
 - **DraftPayment** freezes until a human taps approve in the bunq app — do NOT use in automated pipelines.
 - **Sandbox bot**: `sugardaddy@bunq.com` auto-accepts RequestInquiries up to €500. Use for demo seeding.
 - Sandbox `bunq.me` may return no URL (per toolkit source) — always budget for a fallback flow.
