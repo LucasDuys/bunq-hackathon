@@ -10,6 +10,12 @@ import {
   refinementQa,
   transactions,
 } from "@/lib/db/client";
+import { estimateEmission } from "@/lib/emissions/estimate";
+import {
+  calculateTransactionSavings,
+  rollupMonthlySavings,
+  type MonthlySavingsSummary,
+} from "@/lib/tax";
 
 export const DEFAULT_ORG_ID = "org_acme_bv";
 
@@ -87,6 +93,28 @@ export const getMonthlyTrend = (orgId: string, months = 6) => {
     out.push({ month, co2eKg: co2Row?.c ?? 0, spendEur: spendRow?.s ?? 0 });
   }
   return out;
+};
+
+export const getTaxSavingsForMonth = (orgId: string, month: string): MonthlySavingsSummary => {
+  const txs = getTransactionsForMonth(orgId, month);
+  const summaries = txs
+    .filter((tx) => tx.category && tx.amountCents > 0)
+    .map((tx) => {
+      const amountEur = tx.amountCents / 100;
+      const estimate = estimateEmission({
+        category: tx.category!,
+        subCategory: tx.subCategory,
+        amountEur,
+        classifierConfidence: tx.categoryConfidence ?? 0.5,
+      });
+      return calculateTransactionSavings({
+        category: tx.category!,
+        subCategory: tx.subCategory,
+        amountEur,
+        estimate,
+      });
+    });
+  return rollupMonthlySavings(month, summaries);
 };
 
 export const getLatestEstimatesForMonth = (orgId: string, month: string) => {
