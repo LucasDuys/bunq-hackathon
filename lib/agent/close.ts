@@ -255,7 +255,7 @@ const finalizeEstimates = async (closeRunId: string) => {
   db.update(closeRuns).set({ state: "PROPOSED" }).where(eq(closeRuns.id, closeRunId)).run();
   const creditMix = totalBudgetMix(finalRollup.co2eKgPoint / 1000);
   const actions: ProposedAction[] = [
-    { kind: "reserve_transfer", amountEur: outcome.reserveTotalEur, description: `Carbon Autopilot ${run.month} close` },
+    { kind: "reserve_transfer", amountEur: outcome.reserveTotalEur, description: `Carbo ${run.month} close` },
     ...creditMix.map((m) => ({ kind: "credit_purchase" as const, projectId: m.project.id, tonnes: m.tonnes, eur: m.eur })),
   ];
 

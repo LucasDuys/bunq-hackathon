@@ -3,7 +3,6 @@
  * Derived from UK DEFRA 2024 GHG factors + ADEME Base Carbone + Exiobase sector averages,
  * coarsened for hackathon use. Uncertainty %s follow GHG Protocol Scope 3 Tier guidance:
  * spend-based factors are typically Tier 3 with 30-60% uncertainty.
- * See research/01-spend-based-emissions.md and 02-confidence-methodology.md.
  */
 export type FactorRow = {
   id: string;

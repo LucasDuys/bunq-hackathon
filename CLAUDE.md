@@ -1,7 +1,7 @@
-# Carbon Autopilot — project guide for agents
+# Carbo — project guide for agents
 
 ## Repo purpose
-Hackathon build of **Carbon Autopilot**: monthly carbon-close system for bunq Business.
+Hackathon build of **Carbo**: agentic carbon accounting for bunq Business.
 - Passive webhook ingestion of bunq transactions.
 - Monthly close: aggregate → estimate (with confidence) → cluster uncertainty → refine via 2–3 questions → apply policy → propose reserve transfer + EU credit recommendation → approve → execute.
 - Output: CSRD ESRS E1-shaped monthly report + SHA-256 hash-chained audit ledger.
@@ -12,9 +12,9 @@ Hackathon build of **Carbon Autopilot**: monthly carbon-close system for bunq Bu
 - If `DESIGN.md` and code disagree, fix the code. If you learned something the doc doesn't cover, update `DESIGN.md` in the same PR.
 
 ## Stack (locked)
-- **Next.js 15 App Router + TypeScript + Tailwind 4**.
+- **Next.js 16 App Router + TypeScript + Tailwind 4**.
 - **SQLite + better-sqlite3 + Drizzle ORM**. NOT Postgres/Neon — we switched for hackathon simplicity.
-- **Anthropic TS SDK**: Haiku 4.5 for classification, Sonnet 4.6 for refinement questions + CSRD narrative. No Opus.
+- **Anthropic TS SDK**: Haiku 4.5 for classification, Sonnet 4.6 for refinement questions + CSRD narrative. No Opus. No external emission factor APIs (factors hardcoded from DEFRA 2024 / ADEME / Exiobase).
 - **bunq** signed HTTP client + mock mode. RSA-SHA256. Webhook signature verify required in live mode.
 - Mock-first: `ANTHROPIC_MOCK=1 BUNQ_MOCK=1 DRY_RUN=1` are the safe defaults.
 
@@ -33,9 +33,39 @@ Hackathon build of **Carbon Autopilot**: monthly carbon-close system for bunq Bu
 - Every bunq call goes through `lib/bunq/client.ts callBunq()` so mock + signing + session are centralized.
 - Every state change in the agent writes an `audit_events` row via `appendAudit`.
 
-## Research briefs
-`research/` has 12 practical briefs (400–800 words each). Every non-obvious design choice has a matching brief.
-Read the relevant brief before changing the code it informs. Update the brief's **Decisions for this build** list when you change the code.
+## File map
+
+| Path | What |
+|---|---|
+| `app/page.tsx` | Dashboard — monthly carbon close overview |
+| `app/api/webhook/bunq/route.ts` | bunq webhook receiver |
+| `app/api/close/run/route.ts` | Trigger monthly close run |
+| `app/api/close/[id]/answer/route.ts` | Submit refinement answers |
+| `app/api/close/[id]/approve/route.ts` | Approve proposed actions |
+| `lib/agent/close.ts` | Monthly close state machine (the core loop) |
+| `lib/agent/narrative.ts` | CSRD E1 narrative generator (Claude Sonnet) |
+| `lib/agent/questions.ts` | Refinement question generator (Claude Sonnet) |
+| `lib/classify/merchant.ts` | Merchant classifier (rules → Claude Haiku → fallback) |
+| `lib/classify/rules.ts` | 30+ regex rules for Dutch/EU merchants |
+| `lib/factors/index.ts` | Hardcoded emission factors (kg CO₂e per EUR) |
+| `lib/emissions/estimate.ts` | Spend-based emission estimator + rollup |
+| `lib/policy/evaluate.ts` | Policy engine (reserve allocation rules) |
+| `lib/policy/schema.ts` | Policy YAML schema (Zod) |
+| `lib/credits/projects.ts` | EU carbon credit project catalog |
+| `lib/bunq/client.ts` | bunq API client (RSA-signed) |
+| `lib/bunq/payments.ts` | Intra-account transfers (Carbo Reserve) |
+| `lib/bunq/webhook.ts` | Webhook signature verification |
+| `lib/bunq/accounts.ts` | Account listing |
+| `lib/bunq/signing.ts` | RSA-SHA256 request signing |
+| `lib/anthropic/client.ts` | Anthropic SDK wrapper + mock mode |
+| `lib/db/schema.ts` | Drizzle schema (orgs, transactions, close_runs, etc.) |
+| `lib/db/client.ts` | SQLite database client |
+| `lib/env.ts` | Environment config |
+| `lib/queries.ts` | Read queries (dashboard data) |
+| `lib/audit/append.ts` | Audit log (SHA-256 hash chain) |
+| `scripts/` | migrate / seed / reset / bunq bootstrap |
+| `fixtures/` | Synthetic bunq transactions + Agribalyse emission factors |
+| `DESIGN.md` | UI design system and component specs |
 
 ## What's not done
 See [`todo.md`](./todo.md) for unfinished work — scope cuts, de-risked integrations (live bunq, live Anthropic), polish items. Design spec is now written: see [`DESIGN.md`](./DESIGN.md) (Wise + bunq-inspired). When picking up new work, check todo.md first.
@@ -48,6 +78,18 @@ pnpm seed         # deterministic 61-tx seed
 pnpm reset        # wipe + re-migrate + re-seed (restart dev after!)
 pnpm typecheck    # tsc --noEmit
 ```
+
+## Env vars
+
+| Var | Default | Notes |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | (empty) | Optional — mock mode works without it |
+| `ANTHROPIC_MOCK` | `true` | Set `false` to hit real Claude API |
+| `BUNQ_API_KEY` | (empty) | bunq sandbox API key |
+| `BUNQ_MOCK` | `true` | Set `false` to hit real bunq API |
+| `BUNQ_PRIVATE_KEY_B64` | (empty) | Base64-encoded RSA private key for bunq signing |
+| `DATABASE_URL` | `file:./data/carbon.db` | SQLite path |
+| `DRY_RUN` | `true` | Prevents real transfers |
 
 ## Gotchas
 - **After `pnpm reset`, restart `pnpm dev`** or the running Node process holds a stale SQLite handle and writes silently to the deleted inode.
@@ -63,6 +105,7 @@ pnpm typecheck    # tsc --noEmit
 - The state machine linearity — don't branch close runs unless absolutely necessary.
 - The rollup math — quadrature sum + spend-weighted confidence.
 - The factor source citations — every row in `FACTORS` has a `source` string, keep it filled.
+
 @AGENTS.md
 @DESIGN.md
 

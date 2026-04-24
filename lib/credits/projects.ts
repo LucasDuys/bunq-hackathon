@@ -2,7 +2,6 @@
  * Seeded EU carbon credit projects (synthetic but plausible).
  * Types: "removal" (biochar, DACCS, reforestation) vs "reduction".
  * Regions: all EU-based. Registries: CRCF (future), Puro.earth, Gold Standard.
- * See research/07-eu-carbon-credits.md.
  */
 export type CreditType = "removal_technical" | "removal_nature" | "reduction";
 

@@ -487,3 +487,4 @@ When you're asked to build or modify UI, read this first. When in doubt, match a
 - **Stitch DESIGN.md format** (Google) — 9-section template.
 
 This is an **inspired-by** document, not an official bunq asset. Do not ship to production without legal review of any direct brand lift.
+
