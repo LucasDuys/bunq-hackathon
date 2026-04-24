@@ -143,6 +143,47 @@ export const creditPurchases = sqliteTable("credit_purchases", {
   createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
 });
 
+export const onboardingRuns = sqliteTable("onboarding_runs", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  track: text("track").notNull(),
+  state: text("state").notNull(),
+  status: text("status").notNull().default("active"),
+  profile: text("profile"),
+  partialPolicy: text("partial_policy"),
+  gapList: text("gap_list"),
+  unsupportedList: text("unsupported_list"),
+  draftPolicy: text("draft_policy"),
+  draftMarkdown: text("draft_markdown"),
+  creditShortlist: text("credit_shortlist"),
+  calibrationNotes: text("calibration_notes"),
+  uploadRef: text("upload_ref"),
+  uploadMime: text("upload_mime"),
+  uploadExtract: text("upload_extract"),
+  seedCloseRunId: text("seed_close_run_id"),
+  questionCount: integer("question_count").notNull().default(0),
+  failureReason: text("failure_reason"),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at").notNull().default(sql`(unixepoch())`),
+  completedAt: integer("completed_at"),
+});
+
+export const onboardingQa = sqliteTable("onboarding_qa", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  runId: text("run_id").notNull(),
+  turnIndex: integer("turn_index").notNull(),
+  topic: text("topic").notNull(),
+  kind: text("kind").notNull(),
+  question: text("question").notNull(),
+  options: text("options"),
+  rationale: text("rationale"),
+  answer: text("answer"),
+  parsedAnswer: text("parsed_answer"),
+  required: integer("required", { mode: "boolean" }).notNull().default(true),
+  askedAt: integer("asked_at").notNull().default(sql`(unixepoch())`),
+  answeredAt: integer("answered_at"),
+});
+
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
 export type EmissionFactor = typeof emissionFactors.$inferSelect;
@@ -153,3 +194,7 @@ export type AuditEvent = typeof auditEvents.$inferSelect;
 export type Org = typeof orgs.$inferSelect;
 export type Policy = typeof policies.$inferSelect;
 export type CreditProject = typeof creditProjects.$inferSelect;
+export type OnboardingRun = typeof onboardingRuns.$inferSelect;
+export type NewOnboardingRun = typeof onboardingRuns.$inferInsert;
+export type OnboardingQa = typeof onboardingQa.$inferSelect;
+export type NewOnboardingQa = typeof onboardingQa.$inferInsert;

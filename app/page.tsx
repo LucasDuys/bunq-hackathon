@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { ArrowRight, Play, Shield, TrendingUp, Zap } from "lucide-react";
+import { ArrowRight, Play, Shield, Sparkles, TrendingUp, Zap } from "lucide-react";
 import { Badge, Card, CardBody, CardHeader, CardTitle, ConfidenceBar, Stat } from "@/components/ui";
 import { StartCloseButton } from "@/components/StartCloseButton";
 import { TrendChart } from "@/components/TrendChart";
+import { getActiveRunForOrg } from "@/lib/agent/onboarding";
 import {
   DEFAULT_ORG_ID,
   currentMonth,
+  getActivePolicyRaw,
   getAllTransactions,
   getCategorySpendForMonth,
   getLatestCloseRun,
@@ -24,6 +26,8 @@ export default async function Overview() {
   const totalSpend = spendRows.reduce((s, r) => s + (r.spendEur ?? 0), 0);
   const latestRun = getLatestCloseRun(DEFAULT_ORG_ID);
   const trend = getMonthlyTrend(DEFAULT_ORG_ID, 6);
+  const activeOnboarding = getActiveRunForOrg(DEFAULT_ORG_ID);
+  const hasPolicy = !!getActivePolicyRaw(DEFAULT_ORG_ID);
 
   const hasRun = !!latestRun && (latestRun.finalCo2eKg != null || latestRun.initialCo2eKg != null);
   const point = latestRun?.finalCo2eKg ?? latestRun?.initialCo2eKg ?? 0;
@@ -31,6 +35,31 @@ export default async function Overview() {
 
   return (
     <div className="flex flex-col gap-6">
+      {(!hasPolicy || activeOnboarding) && (
+        <Card className="border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/20">
+          <CardBody className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+            <Sparkles className="h-5 w-5 text-emerald-600 shrink-0" />
+            <div className="flex-1 text-sm">
+              <div className="font-semibold">
+                {activeOnboarding ? "Your onboarding is in progress" : "Finish setting up Carbo"}
+              </div>
+              <div className="text-zinc-600 dark:text-zinc-400 mt-0.5">
+                {activeOnboarding
+                  ? "Pick up where you left off — a few minutes gets you a signed policy and a first close."
+                  : "Carbo needs a carbon policy before it can close the month. Answer a short interview or upload your existing doc."}
+              </div>
+            </div>
+            <Link
+              href={activeOnboarding ? `/onboarding/${activeOnboarding.id}` : "/onboarding"}
+              className="inline-flex items-center gap-1 rounded-full bg-emerald-600 text-white px-4 h-9 text-sm font-medium hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
+            >
+              {activeOnboarding ? "Resume" : "Start onboarding"}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </CardBody>
+        </Card>
+      )}
+
       <div className="flex items-start justify-between gap-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Monthly Carbon Close</h1>
