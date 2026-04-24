@@ -1,10 +1,36 @@
-import { Card, CardBody, CardHeader, CardTitle, Badge, SectionDivider } from "@/components/ui";
-import { DEFAULT_ORG_ID, getCategorySpendForMonth, getLatestCloseRun, getLatestEstimatesForMonth } from "@/lib/queries";
-import { fmtEur, fmtKg } from "@/lib/utils";
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Badge,
+  CodeLabel,
+  ConfidenceBar,
+  SectionDivider,
+  Stat,
+} from "@/components/ui";
+import {
+  DEFAULT_ORG_ID,
+  getCategorySpendForMonth,
+  getLatestCloseRun,
+  getLatestEstimatesForMonth,
+} from "@/lib/queries";
+import { fmtEur, fmtKg, fmtPct } from "@/lib/utils";
 import { generateCsrdNarrative } from "@/lib/agent/narrative";
 import type { CreditProject } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
+
+function categoryToken(cat: string): string {
+  const c = cat.toLowerCase();
+  if (c.includes("fuel") || c.includes("scope1")) return "var(--cat-fuel)";
+  if (c.includes("electric") || c.includes("energy")) return "var(--cat-electricity)";
+  if (c.includes("travel") || c.includes("flight") || c.includes("transport")) return "var(--cat-travel)";
+  if (c.includes("digital") || c.includes("saas") || c.includes("software")) return "var(--cat-digital)";
+  if (c.includes("service")) return "var(--cat-services)";
+  if (c.includes("good") || c.includes("procure")) return "var(--cat-goods)";
+  return "var(--cat-other)";
+}
 
 export default async function ReportPage({ params }: { params: Promise<{ month: string }> }) {
   const { month } = await params;
@@ -26,18 +52,26 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
   }
   const catRows = Array.from(perCat.entries()).sort((a, b) => b[1].co2eKg - a[1].co2eKg);
   const totalCo2 = catRows.reduce((s, [, v]) => s + v.co2eKg, 0);
+  const totalSpend = catRows.reduce((s, [, v]) => s + v.spendEur, 0);
 
-  const mix = run?.creditRecommendation ? (JSON.parse(run.creditRecommendation) as Array<{ project: CreditProject; tonnes: number; eur: number }>) : [];
+  const mix = run?.creditRecommendation
+    ? (JSON.parse(run.creditRecommendation) as Array<{ project: CreditProject; tonnes: number; eur: number }>)
+    : [];
   const totalTonnes = mix.reduce((s, m) => s + m.tonnes, 0);
   const euTonnes = mix.filter((m) => m.project.region === "EU").reduce((s, m) => s + m.tonnes, 0);
-  const removalTonnes = mix.filter((m) => m.project.type !== "reduction").reduce((s, m) => s + m.tonnes, 0);
+  const removalTonnes = mix
+    .filter((m) => m.project.type !== "reduction")
+    .reduce((s, m) => s + m.tonnes, 0);
   const euPct = totalTonnes > 0 ? euTonnes / totalTonnes : 0;
   const removalPct = totalTonnes > 0 ? removalTonnes / totalTonnes : 0;
 
+  const confidence = run?.finalConfidence ?? 0.6;
+  const headlineCo2 = run?.finalCo2eKg ?? totalCo2;
+
   const narrative = await generateCsrdNarrative({
     month,
-    totalCo2eKg: run?.finalCo2eKg ?? totalCo2,
-    confidence: run?.finalConfidence ?? 0.6,
+    totalCo2eKg: headlineCo2,
+    confidence,
     topCategories: catRows.slice(0, 3).map(([category, v]) => ({ category, ...v })),
     reserveEur: run?.reserveEur ?? 0,
     creditTonnes: totalTonnes,
@@ -45,124 +79,352 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
   });
 
   return (
-    <div className="relative z-[1] flex flex-col gap-6">
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-[11px] uppercase tracking-[0.8px] font-semibold" style={{ color: "var(--text-mute)" }}>
-            CSRD ESRS E1 extract
-          </div>
-          <h1 className="text-2xl font-semibold mt-1.5" style={{ color: "var(--text)" }}>
+    <div className="relative z-[1] flex flex-col gap-10 print:gap-6">
+      {/* ── Header ─────────────────────────────── */}
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-3">
+          <CodeLabel>CSRD · ESRS E1 extract</CodeLabel>
+          <h1
+            className="text-[36px] font-normal m-0"
+            style={{
+              color: "var(--fg-primary)",
+              lineHeight: 1.1,
+              letterSpacing: "-0.015em",
+            }}
+          >
             Monthly carbon report — {month}
           </h1>
-          <p className="text-[13px] mt-1" style={{ color: "var(--text-dim)" }}>
-            Voluntary monthly slice; methodology and uncertainty quantified per GHG Protocol Scope 3.
+          <p
+            className="text-[16px] m-0"
+            style={{ color: "var(--fg-secondary)", maxWidth: "66ch", lineHeight: 1.5 }}
+          >
+            Voluntary monthly slice. Methodology and uncertainty quantified per the GHG Protocol
+            Scope 3 guidance. Numbers below pair every CO₂e figure with a confidence indicator.
           </p>
         </div>
         <Badge tone="info">Audit-ready</Badge>
-      </div>
+      </header>
+
+      {/* ── Headline stats ─────────────────────── */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <Card>
+          <CardBody>
+            <Stat
+              label="Gross emissions"
+              value={fmtKg(headlineCo2)}
+              sub={`${fmtEur(totalSpend, 0)} spend analysed`}
+            />
+            <div className="mt-4">
+              <ConfidenceBar value={confidence} />
+            </div>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <Stat
+              label="Credits retired"
+              value={`${totalTonnes.toFixed(2)} t`}
+              sub={`${fmtPct(euPct)} EU · ${fmtPct(removalPct)} removal`}
+            />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <Stat
+              label="Reserve transferred"
+              value={fmtEur(run?.reserveEur ?? 0, 0)}
+              sub={run ? `Close run ${run.id}` : "No close run yet"}
+            />
+          </CardBody>
+        </Card>
+      </section>
 
       <SectionDivider />
 
+      {/* ── Narrative ──────────────────────────── */}
+      <section className="flex flex-col gap-4">
+        <CodeLabel>Narrative summary</CodeLabel>
+        <p
+          className="text-[16px] m-0"
+          style={{ color: "var(--fg-secondary)", maxWidth: "66ch", lineHeight: 1.6 }}
+        >
+          {narrative}
+        </p>
+      </section>
+
+      <SectionDivider label="E1-6 — Gross GHG emissions" />
+
+      {/* ── Emissions table ────────────────────── */}
       <Card>
-        <CardHeader><CardTitle>Narrative summary</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Emissions by category (approximated)</CardTitle>
+          <CodeLabel>Scope 3 · Cat 1 / 6</CodeLabel>
+        </CardHeader>
         <CardBody>
-          <p className="text-sm leading-relaxed" style={{ color: "var(--text-dim)" }}>{narrative}</p>
-        </CardBody>
-      </Card>
-
-      <SectionDivider label="Emissions" />
-
-      <Card>
-        <CardHeader><CardTitle>E1-6 — Gross GHG emissions (approximated)</CardTitle></CardHeader>
-        <CardBody>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-[10.5px] uppercase tracking-[0.6px] font-semibold" style={{ borderBottom: "1px solid var(--border)", color: "var(--text-mute)" }}>
-                <th className="py-2.5 pr-4">Category (Scope 3, Cat 1/6)</th>
-                <th className="py-2.5 pr-4 text-right">Spend</th>
-                <th className="py-2.5 pr-4 text-right">CO₂e</th>
-                <th className="py-2.5 text-right">Share</th>
-              </tr>
-            </thead>
-            <tbody>
-              {catRows.map(([cat, v]) => (
-                <tr key={cat} style={{ borderBottom: "1px solid var(--border-faint)" }}>
-                  <td className="py-2.5 pr-4 capitalize" style={{ color: "var(--text)" }}>{cat}</td>
-                  <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text-dim)" }}>{fmtEur(v.spendEur, 0)}</td>
-                  <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text-dim)" }}>{fmtKg(v.co2eKg)}</td>
-                  <td className="py-2.5 text-right tabular-nums" style={{ color: "var(--text-mute)" }}>{totalCo2 ? `${((v.co2eKg / totalCo2) * 100).toFixed(0)}%` : "—"}</td>
-                </tr>
-              ))}
-              <tr className="font-semibold">
-                <td className="py-2.5 pr-4" style={{ color: "var(--text)" }}>Total</td>
-                <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text)" }}>{fmtEur(catRows.reduce((s, [, v]) => s + v.spendEur, 0), 0)}</td>
-                <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text)" }}>{fmtKg(totalCo2)}</td>
-                <td className="py-2.5 text-right" style={{ color: "var(--text)" }}>100%</td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="text-xs mt-3" style={{ color: "var(--text-mute)" }}>
-            Method: spend-based (Exiobase / DEFRA 2024 / ADEME Base Carbone). Uncertainty varies by factor (see ledger).
-          </p>
-        </CardBody>
-      </Card>
-
-      <SectionDivider label="Credits" />
-
-      <Card>
-        <CardHeader><CardTitle>E1-7 — Carbon removal and carbon credits</CardTitle></CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.6px] font-semibold" style={{ color: "var(--text-mute)" }}>Total credits</div>
-              <div className="font-serif text-xl font-normal tabular-nums mt-1" style={{ color: "#fff" }}>{totalTonnes.toFixed(2)} t</div>
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.6px] font-semibold" style={{ color: "var(--text-mute)" }}>EU-based</div>
-              <div className="font-serif text-xl font-normal tabular-nums mt-1" style={{ color: "#fff" }}>{(euPct * 100).toFixed(0)}%</div>
-            </div>
-            <div>
-              <div className="text-[10px] uppercase tracking-[0.6px] font-semibold" style={{ color: "var(--text-mute)" }}>Removal vs reduction</div>
-              <div className="font-serif text-xl font-normal tabular-nums mt-1" style={{ color: "#fff" }}>{(removalPct * 100).toFixed(0)}% removal</div>
-            </div>
-          </div>
-          {mix.length > 0 && (
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-[14px]">
               <thead>
-                <tr className="text-left text-[10.5px] uppercase tracking-[0.6px] font-semibold" style={{ borderBottom: "1px solid var(--border)", color: "var(--text-mute)" }}>
-                  <th className="py-2.5 pr-4">Project</th>
-                  <th className="py-2.5 pr-4">Type</th>
-                  <th className="py-2.5 pr-4">Registry</th>
-                  <th className="py-2.5 pr-4 text-right">Tonnes</th>
-                  <th className="py-2.5 text-right">EUR</th>
+                <tr style={{ borderBottom: "1px solid var(--border-default)" }}>
+                  <th
+                    className="code-label text-left py-3 pr-4"
+                    style={{ fontWeight: 400 }}
+                  >
+                    Category
+                  </th>
+                  <th
+                    className="code-label text-right py-3 pr-4"
+                    style={{ fontWeight: 400 }}
+                  >
+                    Spend
+                  </th>
+                  <th
+                    className="code-label text-right py-3 pr-4"
+                    style={{ fontWeight: 400 }}
+                  >
+                    CO₂e
+                  </th>
+                  <th
+                    className="code-label text-right py-3"
+                    style={{ fontWeight: 400 }}
+                  >
+                    Share
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {mix.map((m) => (
-                  <tr key={m.project.id} style={{ borderBottom: "1px solid var(--border-faint)" }}>
-                    <td className="py-2.5 pr-4" style={{ color: "var(--text)" }}>{m.project.name}</td>
-                    <td className="py-2.5 pr-4 capitalize" style={{ color: "var(--text-dim)" }}>{m.project.type.replace("_", " ")}</td>
-                    <td className="py-2.5 pr-4" style={{ color: "var(--text-mute)" }}>{m.project.registry}</td>
-                    <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text-dim)" }}>{m.tonnes.toFixed(3)}</td>
-                    <td className="py-2.5 text-right tabular-nums" style={{ color: "var(--text-dim)" }}>{fmtEur(m.eur)}</td>
+                {catRows.map(([cat, v]) => (
+                  <tr key={cat} style={{ borderBottom: "1px solid var(--border-faint)" }}>
+                    <td className="py-3 pr-4" style={{ color: "var(--fg-primary)" }}>
+                      <span className="inline-flex items-center gap-2">
+                        <span
+                          className="inline-block rounded-full"
+                          style={{
+                            width: 6,
+                            height: 6,
+                            background: categoryToken(cat),
+                          }}
+                        />
+                        <span className="capitalize">{cat}</span>
+                      </span>
+                    </td>
+                    <td
+                      className="py-3 pr-4 text-right tabular-nums"
+                      style={{ color: "var(--fg-secondary)" }}
+                    >
+                      {fmtEur(v.spendEur, 0)}
+                    </td>
+                    <td
+                      className="py-3 pr-4 text-right tabular-nums"
+                      style={{ color: "var(--fg-primary)" }}
+                    >
+                      {fmtKg(v.co2eKg)}
+                    </td>
+                    <td
+                      className="py-3 text-right tabular-nums"
+                      style={{ color: "var(--fg-muted)" }}
+                    >
+                      {totalCo2 ? `${((v.co2eKg / totalCo2) * 100).toFixed(0)}%` : "—"}
+                    </td>
                   </tr>
                 ))}
+                <tr>
+                  <td className="py-3 pr-4" style={{ color: "var(--fg-primary)" }}>
+                    Total
+                  </td>
+                  <td
+                    className="py-3 pr-4 text-right tabular-nums"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
+                    {fmtEur(totalSpend, 0)}
+                  </td>
+                  <td
+                    className="py-3 pr-4 text-right tabular-nums"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
+                    {fmtKg(totalCo2)}
+                  </td>
+                  <td
+                    className="py-3 text-right tabular-nums"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
+                    100%
+                  </td>
+                </tr>
               </tbody>
             </table>
+          </div>
+          <div className="mt-4 flex items-start justify-between gap-6 flex-wrap">
+            <p
+              className="text-[13px] m-0"
+              style={{ color: "var(--fg-muted)", maxWidth: "66ch", lineHeight: 1.5 }}
+            >
+              Method: spend-based (Exiobase · DEFRA 2024 · ADEME Base Carbone). Uncertainty varies
+              by factor; see the ledger for per-row lineage.
+            </p>
+            <div className="min-w-[220px]">
+              <ConfidenceBar value={confidence} />
+            </div>
+          </div>
+        </CardBody>
+      </Card>
+
+      <SectionDivider label="E1-7 — Credits & removals" />
+
+      {/* ── Credits card ───────────────────────── */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Carbon removal and carbon credits</CardTitle>
+          <CodeLabel>Post-reduction purchase mix</CodeLabel>
+        </CardHeader>
+        <CardBody>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+            <Stat
+              label="Total credits"
+              value={`${totalTonnes.toFixed(2)} t`}
+              sub="Retired this close"
+            />
+            <Stat
+              label="EU-based"
+              value={fmtPct(euPct)}
+              sub="Registry: Gold Standard / Puro.earth EU"
+              tone={euPct >= 0.5 ? "positive" : "default"}
+            />
+            <Stat
+              label="Removal vs reduction"
+              value={`${(removalPct * 100).toFixed(0)}% removal`}
+              sub={`${((1 - removalPct) * 100).toFixed(0)}% reduction`}
+            />
+          </div>
+          {mix.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-[14px]">
+                <thead>
+                  <tr style={{ borderBottom: "1px solid var(--border-default)" }}>
+                    <th
+                      className="code-label text-left py-3 pr-4"
+                      style={{ fontWeight: 400 }}
+                    >
+                      Project
+                    </th>
+                    <th
+                      className="code-label text-left py-3 pr-4"
+                      style={{ fontWeight: 400 }}
+                    >
+                      Type
+                    </th>
+                    <th
+                      className="code-label text-left py-3 pr-4"
+                      style={{ fontWeight: 400 }}
+                    >
+                      Registry
+                    </th>
+                    <th
+                      className="code-label text-right py-3 pr-4"
+                      style={{ fontWeight: 400 }}
+                    >
+                      Tonnes
+                    </th>
+                    <th
+                      className="code-label text-right py-3"
+                      style={{ fontWeight: 400 }}
+                    >
+                      EUR
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {mix.map((m) => (
+                    <tr key={m.project.id} style={{ borderBottom: "1px solid var(--border-faint)" }}>
+                      <td className="py-3 pr-4" style={{ color: "var(--fg-primary)" }}>
+                        {m.project.name}
+                      </td>
+                      <td
+                        className="py-3 pr-4 capitalize"
+                        style={{ color: "var(--fg-secondary)" }}
+                      >
+                        {m.project.type.replace("_", " ")}
+                      </td>
+                      <td className="py-3 pr-4" style={{ color: "var(--fg-muted)" }}>
+                        <span className="font-mono text-[12px]">{m.project.registry}</span>
+                      </td>
+                      <td
+                        className="py-3 pr-4 text-right tabular-nums"
+                        style={{ color: "var(--fg-primary)" }}
+                      >
+                        {m.tonnes.toFixed(3)}
+                      </td>
+                      <td
+                        className="py-3 text-right tabular-nums"
+                        style={{ color: "var(--fg-primary)" }}
+                      >
+                        {fmtEur(m.eur)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-[14px] m-0" style={{ color: "var(--fg-muted)" }}>
+              No credit purchases recorded for this month.
+            </p>
           )}
         </CardBody>
       </Card>
 
       <SectionDivider label="Methodology" />
 
-      <Card>
-        <CardHeader><CardTitle>Methodology & data lineage</CardTitle></CardHeader>
-        <CardBody className="text-sm space-y-2.5" style={{ color: "var(--text-dim)" }}>
-          <p>Transactions are ingested via bunq MUTATION webhook and classified merchant-first (regex rules) with LLM fallback. Per-transaction CO₂e = spend × factor; factors are sourced from DEFRA 2024, ADEME Base Carbone, and Exiobase v3. Each factor carries an uncertainty % following GHG Protocol Tier guidance.</p>
-          <p>Confidence = (1 − factor uncertainty) × classifier confidence × tier weight. Uncertainty is clustered at merchant level; a Claude Sonnet 4.6 agent generates at most three high-impact refinement questions per close to reduce variance.</p>
-          <p>Reserve allocation and credit recommendations follow a declarative policy (see <code className="text-xs px-1 py-0.5 rounded" style={{ background: "var(--bg-inset)", color: "var(--text-mute)" }}>policies</code> row). Every state transition is appended to a SHA-256 hash-chained <code className="text-xs px-1 py-0.5 rounded" style={{ background: "var(--bg-inset)", color: "var(--text-mute)" }}>audit_events</code> log — UPDATE and DELETE are blocked by trigger.</p>
-        </CardBody>
-      </Card>
+      {/* ── Methodology prose ──────────────────── */}
+      <section className="flex flex-col gap-4" style={{ maxWidth: "66ch" }}>
+        <h2
+          className="text-[24px] font-normal m-0"
+          style={{ color: "var(--fg-primary)", lineHeight: 1.25, letterSpacing: "-0.005em" }}
+        >
+          Methodology and data lineage
+        </h2>
+        <div
+          className="flex flex-col gap-4 text-[16px]"
+          style={{ color: "var(--fg-secondary)", lineHeight: 1.6 }}
+        >
+          <p className="m-0">
+            Transactions are ingested via the bunq MUTATION webhook and classified merchant-first
+            (regex rules) with an LLM fallback. Per-transaction CO₂e = spend × factor; factors
+            are sourced from DEFRA 2024, ADEME Base Carbone, and Exiobase v3. Each factor carries
+            an uncertainty percentage following GHG Protocol Tier guidance.
+          </p>
+          <p className="m-0">
+            Confidence = (1 − factor uncertainty) × classifier confidence × tier weight.
+            Uncertainty is clustered at the merchant level; a Claude Sonnet 4.6 agent generates
+            at most three high-impact refinement questions per close to reduce variance.
+          </p>
+          <p className="m-0">
+            Reserve allocation and credit recommendations follow a declarative policy (see the{" "}
+            <code
+              className="text-[13px] px-1.5 py-0.5 rounded font-mono"
+              style={{ background: "var(--bg-inset)", color: "var(--fg-muted)" }}
+            >
+              policies
+            </code>{" "}
+            row). Every state transition is appended to a SHA-256 hash-chained{" "}
+            <code
+              className="text-[13px] px-1.5 py-0.5 rounded font-mono"
+              style={{ background: "var(--bg-inset)", color: "var(--fg-muted)" }}
+            >
+              audit_events
+            </code>{" "}
+            log — UPDATE and DELETE are blocked by trigger.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Print overrides ────────────────────── */}
+      <style>{`
+        @media print {
+          body { background: #fff !important; color: #000 !important; }
+          .ca-card { border-color: rgba(0,0,0,0.15) !important; background: #fff !important; }
+          .code-label { color: rgba(0,0,0,0.55) !important; }
+        }
+      `}</style>
     </div>
   );
 }

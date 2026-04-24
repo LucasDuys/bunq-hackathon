@@ -33,5 +33,10 @@ export const env = {
   researchCacheTtlDays: intOr("RESEARCH_CACHE_TTL_DAYS", 30),
   researchConcurrency: intOr("RESEARCH_CONCURRENCY", 4),
   researchMaxClusters: intOr("RESEARCH_MAX_CLUSTERS", 20),
+  gmailClientId: process.env.GMAIL_CLIENT_ID ?? "",
+  gmailClientSecret: process.env.GMAIL_CLIENT_SECRET ?? "",
+  gmailRefreshToken: process.env.GMAIL_REFRESH_TOKEN ?? "",
+  gmailPollAddress: process.env.GMAIL_POLL_ADDRESS ?? "",
+  gmailMock: flag("GMAIL_MOCK", true),
 };
 export { required };

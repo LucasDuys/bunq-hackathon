@@ -27,7 +27,18 @@
       "WebFetch(domain:localhost)",
       "Bash(python -m json.tool)",
       "Bash(git stash *)",
-      "Bash(git diff *)"
+      "Bash(git diff *)",
+      "Bash(taskkill *)",
+      "PowerShell(taskkill *)",
+      "Bash(git log *)",
+      "Bash(xargs ls *)",
+      "Bash(xargs grep *)",
+      "Bash(xargs wc *)",
+      "Bash(git rm *)",
+      "Bash(npm install *)",
+      "Bash(start *)",
+      "Bash(ANTHROPIC_MOCK=true npx tsx *)",
+      "Bash(git ls-tree *)"
     ]
   }
 }

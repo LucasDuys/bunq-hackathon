@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Instrument_Serif } from "next/font/google";
-import { Nav } from "@/components/Nav";
+import { Inter, Source_Code_Pro } from "next/font/google";
+import { Sidebar } from "@/components/Sidebar";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
-  weight: "400",
+const inter = Inter({
+  variable: "--font-inter",
+  weight: ["400", "500"],
   subsets: ["latin"],
-  style: ["normal", "italic"],
+});
+
+const sourceCodePro = Source_Code_Pro({
+  variable: "--font-source-code-pro",
+  weight: ["400"],
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
@@ -20,10 +22,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full`}>
-      <body className="min-h-full flex flex-col">
-        <Nav />
-        <main className="flex-1 w-full max-w-[1480px] mx-auto px-10 py-7">{children}</main>
+    <html lang="en" className={`${inter.variable} ${sourceCodePro.variable} h-full`}>
+      <body className="min-h-full flex">
+        <Sidebar />
+        <main className="layout-main flex-1 min-w-0 flex flex-col">
+          <div className="flex-1 w-full max-w-[1200px] mx-auto px-6 py-8">
+            {children}
+          </div>
+        </main>
       </body>
     </html>
   );
