@@ -71,12 +71,15 @@ Hackathon build of **Carbo**: agentic carbon accounting for bunq Business.
 See [`todo.md`](./todo.md) for unfinished work — scope cuts, de-risked integrations (live bunq, live Anthropic), polish items. Design spec is now written: see [`DESIGN.md`](./DESIGN.md) (Wise + bunq-inspired). When picking up new work, check todo.md first.
 
 ## Commands
+
+Requires Node 22 LTS (`.nvmrc`). Do **not** use Node 25 — it caused a hard system freeze during `better-sqlite3` native rebuild on an 18GB MacBook. `npm` is the chosen package manager (was pnpm; switched for local dev stability).
+
 ```
-pnpm dev          # Next dev server
-pnpm migrate      # apply schema
-pnpm seed         # deterministic 61-tx seed
-pnpm reset        # wipe + re-migrate + re-seed (restart dev after!)
-pnpm typecheck    # tsc --noEmit
+npm run dev          # Next dev server (memory-capped at 4GB)
+npm run migrate      # apply schema
+npm run seed         # deterministic 61-tx seed
+npm run reset        # wipe + re-migrate + re-seed (restart dev after!)
+npm run typecheck    # tsc --noEmit
 ```
 
 ## Env vars
@@ -92,10 +95,10 @@ pnpm typecheck    # tsc --noEmit
 | `DRY_RUN` | `true` | Prevents real transfers |
 
 ## Gotchas
-- **After `pnpm reset`, restart `pnpm dev`** or the running Node process holds a stale SQLite handle and writes silently to the deleted inode.
+- **After `npm run reset`, restart `npm run dev`** or the running Node process holds a stale SQLite handle and writes silently to the deleted inode.
 - **Path aliases work under `tsx`** as of 4.x — no `tsconfig-paths` registration needed.
 - **Next 16 route params are Promises** — `params: Promise<{ id: string }>` and `await params`.
-- **better-sqlite3 native build** requires `pnpm.onlyBuiltDependencies: ["better-sqlite3"]` in package.json.
+- **better-sqlite3 native build** runs during `npm install` (via its `install` script → `prebuild-install || node-gyp rebuild`). Needs Node 22 LTS; Node 25 caused a runaway compile that OOM'd the system.
 - **LLM mock mode returns `"other"` for classification** — this deliberately creates uncertainty clusters for the agent to surface as questions.
 - **Dev server warning about inferred workspace root** is harmless; silence by setting `turbopack.root` in `next.config.ts` if it bothers you.
 
