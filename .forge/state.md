@@ -1,12 +1,28 @@
 ---
+phase: executing
+spec: dag-hardening
+autonomy: full
+depth: thorough
+tokens_budget: 500000
+iteration: 0
+tokens_used: 0
+review_iterations: 0
+debug_attempts: 0
+task_status: pending
+current_task: T001
+completed_tasks: []
+blocked_reason: null
+---
+
+---
 phase: idle
-spec: null
+spec: spec-dag-hardening
 current_task: null
 task_status: null
 iteration: 0
 tokens_used: 0
 tokens_budget: 500000
-depth: standard
+depth: thorough
 autonomy: gated
 handoff_requested: false
 review_iterations: 0
@@ -14,6 +30,10 @@ debug_attempts: 0
 blocked_reason: null
 lock_holder: null
 checkpoint_id: null
+frontier:.forge/plans/spec-dag-hardening-frontier.md
+tasks_total: 14
+tiers_total: 6
+est_tokens: 157000
 ---
 
 <!--
@@ -33,7 +53,9 @@ token savings: phase doc 2200 -> 1195 chars (~46% cut). total 3263 -> 2000 (~21%
 
 ## next
 
-<!-- example: - T029 -> writeState produces caveman output. -->
+- spec-dag-hardening planned. 14 tasks across 6 tiers. 157k tokens.
+- Tier 1 parallel-dispatch ready: T001 (projector test scaffold) + T002 (mock observability).
+- `/forge:execute` to begin. Autonomy gated — user may upgrade to full at execute time.
 
 ## decisions
 

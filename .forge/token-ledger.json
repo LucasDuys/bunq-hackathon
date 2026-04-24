@@ -1,1 +1,29 @@
-{"total":0,"iterations":0,"per_spec":{}}
+{
+  "total": 157000,
+  "iterations": 0,
+  "per_spec": {
+    "spec-dag-hardening": {
+      "depth": "thorough",
+      "tasks": 14,
+      "tiers": 6,
+      "estimated_total_tokens": 157000,
+      "per_task_estimates": {
+        "T001": { "title": "Author projector unit tests (failing skeleton)", "req": "R006", "tokens": 8000, "tier": 1 },
+        "T002": { "title": "Mock-fallback observability end-to-end", "req": "R002", "tokens": 16000, "tier": 1 },
+        "T003": { "title": "Research cache leakage fix", "req": "R003", "tokens": 14000, "tier": 2 },
+        "T004": { "title": "Deterministic annual-savings projector", "req": "R004", "tokens": 12000, "tier": 2 },
+        "T005": { "title": "Credit Strategy signed audit event", "req": "R001", "tokens": 10000, "tier": 2 },
+        "T006": { "title": "Logo + vendor enrichment (research + recs)", "req": "R010", "tokens": 10000, "tier": 3 },
+        "T007": { "title": "Mock baseline harness", "req": "R011", "tokens": 10000, "tier": 2 },
+        "T008": { "title": "Forecaster API route", "req": "R005", "tokens": 8000, "tier": 3 },
+        "T009": { "title": "Projector tests green verification", "req": "R006", "tokens": 4000, "tier": 3 },
+        "T010": { "title": "Presentation page lazy-wires real data", "req": "R009", "tokens": 12000, "tier": 4 },
+        "T011": { "title": "Path consolidation decision + wiring", "req": "R007", "tokens": 14000, "tier": 4 },
+        "T012": { "title": "Legacy close-machine surgery (runDag integration)", "req": "R008", "tokens": 18000, "tier": 5 },
+        "T013": { "title": "Design consistency verification", "req": "R009,R010,R007", "tokens": 8000, "tier": 6 },
+        "T014": { "title": "End-to-end verification + baseline rerun", "req": "ALL", "tokens": 13000, "tier": 6 }
+      },
+      "actual_tokens_used": 0
+    }
+  }
+}
