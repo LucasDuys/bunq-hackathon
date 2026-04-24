@@ -74,6 +74,15 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `app/reserve/page.tsx` — Serif stat cards, gradient credit project cards (2026-04-24)
 - [x] `app/report/[month]/page.tsx` — Dark theme, serif E1-7 stats, styled methodology section (2026-04-24)
 
+## UI Polish & Fixes (Ben)
+
+- [x] `app/globals.css` — Section divider CSS (gradient lines, label centering), bunq accent colors (--blue, --purple + soft variants), class-based plain divider (replaced broken `:has()` pseudo-class) (2026-04-24)
+- [x] `components/ui.tsx` — SectionDivider + DonutChart components added (2026-04-24)
+- [x] `components/TrendChart.tsx` — Conditional dual-axis (spend line only when data exists), domain fallback for empty CO₂e, custom legend, formatter type fix (2026-04-24)
+- [x] Section dividers added to all pages: dashboard, impact, tax-savings, categories, close, ledger, reserve, report (2026-04-24)
+- [x] `app/tax-savings/page.tsx` — Converted from light Tailwind classes to dark-theme CSS variables (2026-04-24)
+- [x] `app/impact/page.tsx` — Section dividers between all content blocks (2026-04-24)
+
 ## Documentation
 
 - [x] DESIGN.md — 500+ line visual/animation spec (2026-04-23)

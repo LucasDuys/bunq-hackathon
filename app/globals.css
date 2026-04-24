@@ -191,12 +191,12 @@ p, li, dd, blockquote {
   background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
 }
 
-.section-divider:not(:has(*))::after {
-  display: none;
+.section-divider--plain::before {
+  background: linear-gradient(90deg, transparent 5%, var(--border-strong) 30%, var(--border-strong) 70%, transparent 95%);
 }
 
-.section-divider:not(:has(*))::before {
-  background: linear-gradient(90deg, transparent 5%, var(--border-strong) 30%, var(--border-strong) 70%, transparent 95%);
+.section-divider--plain::after {
+  display: none;
 }
 
 .section-divider > span {

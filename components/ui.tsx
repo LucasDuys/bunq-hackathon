@@ -273,7 +273,7 @@ export const KpiChip = ({
 /* ── Section Divider ── */
 
 export const SectionDivider = ({ label }: { label?: string }) => (
-  <div className="section-divider my-1">
+  <div className={cn("section-divider my-1", !label && "section-divider--plain")}>
     {label && <span>{label}</span>}
   </div>
 );

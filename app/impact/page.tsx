@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
   ConfidenceBar,
+  SectionDivider,
   Stat,
 } from "@/components/ui";
 import { BenchmarkChart } from "@/components/BenchmarkChart";
@@ -64,6 +65,8 @@ export default async function ImpactPage() {
         </div>
       </div>
 
+      <SectionDivider />
+
       {/* KPI row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -107,6 +110,8 @@ export default async function ImpactPage() {
         </Card>
       </div>
 
+      <SectionDivider label="Analysis" />
+
       {/* AI narrative */}
       <Card>
         <CardHeader className="flex items-center justify-between">
@@ -136,6 +141,8 @@ export default async function ImpactPage() {
           </p>
         </CardBody>
       </Card>
+
+      <SectionDivider label="Opportunities" />
 
       {/* Two-column: benchmark chart + top switches */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -210,12 +217,16 @@ export default async function ImpactPage() {
         </Card>
       </div>
 
+      <SectionDivider label="Simulator" />
+
       {/* What-if simulator */}
       <ImpactSimulator
         categories={analysis.categories}
         totalCo2eKg={analysis.totalCo2eKg}
         totalSpendEur={analysis.totalSpendEur}
       />
+
+      <SectionDivider label="Methodology" />
 
       {/* Methodology */}
       <Card>
