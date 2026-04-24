@@ -6,6 +6,11 @@ Hackathon build of **Carbon Autopilot**: monthly carbon-close system for bunq Bu
 - Monthly close: aggregate → estimate (with confidence) → cluster uncertainty → refine via 2–3 questions → apply policy → propose reserve transfer + EU credit recommendation → approve → execute.
 - Output: CSRD ESRS E1-shaped monthly report + SHA-256 hash-chained audit ledger.
 
+## Design (locked)
+- **[`DESIGN.md`](./DESIGN.md) at repo root is the single source of truth for look, feel, and voice.** Read it before touching anything visual — components, pages, `globals.css`, Tailwind tokens, copy, motion, a11y. It inherits Wise's friendly-fintech primitives and bunq's Easy Green palette + Montserrat/Inter/Fragment Mono typography, mapped to the files in `components/` and `app/`.
+- Hard rules on every UI change: reference design tokens from §2 (no raw hex, no raw `emerald-*` / `zinc-*`); every CO₂e number pairs with a confidence indicator; sentence-case headlines; `tabular-nums` on every number; pill CTAs; ring-shadows only; dark + light parity; respect `prefers-reduced-motion` and `prefers-color-scheme`.
+- If `DESIGN.md` and code disagree, fix the code. If you learned something the doc doesn't cover, update `DESIGN.md` in the same PR.
+
 ## Stack (locked)
 - **Next.js 15 App Router + TypeScript + Tailwind 4**.
 - **SQLite + better-sqlite3 + Drizzle ORM**. NOT Postgres/Neon — we switched for hackathon simplicity.
@@ -33,7 +38,7 @@ Hackathon build of **Carbon Autopilot**: monthly carbon-close system for bunq Bu
 Read the relevant brief before changing the code it informs. Update the brief's **Decisions for this build** list when you change the code.
 
 ## What's not done
-See [`todo.md`](./todo.md) for unfinished work — scope cuts, de-risked integrations (live bunq, live Anthropic), polish items, and a pointer to a Wise-style [design.md](https://getdesign.md/wise/design-md) spec we haven't written yet. When picking up new work, check todo.md first.
+See [`todo.md`](./todo.md) for unfinished work — scope cuts, de-risked integrations (live bunq, live Anthropic), polish items. Design spec is now written: see [`DESIGN.md`](./DESIGN.md) (Wise + bunq-inspired). When picking up new work, check todo.md first.
 
 ## Commands
 ```
@@ -59,6 +64,7 @@ pnpm typecheck    # tsc --noEmit
 - The rollup math — quadrature sum + spend-weighted confidence.
 - The factor source citations — every row in `FACTORS` has a `source` string, keep it filled.
 @AGENTS.md
+@DESIGN.md
 
 # Progress Tracking
 
