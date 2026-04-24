@@ -19,6 +19,7 @@
     "bunq:sugardaddy": "tsx scripts/bunq-sugardaddy.ts",
     "bunq:register": "tsx scripts/register-webhook.ts",
     "dev:live": "bash scripts/dev-live.sh",
+    "dev:fire": "tsx scripts/fire-test-event.ts",
     "reports:coverage": "tsx scripts/reports-coverage.ts",
     "typecheck": "tsc --noEmit"
   },
