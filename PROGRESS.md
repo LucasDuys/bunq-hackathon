@@ -39,6 +39,17 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Base UI components: Card, Stat, Badge, Button, ConfidenceBar, Nav (2026-04-23)
 - [x] Start Close button wired to backend (2026-04-23)
 
+## Tax Savings & Incentives (Ben)
+
+- [x] `lib/tax/incentives.ts` — Dutch EIA/MIA/Vamil + EU ETS scheme definitions with rates, thresholds, sources (2026-04-24)
+- [x] `lib/tax/alternatives.ts` — Green alternative mappings per emission factor (flight→train, gas→electric, meat→plant, etc.) with price ratios (2026-04-24)
+- [x] `lib/tax/savings.ts` — Per-transaction + monthly rollup tax savings calculator (2026-04-24)
+- [x] `lib/queries.ts` — `getTaxSavingsForMonth()` query wired to tax module (2026-04-24)
+- [x] `app/tax-savings/page.tsx` — Full tax savings page: scheme breakdown, category recommendations, switch tips (2026-04-24)
+- [x] Dashboard tax savings card with annual projection + link to detail page (2026-04-24)
+- [x] Nav updated with Tax savings link (2026-04-24)
+- [x] `research/13-tax-savings-incentives.md` — Full research brief: NL/EU schemes, category switch savings, demo numbers (2026-04-24)
+
 ## Documentation
 
 - [x] DESIGN.md — 500+ line visual/animation spec (2026-04-23)
