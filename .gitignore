@@ -39,6 +39,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# bunq runtime state (installation token, server pub key, sub-account ids)
+.bunq-context.json
+
 # vercel
 .vercel
 

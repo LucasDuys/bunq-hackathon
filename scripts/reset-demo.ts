@@ -12,6 +12,6 @@ for (const p of [dbPath, walPath, shmPath]) {
     console.log(`deleted ${p}`);
   }
 }
-execSync("pnpm tsx scripts/migrate.ts", { stdio: "inherit" });
-execSync("pnpm tsx scripts/seed.ts", { stdio: "inherit" });
+execSync("npx tsx scripts/migrate.ts", { stdio: "inherit" });
+execSync("npx tsx scripts/seed.ts", { stdio: "inherit" });
 console.log("Demo reset complete.");
