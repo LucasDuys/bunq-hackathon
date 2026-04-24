@@ -16,7 +16,7 @@ Mock mode works end-to-end, but we haven't driven live traffic through either ex
 - [ ] **Voice refinement** — "this was a team dinner." Claude voice → text → treat as a free-text refinement. Nice-to-have.
 - [ ] **Visual/narrative dashboard summary** — an LLM-written paragraph at the top of `/` contextualizing the month. Share a prompt with `generateCsrdNarrative` but target the overview reader, not auditors.
 - [ ] **Onboarding flow** — right now an org is seeded. Real flow: user authenticates, we create the sub-accounts, register webhook, install default policy. Probably 1–2 screens.
-- [ ] **Multi-entity consolidation** — a parent org with many bunq users → single CSRD report. Requires multi-tenant rework of queries, OAuth per user. Out of hackathon scope.
+- [ ] **Multi-entity consolidation** — a parent org with many bunq users → single CSRD report. Requires multi-tenant rework of queries. Out of hackathon scope.
 - [ ] **Policy editor UI** — `/settings/policy`: form-based edit of the JSON policy, validated by the same Zod schema. Right now policies live in DB only; editing means SQL.
 - [ ] **Approval workflow via bunq RequestInquiry** — instead of an in-app approve button, fire a RequestInquiry to the CFO's bunq user so approval is bank-native. Spec mentions this as an option.
 

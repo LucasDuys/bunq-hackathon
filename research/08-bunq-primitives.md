@@ -25,7 +25,7 @@ Nail down which bunq API primitives we use, which we avoid, and the non-obvious 
 
 ### Money movement
 - **Intra-user transfers between sub-accounts = immediate, zero per-call approval.** This is the core primitive that makes enterprise single-user flows work.
-- **Cross-user transfers** require OAuth per user OR a manual RequestInquiry accept. Avoid for MVP.
+- **Cross-user transfers** require a manual RequestInquiry accept. We don't use them.
 - **DraftPayment** freezes until a human taps approve in the bunq app — do NOT use in automated pipelines.
 - **Sandbox bot**: `sugardaddy@bunq.com` auto-accepts RequestInquiries up to €500. Use for demo seeding.
 - Sandbox `bunq.me` may return no URL (per toolkit source) — always budget for a fallback flow.
@@ -41,11 +41,11 @@ Nail down which bunq API primitives we use, which we avoid, and the non-obvious 
 - On HTTP 429: back off 3s. Cache `bunq_sessions` across restarts so we don't hit the session-server limit.
 
 ### Sandbox multi-user trick
-- `POST /sandbox-user-person` creates test users programmatically, returns API keys unauthenticated. For multi-entity demos you can hold all keys server-side and skip OAuth entirely.
+- `POST /sandbox-user-person` creates test users programmatically, returns API keys unauthenticated. Useful for seeding multi-user sandbox data server-side.
 
 ## Decisions for this build
 - **Mock mode by default** (`BUNQ_MOCK=1`). Real mode switches to live sandbox.
-- Single-user (single org) — no OAuth in MVP.
+- Single-user (single org) in MVP — each org connects their own bunq Business API key directly.
 - Webhook: `MUTATION` category only. Signature verified in real mode, skipped in mock.
 - Sub-accounts: one Carbon Reserve, one Credits (for simulated purchases). Created at onboarding.
 - Session tokens cached in `bunq_sessions`.
