@@ -18,6 +18,9 @@ import { factorFor } from "@/lib/factors";
 import { evaluatePolicy, type CategoryAggregate } from "@/lib/policy/evaluate";
 import { DEFAULT_POLICY, policySchema, type Policy } from "@/lib/policy/schema";
 import { generateRefinementQuestions } from "./questions";
+import { computeClusters, type Cluster } from "./clusters";
+
+export type { Cluster };
 
 export type CloseState =
   | "AGGREGATE"
@@ -33,18 +36,6 @@ export type CloseState =
   | "EXECUTING"
   | "COMPLETED"
   | "FAILED";
-
-export type Cluster = {
-  id: string;
-  merchantLabel: string;
-  merchantNorms: string[];
-  txIds: string[];
-  totalSpendEur: number;
-  likelyCategory: string | null;
-  likelySubCategory: string | null;
-  avgClassifierConfidence: number;
-  impactScore: number;
-};
 
 export type ProposedAction =
   | { kind: "reserve_transfer"; amountEur: number; description: string }
@@ -119,35 +110,8 @@ export const startCloseRun = async (orgId: string, month: string) => {
 
   // 3. CLUSTER_UNCERTAINTY: group tx by merchantNorm, pick top-N by (spend × (1-confidence)).
   db.update(closeRuns).set({ state: "CLUSTER_UNCERTAINTY" }).where(eq(closeRuns.id, id)).run();
-  const byMerchant = new Map<string, typeof estimates>();
-  for (const e of estimates) {
-    const key = e.tx.merchantNorm;
-    if (!byMerchant.has(key)) byMerchant.set(key, []);
-    byMerchant.get(key)!.push(e);
-  }
-  const clusters: Cluster[] = [];
-  for (const [merchantNorm, group] of byMerchant) {
-    const totalSpendEur = group.reduce((s, g) => s + g.tx.amountCents / 100, 0);
-    const avgConf = group.reduce((s, g) => s + (g.tx.categoryConfidence ?? 0.5), 0) / group.length;
-    const pointCo2 = group.reduce((s, g) => s + g.est.co2eKgPoint, 0);
-    const rangeHalf = group.reduce((s, g) => s + (g.est.co2eKgHigh - g.est.co2eKgLow) / 2, 0);
-    const impactScore = rangeHalf * (1 - avgConf);
-    // Only worth asking about if there's real uncertainty and material spend
-    if (totalSpendEur < 300 || avgConf > 0.85) continue;
-    clusters.push({
-      id: `cl_${merchantNorm.replace(/\s+/g, "_").slice(0, 32)}`,
-      merchantLabel: group[0].tx.merchantRaw,
-      merchantNorms: [merchantNorm],
-      txIds: group.map((g) => g.tx.id),
-      totalSpendEur,
-      likelyCategory: group[0].tx.category,
-      likelySubCategory: group[0].tx.subCategory,
-      avgClassifierConfidence: avgConf,
-      impactScore,
-    });
-  }
-  clusters.sort((a, b) => b.impactScore - a.impactScore);
-  const topClusters = clusters.slice(0, 3);
+  const clusters = computeClusters(estimates);
+  const topClusters = clusters.filter((c) => c.flagged);
 
   // 4. GENERATE QUESTIONS
   db.update(closeRuns).set({ state: "QUESTIONS_GENERATED" }).where(eq(closeRuns.id, id)).run();

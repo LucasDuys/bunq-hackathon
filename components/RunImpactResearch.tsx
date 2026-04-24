@@ -19,7 +19,7 @@ export const RunImpactResearch = ({ hasData }: { hasData: boolean }) => {
     <Button
       onClick={run}
       disabled={pending}
-      className="rounded-full gap-2"
+      variant="primary"
       aria-label={hasData ? "Refresh impact research" : "Run impact research"}
     >
       <Sparkles className="h-4 w-4" aria-hidden />

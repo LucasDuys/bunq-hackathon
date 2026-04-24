@@ -20,7 +20,10 @@ import { ImpactMatrix, type MatrixPoint } from "@/components/ImpactMatrix";
 import { ScenarioPlanner, type PlannableAlternative } from "@/components/ScenarioPlanner";
 import type { Quadrant } from "@/lib/agent/impacts";
 import type { DagRunResult, ResearchResult, ResearchedAlternative } from "@/lib/agents/dag/types";
+import { schemesForCategory } from "@/lib/tax";
 import { fmtEur, fmtKg } from "@/lib/utils";
+
+type Lens = "co2" | "eur";
 
 /* ─────────── Types surfaced from the page ─────────── */
 
@@ -148,7 +151,7 @@ const TabButton = ({
   <button
     type="button"
     onClick={onClick}
-    className="inline-flex items-center gap-2 rounded-full px-3.5 h-9 text-[13px] font-medium transition-[transform,background,color,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring-accent)]"
+    className="inline-flex items-center gap-2 rounded-full px-3.5 h-9 text-[13px] font-normal transition-[transform,background,color,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring-accent)]"
     style={{
       color: active ? "var(--text)" : "var(--text-dim)",
       background: active ? "var(--bg-card-2)" : "transparent",
@@ -171,6 +174,71 @@ const TabButton = ({
   </button>
 );
 
+/* ─────────── Lens toggle ─────────── */
+
+const LensToggle = ({ lens, onChange }: { lens: Lens; onChange: (l: Lens) => void }) => {
+  const Btn = ({ value, label }: { value: Lens; label: string }) => {
+    const active = lens === value;
+    return (
+      <button
+        type="button"
+        onClick={() => onChange(value)}
+        aria-pressed={active}
+        className="inline-flex items-center justify-center h-7 px-3 text-[12px] font-medium tabular-nums rounded-full transition-[background,color] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-green)]"
+        style={{
+          color: active ? "var(--fg-primary)" : "var(--fg-muted)",
+          background: active ? "var(--bg-button)" : "transparent",
+        }}
+      >
+        {label}
+      </button>
+    );
+  };
+  return (
+    <div
+      className="inline-flex items-center gap-0.5 rounded-full p-0.5 ml-1"
+      role="group"
+      aria-label="Lens"
+      style={{
+        background: "var(--bg-inset)",
+        border: "1px solid var(--border-default)",
+      }}
+    >
+      <Btn value="co2" label="CO₂e" />
+      <Btn value="eur" label="€" />
+    </div>
+  );
+};
+
+/* ─────────── Tax-scheme chip ─────────── */
+
+const TaxSchemeChips = ({ category }: { category: string }) => {
+  const schemes = useMemo(() => schemesForCategory(category), [category]);
+  if (schemes.length === 0) return null;
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+      {schemes.map((s) => (
+        <span
+          key={s.id}
+          className="inline-flex items-center gap-1 rounded-full px-2 py-[2px] text-[11px] font-mono uppercase tracking-[0.04em]"
+          style={{
+            color: "var(--brand-green-link)",
+            border: "1px solid var(--brand-green-border)",
+            background: "transparent",
+          }}
+          title={s.description}
+        >
+          <BadgeCheck className="h-3 w-3" aria-hidden />
+          {s.id}
+          {s.method === "pct_of_investment" && (
+            <span style={{ color: "var(--fg-muted)" }}>· {(s.rate * 100).toFixed(1)}%</span>
+          )}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 /* ─────────── Hero briefing ─────────── */
 
 const HeroBriefing = ({
@@ -178,14 +246,27 @@ const HeroBriefing = ({
   headline,
   baselines,
   action,
+  lens,
+  onLensChange,
 }: {
   dag: DagRunResult | null;
   headline: WorkspaceHeadline;
   baselines: WorkspaceBaseline[];
   action: React.ReactNode;
+  lens: Lens;
+  onLensChange: (l: Lens) => void;
 }) => {
   const netEur = dag?.executiveReport.kpis.net_company_scale_financial_impact_eur ?? 0;
   const co2eKg = (dag?.executiveReport.kpis.emissions_reduced_tco2e ?? 0) * 1000;
+  // Headline-derived fallback when DAG hasn't run. Negative deltas in the
+  // headline mean reductions; flip sign for display.
+  const headlineCo2eAvoidableKg = Math.max(
+    0,
+    -(headline.winWinCo2 + headline.payCo2),
+  );
+  const headlineEurUpside = -(headline.winWinEur) + Math.max(0, -headline.payEur);
+  const heroCo2eKg = co2eKg > 0 ? co2eKg : headlineCo2eAvoidableKg;
+  const heroEur = netEur !== 0 ? netEur : headlineEurUpside;
   const confidence = dag?.executiveReport.kpis.confidence ?? headline.avgConfidence;
   const narrative = dag?.executiveReport.executive_summary ?? "";
   const jurisdiction = dag?.creditStrategy.jurisdiction;
@@ -193,42 +274,42 @@ const HeroBriefing = ({
 
   return (
     <Card className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-60"
-        style={{
-          background:
-            "radial-gradient(900px 320px at 85% 0%, rgba(74,222,128,0.12), transparent 60%), radial-gradient(700px 260px at 10% 100%, rgba(107,155,210,0.08), transparent 55%)",
-        }}
-      />
       <div className="relative grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 p-8">
         <div className="flex flex-col gap-5 min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Sparkles className="h-4 w-4" style={{ color: "var(--green-bright)" }} aria-hidden />
             <span
-              className="text-[11px] uppercase tracking-[0.14em] font-semibold"
+              className="text-[11px] uppercase tracking-[0.14em] font-normal"
               style={{ color: "var(--text-mute)" }}
             >
               Carbon CFO briefing · {dag?.executiveReport.analysis_period ?? "latest run"}
             </span>
             {taxReviewRequired ? <Badge tone="warning">Tax advisor review</Badge> : null}
+            <LensToggle lens={lens} onChange={onLensChange} />
           </div>
           <div className="flex items-baseline gap-3 flex-wrap">
             <div
-              className="font-serif font-normal tabular-nums leading-none"
+              className="font-normal tabular-nums leading-none"
               style={{
                 fontSize: "clamp(56px, 7vw, 88px)",
                 letterSpacing: "-0.03em",
-                color: netEur >= 0 ? "var(--green-bright)" : "var(--red)",
+                color:
+                  lens === "co2"
+                    ? "var(--green-bright)"
+                    : heroEur >= 0
+                      ? "var(--green-bright)"
+                      : "var(--red)",
               }}
             >
-              {signedEur(netEur)}
+              {lens === "co2" ? fmtKg(heroCo2eKg) : signedEur(heroEur)}
             </div>
             <div className="flex flex-col gap-0.5">
-              <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-mute)] font-semibold">
-                Net / yr
+              <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-mute)] font-normal">
+                {lens === "co2" ? "Avoidable / yr" : "Net / yr"}
               </span>
-              <span className="text-xs text-[var(--text-dim)]">after tax, credits & ETS</span>
+              <span className="text-xs text-[var(--text-dim)]">
+                {lens === "co2" ? "across surfaced switches" : "after tax, credits & ETS"}
+              </span>
             </div>
           </div>
           {narrative ? (
@@ -306,11 +387,11 @@ const MetricTile = ({
       border: "1px solid var(--border-faint)",
     }}
   >
-    <div className="text-[10.5px] uppercase tracking-[0.6px] font-semibold text-[var(--text-mute)]">
+    <div className="text-[10.5px] uppercase tracking-[0.6px] font-normal text-[var(--text-mute)]">
       {label}
     </div>
     <div
-      className="font-serif text-[24px] leading-none tabular-nums"
+      className="text-[24px] leading-none tabular-nums"
       style={{
         color:
           tone === "positive"
@@ -363,7 +444,7 @@ const TopRecommendations = ({ dag }: { dag: DagRunResult }) => {
                     >
                       #{r.rank}
                     </span>
-                    <span className="font-medium text-[var(--text)]">{r.title}</span>
+                    <span className="font-normal text-[var(--text)]">{r.title}</span>
                     {r.approval_required ? (
                       <Badge tone="warning">Approval required</Badge>
                     ) : null}
@@ -552,7 +633,7 @@ const SwitchesExplorer = ({ baselines }: { baselines: WorkspaceBaseline[] }) => 
                         {b.alternatives.length} alts
                       </span>
                     </div>
-                    <div className="font-medium text-[14px] text-[var(--text)] truncate">
+                    <div className="font-normal text-[14px] text-[var(--text)] truncate">
                       {b.merchantLabel}
                     </div>
                     <div className="flex items-center justify-between tabular-nums text-[12px]">
@@ -652,16 +733,17 @@ const BaselineDetail = ({
               <Badge tone="default">{baseline.subCategory.replace(/_/g, " ")}</Badge>
             )}
           </div>
-          <h3 className="text-xl font-semibold tracking-tight truncate">
+          <h3 className="text-xl font-normal tracking-tight truncate">
             {baseline.merchantLabel}
           </h3>
+          <TaxSchemeChips category={baseline.category} />
         </div>
         <div className="flex items-center gap-6 shrink-0">
           <div className="flex flex-col">
             <span className="text-[10.5px] uppercase tracking-wide text-[var(--text-mute)]">
               Spend / yr
             </span>
-            <span className="font-serif text-[22px] leading-none tabular-nums">
+            <span className="text-[22px] leading-none tabular-nums">
               {fmtEur(baseline.annualSpendEur, 0)}
             </span>
           </div>
@@ -669,7 +751,7 @@ const BaselineDetail = ({
             <span className="text-[10.5px] uppercase tracking-wide text-[var(--text-mute)]">
               CO₂e / yr
             </span>
-            <span className="font-serif text-[22px] leading-none tabular-nums">
+            <span className="text-[22px] leading-none tabular-nums">
               {fmtKg(baseline.annualCo2eKg)}
             </span>
             <ConfidenceBar value={baseline.confidence} />
@@ -691,7 +773,7 @@ const BaselineDetail = ({
                   style={{ background: QUADRANT_COLOR[q] }}
                 />
                 <span
-                  className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+                  className="text-[11px] font-normal uppercase tracking-[0.08em]"
                   style={{ color: QUADRANT_COLOR[q] }}
                 >
                   {QUADRANT_LABEL[q]}
@@ -732,7 +814,7 @@ const AltRow = ({ alt, quadrantColor }: { alt: WorkspaceAlt; quadrantColor: stri
       >
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-2 flex-wrap min-w-0">
-            <span className="font-medium text-[14px] text-[var(--text)]">{alt.name}</span>
+            <span className="font-normal text-[14px] text-[var(--text)]">{alt.name}</span>
             <span className="text-[10px] uppercase tracking-wide text-[var(--text-mute)]">
               {alt.type}
             </span>
@@ -943,7 +1025,7 @@ const ResearchInspector = ({
                       }}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-[13.5px] truncate text-[var(--text)]">
+                        <span className="font-normal text-[13.5px] truncate text-[var(--text)]">
                           {label}
                         </span>
                         {r.cache_hit ? (
@@ -1005,7 +1087,7 @@ const ClusterDetail = ({
         <div className="text-[10.5px] uppercase tracking-[0.6px] text-[var(--text-mute)] mb-1">
           Cluster
         </div>
-        <h3 className="text-lg font-semibold tracking-tight truncate">{label}</h3>
+        <h3 className="text-lg font-normal tracking-tight truncate">{label}</h3>
         <div className="flex items-center gap-4 text-[11px] text-[var(--text-mute)] mt-1.5 tabular-nums">
           <span>{result.alternatives.length} alternatives</span>
           <span>·</span>
@@ -1045,7 +1127,7 @@ const ResearchedAltCard = ({ alt }: { alt: ResearchedAlternative }) => {
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-[14.5px] text-[var(--text)]">{alt.name}</span>
+            <span className="font-normal text-[14.5px] text-[var(--text)]">{alt.name}</span>
             {alt.vendor && (
               <span className="text-[11px] text-[var(--text-mute)]">· {alt.vendor}</span>
             )}
@@ -1119,9 +1201,9 @@ const ResearchedAltCard = ({ alt }: { alt: ResearchedAlternative }) => {
               key={f}
               className="inline-flex items-center gap-1 rounded-full px-2 py-0.5"
               style={{
-                background: "var(--amber-deep)",
-                color: "var(--amber)",
-                border: "1px solid rgba(217,164,65,0.22)",
+                background: "transparent",
+                color: "var(--status-warning)",
+                border: "1px solid rgba(247,185,85,0.30)",
               }}
             >
               <Flag className="h-2.5 w-2.5" aria-hidden />
@@ -1131,7 +1213,7 @@ const ResearchedAltCard = ({ alt }: { alt: ResearchedAlternative }) => {
       </div>
       {alt.sources.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <div className="text-[10.5px] uppercase tracking-[0.6px] font-semibold text-[var(--text-mute)]">
+          <div className="text-[10.5px] uppercase tracking-[0.6px] font-normal text-[var(--text-mute)]">
             Evidence
           </div>
           <ul className="flex flex-col gap-1.5">
@@ -1150,7 +1232,7 @@ const ResearchedAltCard = ({ alt }: { alt: ResearchedAlternative }) => {
                   <FileSearch className="h-3.5 w-3.5 mt-0.5 text-[var(--text-mute)]" aria-hidden />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[12.5px] font-medium text-[var(--text)] truncate">
+                      <span className="text-[12.5px] font-normal text-[var(--text)] truncate">
                         {s.title}
                       </span>
                       <span className="text-[10.5px] text-[var(--text-mute)]">
@@ -1278,19 +1360,27 @@ export const ImpactsWorkspace = ({
   action: React.ReactNode;
 }) => {
   const [tab, setTab] = useState<TabKey>("overview");
+  const [lens, setLens] = useState<Lens>("co2");
 
   const limitations = dag?.executiveReport.limitations ?? [];
   const researchResultsCount = dag?.research?.results.length ?? 0;
 
   return (
     <div className="flex flex-col gap-6">
-      <HeroBriefing dag={dag} headline={headline} baselines={baselines} action={action} />
+      <HeroBriefing
+        dag={dag}
+        headline={headline}
+        baselines={baselines}
+        action={action}
+        lens={lens}
+        onLensChange={setLens}
+      />
 
       <div
         className="sticky top-14 z-20 -mx-2 px-2 py-2 flex items-center gap-2 overflow-x-auto"
         style={{
           background:
-            "linear-gradient(180deg, var(--bg) 0%, var(--bg) 60%, transparent 100%)",
+            "linear-gradient(180deg, var(--bg-canvas) 0%, var(--bg-canvas) 60%, transparent 100%)",
           backdropFilter: "blur(8px)",
         }}
       >
@@ -1371,7 +1461,7 @@ export const ImpactsWorkspace = ({
               style={{ color: "var(--green-bright)" }}
               aria-hidden
             />
-            <h2 className="text-base font-semibold">No DAG run persisted yet</h2>
+            <h2 className="text-base font-normal">No DAG run persisted yet</h2>
             <p className="text-sm text-[var(--text-dim)] max-w-md mx-auto">
               Run impact research to populate the research inspector with web-sourced evidence per
               cluster.
