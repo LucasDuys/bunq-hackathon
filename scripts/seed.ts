@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { appendAudit } from "@/lib/audit/append";
 import { CREDIT_PROJECTS } from "@/lib/credits/projects";
 import { db, creditProjects, emissionFactors, orgs, policies, transactions } from "@/lib/db/client";
@@ -9,6 +11,32 @@ import { normalizeMerchant } from "@/lib/classify/rules";
 import { env } from "@/lib/env";
 
 type SeedTx = { merchant: string; desc: string; amountEur: number; daysAgo: number };
+
+// Spec R001.AC3 — bunq webhook-shape payments loaded from fixtures/bunq-transactions.json.
+type BunqPayment = {
+  id: number;
+  created: string; // "YYYY-MM-DD HH:MM:SS.ffffff"
+  amount: { value: string; currency: string };
+  description: string | null;
+  counterparty_alias?: {
+    display_name?: string;
+    label_monetary_account?: { display_name?: string; merchant_category_code?: string };
+  };
+  _hackathon_metadata?: { employee_team?: string; merchant_category?: string };
+};
+
+const FIXTURE_PATH = path.resolve(process.cwd(), "fixtures", "bunq-transactions.json");
+
+const loadBunqFixture = (): BunqPayment[] => {
+  try {
+    const raw = readFileSync(FIXTURE_PATH, "utf-8");
+    const parsed = JSON.parse(raw) as { Response?: Array<{ Payment?: BunqPayment }> };
+    return (parsed.Response ?? []).map((r) => r.Payment).filter((p): p is BunqPayment => !!p);
+  } catch (e) {
+    console.warn(`[seed] could not read ${FIXTURE_PATH}: ${(e as Error).message}`);
+    return [];
+  }
+};
 
 // Deterministic set of 60 transactions across 90 days. Mix of clearly-classifiable
 // and ambiguous merchants so the agent has work to do.
@@ -158,7 +186,45 @@ const run = async () => {
     count += 1;
   }
   appendAudit({ orgId, actor: "system", type: "transactions.seeded", payload: { count } });
-  console.log(`Seeded ${count} transactions.`);
+  console.log(`Seeded ${count} synthetic transactions.`);
+
+  // Spec R001.AC3 — also load the bunq-shaped fixture so the Baseline agent has
+  // realistic webhook-shape data to aggregate. Each Payment is timestamped from
+  // its `created` field so month boundaries come out right.
+  const fixture = loadBunqFixture();
+  let fxCount = 0;
+  for (const p of fixture) {
+    const rawMerchant =
+      p.counterparty_alias?.display_name ??
+      p.counterparty_alias?.label_monetary_account?.display_name ??
+      p.description ??
+      `bunq_${p.id}`;
+    const merchantNorm = normalizeMerchant(rawMerchant);
+    const cls = await classifyMerchant(rawMerchant, p.description);
+    const ts = Math.floor(new Date(p.created.replace(" ", "T") + "Z").getTime() / 1000);
+    const amountEur = Math.abs(Number(p.amount.value));
+    const id = `tx_${randomUUID()}`;
+    db.insert(transactions).values({
+      id,
+      orgId,
+      bunqTxId: `bunq_fx_${p.id}`,
+      merchantRaw: rawMerchant,
+      merchantNorm,
+      amountCents: Math.round(amountEur * 100),
+      currency: p.amount.currency,
+      timestamp: ts,
+      accountId: "main",
+      description: p.description,
+      category: cls.category,
+      subCategory: cls.subCategory,
+      categoryConfidence: cls.confidence,
+      classifierSource: cls.source,
+    }).onConflictDoNothing().run();
+    fxCount += 1;
+  }
+  appendAudit({ orgId, actor: "system", type: "transactions.fixture.seeded", payload: { count: fxCount, source: "fixtures/bunq-transactions.json" } });
+  console.log(`Seeded ${fxCount} bunq fixture transactions.`);
+  console.log(`Total transactions: ${count + fxCount}.`);
 };
 
 run().catch((e) => {
