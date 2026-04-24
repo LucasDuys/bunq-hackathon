@@ -270,6 +270,88 @@ export const KpiChip = ({
   </div>
 );
 
+/* ── Section Divider ── */
+
+export const SectionDivider = ({ label }: { label?: string }) => (
+  <div className="section-divider my-1">
+    {label && <span>{label}</span>}
+  </div>
+);
+
+/* ── Donut Chart (SVG ring) ── */
+
+export const DonutChart = ({
+  segments,
+  size = 180,
+  thickness = 22,
+  className,
+}: {
+  segments: Array<{ label: string; value: number; color: string }>;
+  size?: number;
+  thickness?: number;
+  className?: string;
+}) => {
+  const total = segments.reduce((s, seg) => s + seg.value, 0);
+  if (total === 0) return null;
+  const r = (size - thickness) / 2;
+  const c = size / 2;
+  const circumference = 2 * Math.PI * r;
+
+  let offset = 0;
+  const arcs = segments.map((seg) => {
+    const pct = seg.value / total;
+    const dash = pct * circumference;
+    const gap = circumference - dash;
+    const rotation = offset * 360 - 90;
+    offset += pct;
+    return { ...seg, dash, gap, rotation, pct };
+  });
+
+  return (
+    <div className={cn("relative inline-flex items-center justify-center", className)}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle
+          cx={c}
+          cy={c}
+          r={r}
+          fill="none"
+          stroke="var(--bg-inset)"
+          strokeWidth={thickness}
+        />
+        {arcs.map((arc) => (
+          <circle
+            key={arc.label}
+            cx={c}
+            cy={c}
+            r={r}
+            fill="none"
+            stroke={arc.color}
+            strokeWidth={thickness}
+            strokeDasharray={`${arc.dash} ${arc.gap}`}
+            strokeLinecap="round"
+            transform={`rotate(${arc.rotation} ${c} ${c})`}
+            style={{
+              filter: `drop-shadow(0 0 4px ${arc.color}44)`,
+              transition: "stroke-dasharray 600ms ease-out",
+            }}
+          />
+        ))}
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div
+          className="font-serif text-[28px] font-normal tabular-nums leading-none"
+          style={{ color: "#fff" }}
+        >
+          {segments.length}
+        </div>
+        <div className="text-[10px] uppercase tracking-[0.5px] mt-1" style={{ color: "var(--text-mute)" }}>
+          categories
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ── Pulse Dot ── */
 
 export const PulseDot = ({ color = "var(--green)" }: { color?: string }) => (

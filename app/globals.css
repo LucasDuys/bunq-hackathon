@@ -33,6 +33,12 @@
   --red: #e06f6f;
   --red-deep: #3d1a1a;
 
+  /* bunq plan accents — used sparingly for variety */
+  --blue: #6b9bd2;
+  --blue-soft: rgba(107,155,210,0.12);
+  --purple: #b07cc7;
+  --purple-soft: rgba(176,124,199,0.12);
+
   /* Category tints */
   --cat-fuel: #6b9bd2;
   --cat-electricity: #30c06f;
@@ -85,6 +91,8 @@
   --color-green-deep: var(--green-deep);
   --color-amber: var(--amber);
   --color-red: var(--red);
+  --color-blue: var(--blue);
+  --color-purple: var(--purple);
   --font-sans: var(--font-sans);
   --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);
@@ -163,6 +171,41 @@ p, li, dd, blockquote {
   -webkit-mask-composite: xor;
           mask-composite: exclude;
   pointer-events: none;
+}
+
+/* ── Section divider — faint rounded pill line ── */
+
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+
+.section-divider:not(:has(*))::after {
+  display: none;
+}
+
+.section-divider:not(:has(*))::before {
+  background: linear-gradient(90deg, transparent 5%, var(--border-strong) 30%, var(--border-strong) 70%, transparent 95%);
+}
+
+.section-divider > span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
 }
 
 /* ── Scrollbar ── */

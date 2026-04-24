@@ -1,4 +1,4 @@
-import { Badge, Card, CardBody, CardHeader, CardTitle } from "@/components/ui";
+import { Badge, Card, CardBody, CardHeader, CardTitle, SectionDivider } from "@/components/ui";
 import { DEFAULT_ORG_ID, getAllAudit } from "@/lib/queries";
 import { verifyChain } from "@/lib/audit/append";
 
@@ -26,6 +26,8 @@ export default async function LedgerPage() {
           {chain.valid ? "Chain valid" : `Broken at id=${chain.brokenAtId}`}
         </Badge>
       </div>
+
+      <SectionDivider />
 
       <Card>
         <CardHeader><CardTitle>{events.length} events</CardTitle></CardHeader>

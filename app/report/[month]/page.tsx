@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, CardTitle, Badge } from "@/components/ui";
+import { Card, CardBody, CardHeader, CardTitle, Badge, SectionDivider } from "@/components/ui";
 import { DEFAULT_ORG_ID, getCategorySpendForMonth, getLatestCloseRun, getLatestEstimatesForMonth } from "@/lib/queries";
 import { fmtEur, fmtKg } from "@/lib/utils";
 import { generateCsrdNarrative } from "@/lib/agent/narrative";
@@ -61,12 +61,16 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
         <Badge tone="info">Audit-ready</Badge>
       </div>
 
+      <SectionDivider />
+
       <Card>
         <CardHeader><CardTitle>Narrative summary</CardTitle></CardHeader>
         <CardBody>
           <p className="text-sm leading-relaxed" style={{ color: "var(--text-dim)" }}>{narrative}</p>
         </CardBody>
       </Card>
+
+      <SectionDivider label="Emissions" />
 
       <Card>
         <CardHeader><CardTitle>E1-6 — Gross GHG emissions (approximated)</CardTitle></CardHeader>
@@ -102,6 +106,8 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
           </p>
         </CardBody>
       </Card>
+
+      <SectionDivider label="Credits" />
 
       <Card>
         <CardHeader><CardTitle>E1-7 — Carbon removal and carbon credits</CardTitle></CardHeader>
@@ -146,6 +152,8 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
           )}
         </CardBody>
       </Card>
+
+      <SectionDivider label="Methodology" />
 
       <Card>
         <CardHeader><CardTitle>Methodology & data lineage</CardTitle></CardHeader>

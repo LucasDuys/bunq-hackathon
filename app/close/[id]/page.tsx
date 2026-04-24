@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2, Circle, Clock } from "lucide-react";
-import { Badge, Card, CardBody, CardHeader, CardTitle, ConfidenceBar, Stat } from "@/components/ui";
+import { Badge, Card, CardBody, CardHeader, CardTitle, ConfidenceBar, SectionDivider, Stat } from "@/components/ui";
 import { CloseActions } from "@/components/CloseActions";
 import { fmtEur, fmtKg } from "@/lib/utils";
 import { getAuditForRun, getCloseRun, getQuestionsForRun } from "@/lib/queries";
@@ -48,6 +48,8 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
         </h1>
       </div>
 
+      <SectionDivider />
+
       {/* Pipeline */}
       <Card>
         <CardHeader><CardTitle>Pipeline</CardTitle></CardHeader>
@@ -86,6 +88,8 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
         </CardBody>
       </Card>
 
+      <SectionDivider label="Results" />
+
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardBody><Stat label="Initial CO₂e" value={run.initialCo2eKg != null ? fmtKg(run.initialCo2eKg) : "—"} /></CardBody></Card>
@@ -101,6 +105,8 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
         </CardBody></Card>
         <Card><CardBody><Stat label="Reserve" value={run.reserveEur != null ? fmtEur(run.reserveEur, 0) : "—"} sub={run.approved ? "Transferred" : run.reserveEur != null ? "Awaiting approval" : "Not yet computed"} tone={run.approved ? "positive" : undefined} /></CardBody></Card>
       </div>
+
+      <SectionDivider label="Review" />
 
       {/* Unanswered questions */}
       {questions.length > 0 && questions.some((q) => !q.answer) && (
@@ -153,6 +159,8 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
           </CardBody>
         </Card>
       )}
+
+      <SectionDivider label="Audit" />
 
       {/* Audit trail */}
       <Card>

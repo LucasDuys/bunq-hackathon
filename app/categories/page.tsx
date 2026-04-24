@@ -1,4 +1,4 @@
-import { Card, CardBody, CardHeader, CardTitle, Badge } from "@/components/ui";
+import { Card, CardBody, CardHeader, CardTitle, Badge, SectionDivider } from "@/components/ui";
 import { DEFAULT_ORG_ID, currentMonth, getCategorySpendForMonth, getLatestEstimatesForMonth } from "@/lib/queries";
 import { fmtEur, fmtKg } from "@/lib/utils";
 
@@ -45,6 +45,8 @@ export default async function CategoriesPage() {
         </p>
       </div>
 
+      <SectionDivider label="Emissions" />
+
       <Card>
         <CardHeader><CardTitle>Emissions by category</CardTitle></CardHeader>
         <CardBody className="flex flex-col gap-3">
@@ -81,6 +83,8 @@ export default async function CategoriesPage() {
           )}
         </CardBody>
       </Card>
+
+      <SectionDivider label="Impact matrix" />
 
       <Card>
         <CardHeader><CardTitle>Impact matrix — price × environmental</CardTitle></CardHeader>

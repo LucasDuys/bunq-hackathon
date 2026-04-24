@@ -1,5 +1,5 @@
 import { Factory, Sprout, Trees, Globe2 } from "lucide-react";
-import { Badge, Card, CardBody, CardHeader, CardTitle, Stat } from "@/components/ui";
+import { Badge, Card, CardBody, CardHeader, CardTitle, SectionDivider, Stat } from "@/components/ui";
 import { DEFAULT_ORG_ID, getCreditProjects, getLatestCloseRun } from "@/lib/queries";
 import { fmtEur } from "@/lib/utils";
 import type { CreditProject } from "@/lib/db/schema";
@@ -34,11 +34,15 @@ export default async function ReservePage() {
         </p>
       </div>
 
+      <SectionDivider />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card><CardBody><Stat label="Reserve allocated (last close)" value={latest?.reserveEur ? fmtEur(latest.reserveEur, 0) : "—"} sub={latest?.approved ? "Transferred" : latest?.reserveEur ? "Awaiting approval" : "No close yet"} tone={latest?.approved ? "positive" : undefined} serif /></CardBody></Card>
         <Card><CardBody><Stat label="Recommended coverage" value={`${totalTonnes.toFixed(2)} t`} sub={`Across ${mix.length} EU projects`} serif /></CardBody></Card>
         <Card><CardBody><Stat label="Credit spend (simulated)" value={fmtEur(totalEur, 0)} sub="EU-only · removal-weighted" tone="positive" serif /></CardBody></Card>
       </div>
+
+      <SectionDivider label="Credit mix" />
 
       <Card>
         <CardHeader className="flex items-center justify-between">

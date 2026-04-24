@@ -8,8 +8,10 @@ import {
   CardHeader,
   CardTitle,
   ConfidenceBar,
+  DonutChart,
   KpiChip,
   PulseDot,
+  SectionDivider,
   Stat,
 } from "@/components/ui";
 import { StartCloseButton } from "@/components/StartCloseButton";
@@ -81,6 +83,8 @@ export default async function Overview() {
             <StartCloseButton month={month} latestRunId={latestRun?.id ?? null} />
           </div>
         </div>
+
+        <SectionDivider />
 
         {/* ROW 1 — Hero reserve card + KPI chips */}
         <div className="grid grid-cols-12 gap-5">
@@ -206,6 +210,8 @@ export default async function Overview() {
           </div>
         </div>
 
+        <SectionDivider label="Analytics" />
+
         {/* ROW 2 — Emissions trend + How it works */}
         <div className="grid grid-cols-12 gap-5">
           <Card className="col-span-8">
@@ -247,48 +253,79 @@ export default async function Overview() {
           </Card>
         </div>
 
-        {/* ROW 3 — Category spend breakdown */}
-        {spendRows.length > 0 && (
-          <Card>
-            <CardHeader className="flex items-center justify-between">
-              <div>
-                <div className="text-[11px] uppercase tracking-[0.8px] font-semibold mb-1.5" style={{ color: "var(--text-mute)" }}>Spend by category</div>
-                <CardTitle>Where the footprint comes from</CardTitle>
-              </div>
-              <Link href="/categories">
-                <Button variant="ghost" size="sm">View details <ArrowRight className="h-3.5 w-3.5" /></Button>
-              </Link>
-            </CardHeader>
-            <CardBody className="flex flex-col gap-2.5">
-              {spendRows
-                .sort((a, b) => (b.spendEur ?? 0) - (a.spendEur ?? 0))
-                .slice(0, 6)
-                .map((r) => {
-                  const maxSpend = Math.max(1, ...spendRows.map((s) => s.spendEur ?? 0));
-                  const pct = ((r.spendEur ?? 0) / maxSpend) * 100;
-                  return (
-                    <div key={r.category} className="flex items-center gap-4">
-                      <div className="w-28 text-[13px] font-medium capitalize" style={{ color: "var(--text)" }}>{r.category}</div>
-                      <div className="flex-1 h-[8px] rounded-full relative overflow-hidden" style={{ background: "var(--bg-inset)" }}>
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${pct}%`,
-                            background: "linear-gradient(90deg, var(--green-soft), var(--green))",
-                            boxShadow: "0 0 6px rgba(48,192,111,0.3)",
-                            animation: "bar-grow 800ms cubic-bezier(.22,.8,.2,1) both",
-                            transformOrigin: "left",
-                          }}
-                        />
-                      </div>
-                      <div className="w-24 text-right text-[13px] tabular-nums" style={{ color: "var(--text-dim)" }}>{fmtEur(r.spendEur ?? 0, 0)}</div>
-                      <div className="w-14 text-right text-xs" style={{ color: "var(--text-faint)" }}>{r.count} tx</div>
-                    </div>
-                  );
-                })}
-            </CardBody>
-          </Card>
-        )}
+        <SectionDivider label="Breakdown" />
+
+        {/* ROW 3 — Category spend breakdown with donut */}
+        {spendRows.length > 0 && (() => {
+          const CAT_COLORS: Record<string, string> = {
+            fuel: "var(--cat-fuel)",
+            electricity: "var(--cat-electricity)",
+            food: "var(--cat-goods)",
+            goods: "var(--cat-goods)",
+            travel: "var(--cat-travel)",
+            digital: "var(--cat-digital)",
+            cloud: "var(--cat-digital)",
+            services: "var(--cat-services)",
+            procurement: "var(--cat-goods)",
+          };
+          const sorted = [...spendRows].sort((a, b) => (b.spendEur ?? 0) - (a.spendEur ?? 0));
+          const maxSpend = Math.max(1, ...sorted.map((s) => s.spendEur ?? 0));
+          return (
+            <Card>
+              <CardHeader className="flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] uppercase tracking-[0.8px] font-semibold mb-1.5" style={{ color: "var(--text-mute)" }}>Spend by category</div>
+                  <CardTitle>Where the footprint comes from</CardTitle>
+                </div>
+                <Link href="/categories">
+                  <Button variant="ghost" size="sm">View details <ArrowRight className="h-3.5 w-3.5" /></Button>
+                </Link>
+              </CardHeader>
+              <CardBody>
+                <div className="flex gap-8 items-center">
+                  <DonutChart
+                    className="shrink-0"
+                    segments={sorted.slice(0, 6).map((r) => ({
+                      label: r.category ?? "other",
+                      value: r.spendEur ?? 0,
+                      color: CAT_COLORS[(r.category ?? "other").toLowerCase()] ?? "var(--cat-other)",
+                    }))}
+                  />
+                  <div className="flex-1 flex flex-col gap-2.5">
+                    {sorted.slice(0, 6).map((r) => {
+                      const pct = ((r.spendEur ?? 0) / maxSpend) * 100;
+                      const color = CAT_COLORS[(r.category ?? "other").toLowerCase()] ?? "var(--cat-other)";
+                      return (
+                        <div key={r.category} className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 w-28">
+                            <span className="w-[6px] h-[6px] rounded-full shrink-0" style={{ background: color }} />
+                            <span className="text-[13px] font-medium capitalize" style={{ color: "var(--text)" }}>{r.category}</span>
+                          </div>
+                          <div className="flex-1 h-[8px] rounded-full relative overflow-hidden" style={{ background: "var(--bg-inset)" }}>
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: `${pct}%`,
+                                background: `linear-gradient(90deg, ${color}88, ${color})`,
+                                boxShadow: `0 0 6px ${color}44`,
+                                animation: "bar-grow 800ms cubic-bezier(.22,.8,.2,1) both",
+                                transformOrigin: "left",
+                              }}
+                            />
+                          </div>
+                          <div className="w-24 text-right text-[13px] tabular-nums" style={{ color: "var(--text-dim)" }}>{fmtEur(r.spendEur ?? 0, 0)}</div>
+                          <div className="w-14 text-right text-xs" style={{ color: "var(--text-faint)" }}>{r.count} tx</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          );
+        })()}
+
+        <SectionDivider />
 
         {/* ROW 4 — Impact analysis CTA */}
         {impactCategories.length > 0 && (
@@ -335,6 +372,8 @@ export default async function Overview() {
             </div>
           </Link>
         )}
+
+        <SectionDivider label="Close" />
 
         {/* ROW 5 — Latest close run */}
         {latestRun && (
