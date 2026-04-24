@@ -22,6 +22,7 @@ import { env } from "@/lib/env";
 import { policySchema, type Policy } from "@/lib/policy/schema";
 import { evaluatePolicy, type CategoryAggregate } from "@/lib/policy/evaluate";
 import { DEFAULT_ORG_ID, currentMonth, getActivePolicyRaw, getTransactionsForMonth } from "@/lib/queries";
+import type Anthropic from "@anthropic-ai/sdk";
 import { anthropic, MODEL_HAIKU, isAnthropicMock } from "@/lib/anthropic/client";
 import { detailFor, type ReasonForPriority } from "./reasons";
 import { recommendedAgentFor } from "./routing";
@@ -277,6 +278,43 @@ const buildPriorityTargets = (scored: ScoredCluster[]): BaselineOutput["priority
 
 // ── Optional LLM enhance (spec R005 — runs only when key + flag allow) ────
 
+// Schema-forced structured output via Anthropic tool_use — eliminates the
+// fragility of regex-extracting JSON from free-form text (Haiku occasionally
+// emits trailing commas or code fences). The tool never actually executes;
+// we just use it as a contract the model must fill.
+const ENHANCE_TOOL: Anthropic.Tool = {
+  name: "emit_baseline_enhancements",
+  description:
+    "Return per-cluster context-aware one-sentence detail strings and an optional required_context_question. Do not re-rank, do not invent clusters.",
+  input_schema: {
+    type: "object",
+    properties: {
+      priority_targets: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            cluster_id: { type: "string" },
+            reason_for_priority_detail: { type: "string" },
+          },
+          required: ["cluster_id", "reason_for_priority_detail"],
+        },
+      },
+      required_context_question: {
+        type: ["string", "null"],
+        description:
+          "Ask exactly one concrete question if and only if any cluster looks schema-ambiguous (e.g. the 'other' bucket is >30% of spend). Otherwise return null.",
+      },
+    },
+    required: ["priority_targets", "required_context_question"],
+  },
+};
+
+type EnhanceToolInput = {
+  priority_targets: Array<{ cluster_id: string; reason_for_priority_detail: string }>;
+  required_context_question: string | null;
+};
+
 const enhanceWithLlm = async (output: BaselineOutput): Promise<BaselineOutput> => {
   if (isAnthropicMock()) return output;
   try {
@@ -295,20 +333,20 @@ const enhanceWithLlm = async (output: BaselineOutput): Promise<BaselineOutput> =
     };
     const msg = await client.messages.create({
       model: MODEL_HAIKU,
-      max_tokens: 800,
+      max_tokens: 1024,
       system: [
         { type: "text", text: SYSTEM_PROMPT, cache_control: { type: "ephemeral" } },
       ],
+      tools: [ENHANCE_TOOL],
+      tool_choice: { type: "tool", name: ENHANCE_TOOL.name },
       messages: [{ role: "user", content: JSON.stringify(userPayload) }],
     });
-    const text = msg.content.filter((c) => c.type === "text").map((c) => (c as { text: string }).text).join("");
-    const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return output;
-    const parsed = JSON.parse(m[0]) as {
-      priority_targets?: Array<{ cluster_id: string; reason_for_priority_detail?: string }>;
-      required_context_question?: string | null;
-    };
-    const byId = new Map((parsed.priority_targets ?? []).map((p) => [p.cluster_id, p]));
+
+    const toolUse = msg.content.find((c) => c.type === "tool_use");
+    if (!toolUse || toolUse.type !== "tool_use") return output;
+    const parsed = toolUse.input as EnhanceToolInput;
+
+    const byId = new Map(parsed.priority_targets.map((p) => [p.cluster_id, p]));
     return {
       ...output,
       priority_targets: output.priority_targets.map((t) => {
