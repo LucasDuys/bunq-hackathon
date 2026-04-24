@@ -207,6 +207,50 @@ CREATE TABLE IF NOT EXISTS agent_messages (
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE INDEX IF NOT EXISTS idx_agent_messages_run ON agent_messages(agent_run_id);
+
+CREATE TABLE IF NOT EXISTS onboarding_runs (
+  id TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL,
+  track TEXT NOT NULL,
+  state TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  profile TEXT,
+  partial_policy TEXT,
+  gap_list TEXT,
+  unsupported_list TEXT,
+  draft_policy TEXT,
+  draft_markdown TEXT,
+  credit_shortlist TEXT,
+  calibration_notes TEXT,
+  upload_ref TEXT,
+  upload_mime TEXT,
+  upload_extract TEXT,
+  seed_close_run_id TEXT,
+  question_count INTEGER NOT NULL DEFAULT 0,
+  failure_reason TEXT,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  completed_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_onb_org ON onboarding_runs(org_id);
+CREATE INDEX IF NOT EXISTS idx_onb_status ON onboarding_runs(status);
+
+CREATE TABLE IF NOT EXISTS onboarding_qa (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT NOT NULL,
+  turn_index INTEGER NOT NULL,
+  topic TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  question TEXT NOT NULL,
+  options TEXT,
+  rationale TEXT,
+  answer TEXT,
+  parsed_answer TEXT,
+  required INTEGER NOT NULL DEFAULT 1,
+  asked_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  answered_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_onbqa_run ON onboarding_qa(run_id);
 `;
 
 const dbPath = env.dbUrl.replace(/^file:/, "");

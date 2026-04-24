@@ -44,3 +44,19 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] DESIGN.md — 500+ line visual/animation spec (2026-04-23)
 - [x] Research docs for agent design and LLM ops (2026-04-23)
 - [x] PROGRESS.md created (2026-04-24)
+
+## Onboarding
+
+- [x] Agentic onboarding state machine with 11 states, DB-persisted, audit-event on every transition (`lib/agent/onboarding.ts`) (2026-04-24)
+- [x] Two new tables: `onboarding_runs`, `onboarding_qa`, with indexes (`lib/db/schema.ts`, `scripts/migrate.ts`) (2026-04-24)
+- [x] Three-track UX: generate from interview, upload existing policy, mix (upload + refine) (`app/onboarding/page.tsx`) (2026-04-24)
+- [x] LLM interviewer (Sonnet) with deterministic fallback plan — 15-question topic tree, skip logic, profile accumulation (`lib/agent/onboarding-interviewer.ts`) (2026-04-24)
+- [x] LLM drafter (Sonnet) produces Zod-valid Policy + CSRD-flavoured markdown document + calibration notes (`lib/agent/onboarding-drafter.ts`) (2026-04-24)
+- [x] LLM parser for uploaded policies — PDF via Sonnet multimodal, DOCX via adm-zip, MD/YAML/JSON/TXT native (`lib/agent/onboarding-parser.ts`) (2026-04-24)
+- [x] Profile → calibrated policy heuristics (ambition / travel / cloud multipliers, sector-aware procurement) (`lib/onboarding/calibration.ts`) (2026-04-24)
+- [x] Deterministic markdown renderer for auditor-ready policy docs (`lib/onboarding/markdown.ts`) (2026-04-24)
+- [x] Finalization writes policy row, deactivates prior, mocks/creates bunq sub-accounts, seeds first close run (2026-04-24)
+- [x] API routes: `/api/onboarding/start`, `[runId]/upload`, `[runId]/answer`, `[runId]/approve`, `[runId]/revise`, `[runId]/cancel` (2026-04-24)
+- [x] OnboardingClient.tsx — track picker, MC/numeric/free-text/confirm answer form, drag-drop upload, draft preview with rules-table + markdown view + .md download, approve + reset controls (2026-04-24)
+- [x] Dashboard banner + Nav link shown when no active policy or active onboarding run exists (2026-04-24)
+- [x] Example policy fixture at `fixtures/example-policy.md` to demo the upload path (2026-04-24)
