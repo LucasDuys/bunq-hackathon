@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import { getCarbonCreditPrice, getCarbonPriceExposure, getCorporateTaxRate } from "./tools";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 import { z } from "zod";
 
 export const SYSTEM_PROMPT = `You are the Carbon Credit & Incentive Strategy Agent for Carbon Autopilot for bunq Business.
@@ -294,16 +295,21 @@ const assemble = (
   };
 };
 
-export async function run(input: CreditStrategyInput, _ctx: AgentContext): Promise<CreditStrategyOutput> {
+export async function run(input: CreditStrategyInput, ctx: AgentContext): Promise<CreditStrategyOutput> {
   const tax = getCorporateTaxRate("NL", "BV");
   const exposure = getCarbonPriceExposure("NL", "default");
   const credit = getCarbonCreditPrice("removal_nature");
   const computeds = compute(input.baseline, input.greenJudge, input.costJudge, tax.corporateTaxRate, exposure.euPerTonne, credit.pricePerTonneEur);
   if (computeds.length === 0) {
+    // No clusters means no Sonnet call would have happened either way; the agent
+    // ran deterministically. Treat that as the live (non-mock) path so the
+    // mock-agent count tracks Sonnet-fallbacks, not vacuous skips.
+    recordAgentMessage(ctx, { agentName: "carbon_credit_incentive_strategy_agent", usedMock: false });
     return assemble(input.baseline, input.greenJudge, input.costJudge, [], new Map(), tax, credit);
   }
 
   if (isMock()) {
+    recordAgentMessage(ctx, { agentName: "carbon_credit_incentive_strategy_agent", usedMock: true });
     return assemble(input.baseline, input.greenJudge, input.costJudge, computeds, new Map(), tax, credit);
   }
 
@@ -323,7 +329,7 @@ export async function run(input: CreditStrategyInput, _ctx: AgentContext): Promi
         avoided_carbon_price_eur: c.avoided_carbon_price_eur,
       })),
     };
-    const { jsonText } = await callAgent({
+    const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: [
         "Jurisdiction + computed impacts for each approved switch:",
@@ -334,12 +340,23 @@ export async function run(input: CreditStrategyInput, _ctx: AgentContext): Promi
       ].join("\n"),
       maxTokens: 2500,
     });
-    if (!jsonText) return assemble(input.baseline, input.greenJudge, input.costJudge, computeds, new Map(), tax, credit);
+    if (!jsonText) {
+      recordAgentMessage(ctx, { agentName: "carbon_credit_incentive_strategy_agent", usedMock: true });
+      return assemble(input.baseline, input.greenJudge, input.costJudge, computeds, new Map(), tax, credit);
+    }
+    recordAgentMessage(ctx, {
+      agentName: "carbon_credit_incentive_strategy_agent",
+      usedMock,
+      tokensIn,
+      tokensOut,
+      cached,
+    });
     const parsed = PROSE_SCHEMA.parse(JSON.parse(jsonText));
     const proseMap = new Map<string, ProseDecision>();
     for (const p of parsed.results) if (p.cluster_id) proseMap.set(p.cluster_id, p);
     return assemble(input.baseline, input.greenJudge, input.costJudge, computeds, proseMap, tax, credit);
   } catch {
+    recordAgentMessage(ctx, { agentName: "carbon_credit_incentive_strategy_agent", usedMock: true });
     return assemble(input.baseline, input.greenJudge, input.costJudge, computeds, new Map(), tax, credit);
   }
 }

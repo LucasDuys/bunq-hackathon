@@ -4,6 +4,9 @@
  * See docs/agents/00-overview.md, plans/matrix-dag.md, plans/matrix-research.md.
  */
 import { randomUUID } from "node:crypto";
+import { eq, and } from "drizzle-orm";
+import { db, agentMessages } from "@/lib/db/client";
+import { env } from "@/lib/env";
 import * as spendBaseline from "./spendBaseline";
 import * as research from "./research";
 import * as greenAlternatives from "./greenAlternatives";
@@ -30,6 +33,12 @@ export async function runDag(
   const metrics = {} as Record<AgentName, AgentRunMetrics>;
   const totalStart = performance.now();
   const runId = `run_${randomUUID()}`;
+
+  // R002 / T002 — pin runId into the context so each LLM-using agent can
+  // record a row in `agent_messages` keyed to this run. Mutating the supplied
+  // ctx is intentional: callers (smoke scripts, /api/impacts/research) keep
+  // the same ctx instance across all agents and we must not silently swap it.
+  ctx.agentRunId = runId;
 
   const [baseline, mBaseline] = await timed(() =>
     spendBaseline.run({ orgId: input.orgId, month: input.month }, ctx),
@@ -110,6 +119,25 @@ export async function runDag(
     },
   });
 
+  // R002.AC2-AC5 — read per-agent mock_path rows back, count Sonnet-path
+  // fallbacks, and emit one `agent.<name>.fallback_to_mock` audit event per
+  // mocked agent. ANTHROPIC_MOCK=1 marks the flag as `intended`; otherwise
+  // it's `degradation` (real run silently fell back to mock).
+  const mockedRows = db
+    .select({ agentName: agentMessages.agentName })
+    .from(agentMessages)
+    .where(and(eq(agentMessages.agentRunId, runId), eq(agentMessages.mockPath, 1)))
+    .all();
+  const mockedAgents = Array.from(new Set(mockedRows.map((r) => r.agentName as AgentName)));
+  const intended = env.anthropicMock;
+  for (const name of mockedAgents) {
+    await ctx.auditLog({
+      type: `agent.${name}.fallback_to_mock`,
+      payload: { agent: name, runId, flag: intended ? "intended" : "degradation" },
+    });
+  }
+  const mock_agent_count = mockedAgents.length;
+
   return {
     runId,
     baseline,
@@ -121,6 +149,7 @@ export async function runDag(
     creditStrategy: strategy,
     executiveReport: report,
     metrics,
+    mock_agent_count,
     totalLatencyMs: performance.now() - totalStart,
   };
 }

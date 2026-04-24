@@ -12,6 +12,7 @@
 import { z } from "zod";
 import type { AgentContext, GreenAltOutput, GreenJudgeOutput, ResearchedPool } from "./types";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 export const SYSTEM_PROMPT = `You are the Green Judge Agent for Carbon Autopilot for bunq Business.
 
@@ -229,6 +230,7 @@ const buildUserMessage = (greenAlt: GreenAltOutput): string => {
 
 export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<GreenJudgeOutput> {
   if (isMock()) {
+    recordAgentMessage(ctx, { agentName: "green_judge_agent", usedMock: true });
     const out = buildMock(input.greenAlt, input.researchedPool);
     for (const j of out.judged_results) {
       await ctx.auditLog({ type: "agent.green_judge.verdict", payload: { cluster_id: j.cluster_id, verdict: j.verdict, score: j.green_score } });
@@ -236,12 +238,22 @@ export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<Gr
     return out;
   }
   try {
-    const { jsonText } = await callAgent({
+    const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: buildUserMessage(input.greenAlt),
       maxTokens: 3000,
     });
-    if (!jsonText) return buildMock(input.greenAlt, input.researchedPool);
+    if (!jsonText) {
+      recordAgentMessage(ctx, { agentName: "green_judge_agent", usedMock: true });
+      return buildMock(input.greenAlt, input.researchedPool);
+    }
+    recordAgentMessage(ctx, {
+      agentName: "green_judge_agent",
+      usedMock,
+      tokensIn,
+      tokensOut,
+      cached,
+    });
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     // Even when Sonnet returns verdicts, we recompute math AND the evidence gate in code —
     // the judge cannot approve a zero-source recommendation regardless of its self-rating.
@@ -287,6 +299,7 @@ export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<Gr
       },
     };
   } catch {
+    recordAgentMessage(ctx, { agentName: "green_judge_agent", usedMock: true });
     return buildMock(input.greenAlt, input.researchedPool);
   }
 }

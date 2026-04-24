@@ -23,6 +23,13 @@ export interface AgentContext {
   dryRun: boolean;
   mock: boolean;
   auditLog: (event: { type: string; payload: Record<string, unknown> }) => Promise<void>;
+  /**
+   * R002 / T002 — set by `runDag` before invoking each agent so per-agent
+   * observability rows in `agent_messages` (mock_path, tokens, cached) can be
+   * keyed back to the same runId that `runDag` returns. Optional so callers
+   * outside the DAG (legacy spendBaseline tests, etc.) keep working.
+   */
+  agentRunId?: string;
 }
 
 export interface AgentRunMetrics {
@@ -409,5 +416,12 @@ export interface DagRunResult {
   creditStrategy: CreditStrategyOutput;
   executiveReport: ExecReportOutput;
   metrics: Record<AgentName, AgentRunMetrics>;
+  /**
+   * R002.AC4 — top-level count of LLM-using agents that took the mock path on
+   * this run. 0 means every Sonnet-using agent reached the API; 7 means the
+   * full LLM panel was mocked (intended in `ANTHROPIC_MOCK=1`, a degradation
+   * signal otherwise). Reads from `agent_messages.mock_path` keyed by runId.
+   */
+  mock_agent_count: number;
   totalLatencyMs: number;
 }

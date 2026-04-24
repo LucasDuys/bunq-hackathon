@@ -18,6 +18,7 @@ import type {
 } from "./types";
 import { findLowerCarbonAlternative, getEmissionFactor, type AltTemplate } from "./tools";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 export const SYSTEM_PROMPT = `You are the Green Alternatives Agent for Carbon Autopilot for bunq Business.
 
@@ -291,18 +292,22 @@ const buildUserMessage = (baseline: BaselineOutput, candidates: CandidateBundle[
   return lines.join("\n");
 };
 
-export async function run(input: GreenAltInput, _ctx: AgentContext): Promise<GreenAltOutput> {
+export async function run(input: GreenAltInput, ctx: AgentContext): Promise<GreenAltOutput> {
   const candidates = buildCandidates(input.baseline, input.researchedPool);
   if (candidates.length === 0 || isMock()) {
+    recordAgentMessage(ctx, { agentName: "green_alternatives_agent", usedMock: true });
     return mockOutput(input.baseline, input.researchedPool);
   }
   try {
-    const { jsonText } = await callAgent({
+    const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: buildUserMessage(input.baseline, candidates),
       maxTokens: 4000,
     });
-    if (!jsonText) return mockOutput(input.baseline, input.researchedPool);
+    if (!jsonText) {
+      recordAgentMessage(ctx, { agentName: "green_alternatives_agent", usedMock: true });
+      return mockOutput(input.baseline, input.researchedPool);
+    }
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const results = parsed.results;
     const totalCurrent = results.reduce((s, r) => s + (r.current_purchase.estimated_kg_co2e ?? 0), 0);
@@ -311,6 +316,13 @@ export async function run(input: GreenAltInput, _ctx: AgentContext): Promise<Gre
       0,
     );
     const avgConf = results.length > 0 ? results.reduce((s, r) => s + r.current_purchase.confidence, 0) / results.length : 0;
+    recordAgentMessage(ctx, {
+      agentName: "green_alternatives_agent",
+      usedMock,
+      tokensIn,
+      tokensOut,
+      cached,
+    });
     return {
       agent: "green_alternatives_agent",
       company_id: input.baseline.company_id,
@@ -331,6 +343,7 @@ export async function run(input: GreenAltInput, _ctx: AgentContext): Promise<Gre
       },
     };
   } catch {
+    recordAgentMessage(ctx, { agentName: "green_alternatives_agent", usedMock: true });
     return mockOutput(input.baseline, input.researchedPool);
   }
 }

@@ -193,6 +193,9 @@ export const agentMessages = sqliteTable("agent_messages", {
   cached: integer("cached", { mode: "boolean" }).notNull().default(false),
   serverToolUseCount: integer("server_tool_use_count"),
   webSearchRequests: integer("web_search_requests"),
+  // R002.AC2 — 0 = real API path, 1 = `buildMock()` fallback. Additive; nullable
+  // for rows written before the migration ran.
+  mockPath: integer("mock_path"),
   createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
 });
 

@@ -40,6 +40,7 @@ import {
   type AltTemplate,
 } from "./tools";
 import { callAgentWithTools, isMock, type WebSearchHit } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 // -----------------------------------------------------------------------------
 // System prompt — cached; do not mutate at runtime.
@@ -504,6 +505,9 @@ export interface ResearchInput {
 export async function run(input: ResearchInput, ctx: AgentContext): Promise<ResearchOutput> {
   const policy = derivePolicy(ctx);
   const targets = input.baseline.priority_targets.slice(0, env.researchMaxClusters);
+  // R002 — researcher's mock branch is global (`isMock() || env.researchDisabled`),
+  // so the whole-agent mode is decided once here and applies to every cluster.
+  const usedMock = isMock() || env.researchDisabled;
   const results = await mapPool(targets, env.researchConcurrency, (t) =>
     researchOneCluster(t, policy, ctx, input.agentRunId),
   );
@@ -516,6 +520,12 @@ export async function run(input: ResearchInput, ctx: AgentContext): Promise<Rese
   const totalSearches = results.reduce((s, r) => s + r.searches_used, 0);
   // At $10/1000 requests → ~€0.0094/req (USD/EUR loose).
   const webSearchSpendEur = Number((totalSearches * 0.0094).toFixed(4));
+
+  recordAgentMessage(ctx, {
+    agentName: "research_agent",
+    usedMock,
+    webSearchRequests: totalSearches,
+  });
 
   await ctx.auditLog({
     type: "agent.research.run",

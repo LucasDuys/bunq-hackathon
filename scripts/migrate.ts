@@ -206,6 +206,7 @@ CREATE TABLE IF NOT EXISTS agent_messages (
   cached INTEGER NOT NULL DEFAULT 0,
   server_tool_use_count INTEGER,
   web_search_requests INTEGER,
+  mock_path INTEGER,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE INDEX IF NOT EXISTS idx_agent_messages_run ON agent_messages(agent_run_id);
@@ -302,6 +303,8 @@ const ensureColumn = (table: string, column: string, ddl: string) => {
 };
 ensureColumn("agent_messages", "server_tool_use_count", "INTEGER");
 ensureColumn("agent_messages", "web_search_requests", "INTEGER");
+// R002.AC2 — additive `mock_path` (0 real, 1 mock). Nullable for backfill safety.
+ensureColumn("agent_messages", "mock_path", "INTEGER");
 
 console.log(`Migrated: ${dbPath}`);
 sqlite.close();

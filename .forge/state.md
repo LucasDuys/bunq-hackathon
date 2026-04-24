@@ -4,13 +4,13 @@ spec: dag-hardening
 autonomy: full
 depth: thorough
 tokens_budget: 500000
-iteration: 0
+iteration: 2
 tokens_used: 0
 review_iterations: 0
 debug_attempts: 0
-task_status: pending
-current_task: T001
-completed_tasks: []
+task_status: complete
+current_task: T002
+completed_tasks: [T001, T002]
 blocked_reason: null
 ---
 
@@ -45,21 +45,24 @@ token savings: phase doc 2200 -> 1195 chars (~46% cut). total 3263 -> 2000 (~21%
 
 ## done
 
-<!-- example: - T014 complete. /forge status unified. no regressions. commit abc1234. -->
+- T001 complete. projector.test.ts (6 failing tests, R006 AC2-AC7) + projector.ts stub (type contract + throwing impl). typecheck green. commit a078b77.
+- T002 complete. mock-fallback observability R002.AC1-AC5: usedMock on LlmCallResult+ToolRunResult, mock_path col on agent_messages, recordAgentMessage helper in persist.ts, runDag aggregates mock_agent_count + emits agent.<name>.fallback_to_mock with intended/degradation flag. 6/6 tests green. typecheck + dag-smoke + smoke-research green. audit chain valid.
 
 ## in-flight
 
-<!-- example: - T028 executing. caveman rewrite of state.md + resume.md. -->
+<!-- T002 done. Tier 1 closed. Tier 2 unblocks: T003, T004 (already unblocked via T001.R006.AC1), T005, T007. -->
 
 ## next
 
-- spec-dag-hardening planned. 14 tasks across 6 tiers. 157k tokens.
-- Tier 1 parallel-dispatch ready: T001 (projector test scaffold) + T002 (mock observability).
-- `/forge:execute` to begin. Autonomy gated — user may upgrade to full at execute time.
+- Tier 2 dispatch: T003 (research cache leakage), T004 (projector impl), T005 (credit audit event), T007 (baseline harness). Up to 3 concurrent per parallelism cap.
 
 ## decisions
 
-<!-- example: - bcrypt rounds = 12. matches spec R001. -->
+- Added stub `lib/agents/dag/projector.ts` in T001 so typecheck stays green while TDD tests fail at runtime. T004 replaces the throwing impl.
+- task-classify flagged T001 as UI (false positive — spec globally mentions .tsx + app/). Skipped frontend-design skill invocation; T001 is a pure data test file.
+- T002: chose central recordAgentMessage helper in lib/agents/dag/persist.ts called from each LLM-using agent's mock + live branches; runDag queries agent_messages.mock_path back to compute mock_agent_count instead of threading return shapes through every agent. Keeps agent run() signatures stable. agentRunId added as optional field on AgentContext (additive, backward compat).
+- T002: spendBaseline (deterministic, no LLM) excluded from mock_path tracking. creditStrategy zero-cluster path counted as live (no Sonnet call would have run anyway).
+- T002: intended-vs-degradation distinction in audit event payload, NOT in DB column (per task brief reading of R002.AC5). mock_path col stays 0|1.
 
 ---
 

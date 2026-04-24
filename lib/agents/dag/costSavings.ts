@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import { detectRecurringSpend, findCostSaving, type AltTemplate, type RecurringSpend } from "./tools";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 export const SYSTEM_PROMPT = `You are the Cost Savings Agent for Carbon Autopilot for bunq Business.
 
@@ -330,15 +331,19 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
   const recurring = detectRecurringSpend(ctx.orgId, 3, 6);
   const bundles = buildBundles(input.baseline, recurring, input.researchedPool);
   if (bundles.length === 0 || isMock()) {
+    recordAgentMessage(ctx, { agentName: "cost_savings_agent", usedMock: true });
     return mockOutput(input.baseline, recurring, input.researchedPool);
   }
   try {
-    const { jsonText } = await callAgent({
+    const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: buildUserMessage(input.baseline, bundles),
       maxTokens: 4000,
     });
-    if (!jsonText) return mockOutput(input.baseline, recurring, input.researchedPool);
+    if (!jsonText) {
+      recordAgentMessage(ctx, { agentName: "cost_savings_agent", usedMock: true });
+      return mockOutput(input.baseline, recurring, input.researchedPool);
+    }
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const results = parsed.results;
     const totalObserved = results.reduce((s, r) => s + (r.current_spend.annualized_spend_eur ?? 0), 0);
@@ -353,6 +358,13 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
     const avgConf = results.length > 0
       ? results.reduce((s, r) => s + (r.cost_saving_options[0]?.confidence ?? 0.5), 0) / results.length
       : 0;
+    recordAgentMessage(ctx, {
+      agentName: "cost_savings_agent",
+      usedMock,
+      tokensIn,
+      tokensOut,
+      cached,
+    });
     return {
       agent: "cost_savings_agent",
       company_id: input.baseline.company_id,
@@ -374,6 +386,7 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
       },
     };
   } catch {
+    recordAgentMessage(ctx, { agentName: "cost_savings_agent", usedMock: true });
     return mockOutput(input.baseline, recurring, input.researchedPool);
   }
 }

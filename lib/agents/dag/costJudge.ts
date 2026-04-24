@@ -8,6 +8,7 @@
 import { z } from "zod";
 import type { AgentContext, CostSavingsOutput, CostJudgeOutput, ResearchedPool } from "./types";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 const TRUSTED_DOMAINS = new Set([
   "defra.gov.uk",
@@ -216,6 +217,7 @@ const buildMock = (costSavings: CostSavingsOutput, pool: ResearchedPool | undefi
 
 export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<CostJudgeOutput> {
   if (isMock()) {
+    recordAgentMessage(ctx, { agentName: "cost_judge_agent", usedMock: true });
     const out = buildMock(input.costSavings, input.researchedPool);
     for (const j of out.judged_results) {
       await ctx.auditLog({ type: "agent.cost_judge.verdict", payload: { cluster_id: j.cluster_id, verdict: j.verdict, score: j.cost_score } });
@@ -223,7 +225,7 @@ export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<Cos
     return out;
   }
   try {
-    const { jsonText } = await callAgent({
+    const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: [
         "Cost Savings output to judge:",
@@ -233,7 +235,17 @@ export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<Cos
       ].join("\n"),
       maxTokens: 3000,
     });
-    if (!jsonText) return buildMock(input.costSavings, input.researchedPool);
+    if (!jsonText) {
+      recordAgentMessage(ctx, { agentName: "cost_judge_agent", usedMock: true });
+      return buildMock(input.costSavings, input.researchedPool);
+    }
+    recordAgentMessage(ctx, {
+      agentName: "cost_judge_agent",
+      usedMock,
+      tokensIn,
+      tokensOut,
+      cached,
+    });
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const rebuilt = parsed.judged_results.map((j, i) => {
       const source = input.costSavings.results[i];
@@ -277,6 +289,7 @@ export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<Cos
       },
     };
   } catch {
+    recordAgentMessage(ctx, { agentName: "cost_judge_agent", usedMock: true });
     return buildMock(input.costSavings, input.researchedPool);
   }
 }
