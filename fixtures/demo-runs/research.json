@@ -1,0 +1,94 @@
+{
+  "_comment": "Reference fixture — shape of ResearchOutput. Mock mode in lib/agents/dag/research.ts synthesizes this at runtime from GREEN_TEMPLATES keyed by priority cluster category/sub_category. This file is a frozen example for docs + snapshot tests; it is NOT loaded at runtime.",
+  "agent": "research_agent",
+  "company_id": "acme-bv",
+  "analysis_period": "2026-04",
+  "summary": {
+    "clusters_researched": 6,
+    "total_alternatives": 14,
+    "total_sources": 22,
+    "total_searches_used": 12,
+    "cache_hits": 2,
+    "web_search_spend_eur": 0.1128
+  },
+  "results": [
+    {
+      "cluster_id": "cluster_travel_shorthaul",
+      "alternatives": [
+        {
+          "id": "a1b2c3d4e5f6a7b8",
+          "cluster_id": "cluster_travel_shorthaul",
+          "name": "Rail for routes under 700 km",
+          "vendor": "NS International",
+          "url": "https://www.nsinternational.com/en/business",
+          "description": "Require train booking for Amsterdam ↔ Paris / Brussels / Frankfurt / London under 700 km.",
+          "cost_delta_pct": 0.05,
+          "co2e_delta_pct": -0.85,
+          "confidence": 0.9,
+          "feasibility": "drop_in",
+          "geography": "NL",
+          "sources": [
+            {
+              "title": "DEFRA 2024 GHG Conversion Factors",
+              "url": "https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2024",
+              "snippet": null,
+              "domain": "gov.uk",
+              "fetched_at": 1713830400
+            },
+            {
+              "title": "Transport & Environment — rail vs plane",
+              "url": "https://www.transportenvironment.org/",
+              "snippet": null,
+              "domain": "transportenvironment.org",
+              "fetched_at": 1713830400
+            }
+          ],
+          "provenance": "web_search",
+          "freshness_days": 0,
+          "flags": []
+        }
+      ],
+      "searches_used": 3,
+      "cache_hit": false
+    },
+    {
+      "cluster_id": "cluster_utilities_electricity",
+      "alternatives": [
+        {
+          "id": "b2c3d4e5f6a7b8c9",
+          "cluster_id": "cluster_utilities_electricity",
+          "name": "Switch to Pure Energie 100% Dutch wind",
+          "vendor": "Pure Energie",
+          "url": "https://pure-energie.nl/",
+          "description": "Move office meter to a Pure Energie certified Dutch-wind tariff.",
+          "cost_delta_pct": 0.03,
+          "co2e_delta_pct": -0.9,
+          "confidence": 0.88,
+          "feasibility": "drop_in",
+          "geography": "NL",
+          "sources": [
+            {
+              "title": "Pure Energie — tariff page",
+              "url": "https://pure-energie.nl/",
+              "snippet": null,
+              "domain": "pure-energie.nl",
+              "fetched_at": 1713830400
+            },
+            {
+              "title": "GHG Protocol Scope 2 Guidance",
+              "url": "https://ghgprotocol.org/scope-2-guidance",
+              "snippet": null,
+              "domain": "ghgprotocol.org",
+              "fetched_at": 1713830400
+            }
+          ],
+          "provenance": "web_search",
+          "freshness_days": 0,
+          "flags": []
+        }
+      ],
+      "searches_used": 3,
+      "cache_hit": false
+    }
+  ]
+}

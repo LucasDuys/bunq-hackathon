@@ -8,6 +8,12 @@ const flag = (key: string, dflt = false) => {
   if (v === undefined) return dflt;
   return v === "1" || v.toLowerCase() === "true";
 };
+const intOr = (key: string, dflt: number) => {
+  const v = process.env[key];
+  if (v === undefined) return dflt;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : dflt;
+};
 
 export const env = {
   anthropicKey: process.env.ANTHROPIC_API_KEY ?? "",
@@ -21,5 +27,11 @@ export const env = {
   dryRun: flag("DRY_RUN", true),
   maxToolCalls: Number(process.env.MAX_TOOL_CALLS ?? "8"),
   defaultOrgName: process.env.DEFAULT_ORG_NAME ?? "Acme BV",
+  // Research agent (plans/matrix-research.md)
+  researchDisabled: flag("RESEARCH_DISABLED", false),
+  researchMaxSearchesPerCluster: intOr("RESEARCH_MAX_SEARCHES_PER_CLUSTER", 3),
+  researchCacheTtlDays: intOr("RESEARCH_CACHE_TTL_DAYS", 30),
+  researchConcurrency: intOr("RESEARCH_CONCURRENCY", 4),
+  researchMaxClusters: intOr("RESEARCH_MAX_CLUSTERS", 20),
 };
 export { required };

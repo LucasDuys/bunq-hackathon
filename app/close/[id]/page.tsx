@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { CheckCircle2, Circle, Clock } from "lucide-react";
-import { Badge, Card, CardBody, CardHeader, CardTitle, ConfidenceBar, Stat } from "@/components/ui";
+import { Badge, Card, CardBody, CardHeader, CardTitle, ConfidenceBar, SectionDivider, Stat } from "@/components/ui";
 import { CloseActions } from "@/components/CloseActions";
 import { fmtEur, fmtKg } from "@/lib/utils";
 import { getAuditForRun, getCloseRun, getQuestionsForRun } from "@/lib/queries";
@@ -38,40 +38,77 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
   const confidenceDelta = confidenceFinal - confidenceInitial;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="relative z-[1] flex flex-col gap-6">
       <div>
-        <div className="text-xs uppercase tracking-wide text-zinc-500">Monthly close · {run.month}</div>
-        <h1 className="text-2xl font-semibold mt-1">Close run <span className="font-mono text-base text-zinc-500">{id.slice(0, 12)}…</span></h1>
+        <div className="text-[11px] uppercase tracking-[0.8px] font-semibold" style={{ color: "var(--text-mute)" }}>
+          Monthly close · {run.month}
+        </div>
+        <h1 className="text-2xl font-semibold mt-1.5" style={{ color: "var(--text)" }}>
+          Close run <span className="font-mono text-base" style={{ color: "var(--text-mute)" }}>{id.slice(0, 12)}…</span>
+        </h1>
       </div>
 
+      <SectionDivider />
+
+      {/* Pipeline */}
       <Card>
         <CardHeader><CardTitle>Pipeline</CardTitle></CardHeader>
         <CardBody>
-          <ol className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+          <div className="grid grid-cols-4 md:grid-cols-6 gap-2">
             {STEPS.map((s, i) => {
               const done = i < stepIdx || run.state === "COMPLETED";
               const active = i === stepIdx && run.state !== "COMPLETED";
               return (
-                <li key={s.key} className="flex items-center gap-1.5">
-                  {done ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : active ? <Clock className="h-4 w-4 text-amber-600 animate-pulse" /> : <Circle className="h-4 w-4 text-zinc-300" />}
-                  <span className={done ? "text-zinc-900 dark:text-zinc-100" : active ? "text-amber-700 dark:text-amber-400 font-medium" : "text-zinc-400"}>{s.label}</span>
-                </li>
+                <div
+                  key={s.key}
+                  className="rounded-xl px-3 py-2.5 transition-all"
+                  style={{
+                    background: active ? "rgba(48,192,111,0.08)" : done ? "var(--bg-card-2)" : "var(--bg-inset)",
+                    border: `1px solid ${active ? "rgba(48,192,111,0.35)" : done ? "var(--border-strong)" : "var(--border-faint)"}`,
+                  }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    {done ? (
+                      <div className="w-4 h-4 rounded-full grid place-items-center" style={{ background: "var(--green)" }}>
+                        <CheckCircle2 className="h-2.5 w-2.5" style={{ color: "#0d3b23" }} />
+                      </div>
+                    ) : active ? (
+                      <div className="w-4 h-4 rounded-full" style={{ border: "1.5px solid var(--green)", background: "rgba(48,192,111,0.15)", animation: "pulse-dot 1.4s infinite" }} />
+                    ) : (
+                      <Circle className="h-4 w-4" style={{ color: "var(--border-strong)" }} />
+                    )}
+                    <span className="text-[11px] font-semibold" style={{ color: done || active ? "var(--text)" : "var(--text-mute)" }}>
+                      {s.label}
+                    </span>
+                  </div>
+                </div>
               );
             })}
-          </ol>
+          </div>
         </CardBody>
       </Card>
 
+      <SectionDivider label="Results" />
+
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card><CardBody><Stat label="Initial CO₂e" value={run.initialCo2eKg != null ? fmtKg(run.initialCo2eKg) : "—"} /></CardBody></Card>
         <Card><CardBody><Stat label="Final CO₂e" value={run.finalCo2eKg != null ? fmtKg(run.finalCo2eKg) : "—"} sub={run.finalCo2eKg != null && run.initialCo2eKg != null ? `${run.finalCo2eKg >= run.initialCo2eKg ? "+" : ""}${(run.finalCo2eKg - run.initialCo2eKg).toFixed(1)} kg refined` : undefined} /></CardBody></Card>
         <Card><CardBody className="space-y-2">
-          <Stat label="Confidence" value={`${(confidenceFinal * 100).toFixed(0)}%`} sub={confidenceDelta !== 0 ? `${confidenceDelta >= 0 ? "+" : ""}${(confidenceDelta * 100).toFixed(0)} pts vs. initial` : undefined} tone={confidenceFinal > 0.85 ? "positive" : "warning"} />
-          <ConfidenceBar value={confidenceFinal} />
+          <Stat
+            label="Confidence"
+            value={`${(confidenceFinal * 100).toFixed(0)}%`}
+            sub={confidenceDelta !== 0 ? `${confidenceDelta >= 0 ? "+" : ""}${(confidenceDelta * 100).toFixed(0)} pts vs. initial` : undefined}
+            tone={confidenceFinal > 0.85 ? "positive" : "warning"}
+          />
+          <ConfidenceBar value={confidenceFinal} animate />
         </CardBody></Card>
-        <Card><CardBody><Stat label="Reserve" value={run.reserveEur != null ? fmtEur(run.reserveEur, 0) : "—"} sub={run.approved ? "Transferred" : run.reserveEur != null ? "Awaiting approval" : "Not yet computed"} tone={run.approved ? "positive" : "default"} /></CardBody></Card>
+        <Card><CardBody><Stat label="Reserve" value={run.reserveEur != null ? fmtEur(run.reserveEur, 0) : "—"} sub={run.approved ? "Transferred" : run.reserveEur != null ? "Awaiting approval" : "Not yet computed"} tone={run.approved ? "positive" : undefined} /></CardBody></Card>
       </div>
 
+      <SectionDivider label="Review" />
+
+      {/* Unanswered questions */}
       {questions.length > 0 && questions.some((q) => !q.answer) && (
         <Card>
           <CardHeader><CardTitle>Refinement questions</CardTitle></CardHeader>
@@ -83,13 +120,14 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
         </Card>
       )}
 
+      {/* Answered questions */}
       {questions.length > 0 && questions.every((q) => q.answer) && (
         <Card>
           <CardHeader><CardTitle>Answered</CardTitle></CardHeader>
           <CardBody className="flex flex-col gap-2 text-sm">
             {questions.map((q) => (
               <div key={q.id} className="flex justify-between gap-4">
-                <span className="text-zinc-600 dark:text-zinc-400">{q.question}</span>
+                <span style={{ color: "var(--text-dim)" }}>{q.question}</span>
                 <Badge tone="positive">{q.answer}</Badge>
               </div>
             ))}
@@ -97,6 +135,7 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
         </Card>
       )}
 
+      {/* Proposed actions */}
       {proposed && (
         <Card>
           <CardHeader className="flex items-center justify-between">
@@ -106,12 +145,12 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
           </CardHeader>
           <CardBody className="flex flex-col gap-2 text-sm">
             {proposed.map((a, i) => (
-              <div key={i} className="flex items-center justify-between border-b last:border-0 border-zinc-100 dark:border-zinc-900 py-2">
-                <div>
+              <div key={i} className="flex items-center justify-between py-2.5" style={{ borderBottom: i < proposed.length - 1 ? "1px solid var(--border-faint)" : "none" }}>
+                <div style={{ color: "var(--text-dim)" }}>
                   {a.kind === "reserve_transfer" ? (
-                    <span>Transfer <span className="font-semibold">{fmtEur(a.amountEur)}</span> to Carbon Reserve — <span className="text-zinc-500">{a.description}</span></span>
+                    <span>Transfer <span className="font-semibold" style={{ color: "var(--text)" }}>{fmtEur(a.amountEur)}</span> to Carbon Reserve — <span style={{ color: "var(--text-mute)" }}>{a.description}</span></span>
                   ) : (
-                    <span>Purchase <span className="font-semibold">{a.tonnes.toFixed(3)} t</span> from <span className="font-mono">{a.projectId}</span> ({fmtEur(a.eur)})</span>
+                    <span>Purchase <span className="font-semibold" style={{ color: "var(--text)" }}>{a.tonnes.toFixed(3)} t</span> from <span className="font-mono">{a.projectId}</span> ({fmtEur(a.eur)})</span>
                   )}
                 </div>
                 <Badge tone={a.kind === "reserve_transfer" ? "info" : "default"}>{a.kind.replace(/_/g, " ")}</Badge>
@@ -121,16 +160,19 @@ export default async function CloseRunPage({ params }: { params: Promise<{ id: s
         </Card>
       )}
 
+      <SectionDivider label="Audit" />
+
+      {/* Audit trail */}
       <Card>
         <CardHeader><CardTitle>Audit trail</CardTitle></CardHeader>
         <CardBody>
           <ol className="flex flex-col gap-1.5 text-xs font-mono">
             {audit.map((e) => (
               <li key={e.id} className="flex items-center gap-3">
-                <span className="text-zinc-400">{new Date(e.createdAt * 1000).toLocaleTimeString()}</span>
+                <span style={{ color: "var(--text-faint)" }}>{new Date(e.createdAt * 1000).toLocaleTimeString()}</span>
                 <Badge tone={e.actor === "agent" ? "info" : e.actor === "user" ? "positive" : "default"}>{e.actor}</Badge>
-                <span className="text-zinc-800 dark:text-zinc-200">{e.type}</span>
-                <span className="text-zinc-400 truncate">{e.hash.slice(0, 10)}</span>
+                <span style={{ color: "var(--text)" }}>{e.type}</span>
+                <span className="tabular-nums" style={{ color: "var(--text-faint)" }}>{e.hash.slice(0, 10)}</span>
               </li>
             ))}
           </ol>

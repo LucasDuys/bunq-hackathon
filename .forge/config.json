@@ -1,0 +1,98 @@
+{
+  "autonomy": "gated",
+  "depth": "standard",
+  "auto_detect_depth": true,
+  "max_iterations": 100,
+  "token_budget": 500000,
+  "context_reset_threshold": 60,
+  "repos": {},
+  "cross_repo_rules": {
+    "commit_in_source": true,
+    "api_first": true,
+    "shared_specs": true
+  },
+  "loop": {
+    "circuit_breaker_test_fails": 3,
+    "circuit_breaker_debug_attempts": 3,
+    "circuit_breaker_review_iterations": 3,
+    "circuit_breaker_no_progress": 2,
+    "single_task_budget_percent": 20
+  },
+  "review": {
+    "enabled": true,
+    "min_depth": "standard",
+    "model": "claude"
+  },
+  "verification": {
+    "enabled": true,
+    "min_depth": "standard",
+    "stub_detection": true
+  },
+  "backprop": {
+    "auto_generate_regression_tests": true,
+    "re_run_after_spec_update": false
+  },
+  "auto_backprop": true,
+  "execute": {
+    "status_header": true
+  },
+  "capability_hints": {},
+  "parallelism": {
+    "max_concurrent_agents": 3,
+    "max_concurrent_per_repo": 2
+  },
+  "model_routing": {
+    "enabled": true,
+    "cost_weights": {
+      "haiku": 1,
+      "sonnet": 5,
+      "opus": 25
+    },
+    "role_baselines": {
+      "forge-researcher": { "min": "haiku", "preferred": "sonnet", "max": "sonnet" },
+      "forge-complexity": { "min": "haiku", "preferred": "haiku", "max": "haiku" },
+      "forge-executor": { "min": "haiku", "preferred": "sonnet", "max": "opus" },
+      "forge-reviewer": { "min": "sonnet", "preferred": "sonnet", "max": "opus" },
+      "forge-verifier": { "min": "sonnet", "preferred": "sonnet", "max": "opus" },
+      "forge-speccer": { "min": "sonnet", "preferred": "opus", "max": "opus" },
+      "forge-planner": { "min": "sonnet", "preferred": "sonnet", "max": "opus" }
+    }
+  },
+  "hooks_config": {
+    "test_filter": true,
+    "progress_tracker": true,
+    "tool_cache": true,
+    "tool_cache_ttl": 120
+  },
+  "replanning": {
+    "enabled": true,
+    "concern_threshold": 0.3
+  },
+  "redecomposition": {
+    "enabled": true,
+    "max_expansion_depth": 1
+  },
+  "codex": {
+    "enabled": true,
+    "review": {
+      "enabled": true,
+      "depth_threshold": "standard",
+      "model": "gpt-5.4-mini",
+      "sensitive_tags": ["security", "shared", "api-export"]
+    },
+    "rescue": {
+      "enabled": true,
+      "debug_attempts_before_rescue": 2,
+      "model": null
+    }
+  },
+  "collab": {
+    "scorer": "node scripts/forge-collab-scorer.cjs",
+    "fallback_jaccard": false
+  },
+  "streaming_dag": {
+    "enabled": true,
+    "max_provisional": 3,
+    "max_failures_before_fallback": 2
+  }
+}

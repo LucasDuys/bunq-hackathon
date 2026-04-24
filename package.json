@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=22 <25"
+    "node": ">=22"
   },
   "scripts": {
-    "dev": "NODE_OPTIONS=--max-old-space-size=4096 next dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "migrate": "tsx scripts/migrate.ts",
@@ -50,5 +50,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
     "typescript": "^5"
+  },
+  "optionalDependencies": {
+    "adm-zip": "^0.5.17"
   }
 }

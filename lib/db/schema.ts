@@ -143,6 +143,127 @@ export const creditPurchases = sqliteTable("credit_purchases", {
   createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
 });
 
+export const impactRecommendations = sqliteTable("impact_recommendations", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  researchRunId: text("research_run_id").notNull(),
+  month: text("month").notNull(),
+  baselineKey: text("baseline_key").notNull(),
+  baselineMerchantNorm: text("baseline_merchant_norm").notNull(),
+  baselineMerchantLabel: text("baseline_merchant_label").notNull(),
+  baselineCategory: text("baseline_category").notNull(),
+  baselineSubCategory: text("baseline_sub_category"),
+  baselineAnnualSpendEur: real("baseline_annual_spend_eur").notNull(),
+  baselineAnnualCo2eKg: real("baseline_annual_co2e_kg").notNull(),
+  baselineConfidence: real("baseline_confidence").notNull(),
+  altName: text("alt_name").notNull(),
+  altType: text("alt_type").notNull(),
+  altDescription: text("alt_description").notNull(),
+  altCostDeltaPct: real("alt_cost_delta_pct").notNull(),
+  altCo2eDeltaPct: real("alt_co2e_delta_pct").notNull(),
+  altCostDeltaEurYear: real("alt_cost_delta_eur_year").notNull(),
+  altCo2eDeltaKgYear: real("alt_co2e_delta_kg_year").notNull(),
+  altConfidence: real("alt_confidence").notNull(),
+  altFeasibility: text("alt_feasibility").notNull(),
+  altRationale: text("alt_rationale").notNull(),
+  altSources: text("alt_sources").notNull(),
+  quadrant: text("quadrant").notNull(),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+export const agentRuns = sqliteTable("agent_runs", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  month: text("month").notNull(),
+  researchRunId: text("research_run_id"),
+  dagPayload: text("dag_payload").notNull(),
+  totalLatencyMs: integer("total_latency_ms").notNull(),
+  mock: integer("mock", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+export const agentMessages = sqliteTable("agent_messages", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentRunId: text("agent_run_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  tokensIn: integer("tokens_in"),
+  tokensOut: integer("tokens_out"),
+  cached: integer("cached", { mode: "boolean" }).notNull().default(false),
+  serverToolUseCount: integer("server_tool_use_count"),
+  webSearchRequests: integer("web_search_requests"),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+// Research Agent cache — plans/matrix-research.md §5. Keyed per jurisdiction + policy digest
+// so two orgs in the same regime share cache rows (future multi-tenant amortization).
+export const researchCache = sqliteTable("research_cache", {
+  cacheKey: text("cache_key").primaryKey(),
+  orgId: text("org_id").notNull(),
+  category: text("category").notNull(),
+  subCategory: text("sub_category"),
+  jurisdiction: text("jurisdiction").notNull(),
+  policyDigest: text("policy_digest").notNull(),
+  weekBucket: text("week_bucket").notNull(),
+  alternativesJson: text("alternatives_json").notNull(),
+  sourcesCount: integer("sources_count").notNull(),
+  searchRequestsUsed: integer("search_requests_used").notNull(),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+  ttlSec: integer("ttl_sec").notNull().default(2_592_000),
+});
+
+export const webSearchAudit = sqliteTable("web_search_audit", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentRunId: text("agent_run_id").notNull(),
+  clusterId: text("cluster_id"),
+  query: text("query").notNull(),
+  resultsN: integer("results_n").notNull(),
+  firstUrl: text("first_url"),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+export const onboardingRuns = sqliteTable("onboarding_runs", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  track: text("track").notNull(),
+  state: text("state").notNull(),
+  status: text("status").notNull().default("active"),
+  profile: text("profile"),
+  partialPolicy: text("partial_policy"),
+  gapList: text("gap_list"),
+  unsupportedList: text("unsupported_list"),
+  draftPolicy: text("draft_policy"),
+  draftMarkdown: text("draft_markdown"),
+  creditShortlist: text("credit_shortlist"),
+  calibrationNotes: text("calibration_notes"),
+  uploadRef: text("upload_ref"),
+  uploadMime: text("upload_mime"),
+  uploadExtract: text("upload_extract"),
+  seedCloseRunId: text("seed_close_run_id"),
+  questionCount: integer("question_count").notNull().default(0),
+  failureReason: text("failure_reason"),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at").notNull().default(sql`(unixepoch())`),
+  completedAt: integer("completed_at"),
+});
+
+export const onboardingQa = sqliteTable("onboarding_qa", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  runId: text("run_id").notNull(),
+  turnIndex: integer("turn_index").notNull(),
+  topic: text("topic").notNull(),
+  kind: text("kind").notNull(),
+  question: text("question").notNull(),
+  options: text("options"),
+  rationale: text("rationale"),
+  answer: text("answer"),
+  parsedAnswer: text("parsed_answer"),
+  required: integer("required", { mode: "boolean" }).notNull().default(true),
+  askedAt: integer("asked_at").notNull().default(sql`(unixepoch())`),
+  answeredAt: integer("answered_at"),
+});
+
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
 export type EmissionFactor = typeof emissionFactors.$inferSelect;
@@ -153,3 +274,15 @@ export type AuditEvent = typeof auditEvents.$inferSelect;
 export type Org = typeof orgs.$inferSelect;
 export type Policy = typeof policies.$inferSelect;
 export type CreditProject = typeof creditProjects.$inferSelect;
+export type ImpactRecommendation = typeof impactRecommendations.$inferSelect;
+export type NewImpactRecommendation = typeof impactRecommendations.$inferInsert;
+export type AgentRun = typeof agentRuns.$inferSelect;
+export type AgentMessage = typeof agentMessages.$inferSelect;
+export type ResearchCacheRow = typeof researchCache.$inferSelect;
+export type NewResearchCacheRow = typeof researchCache.$inferInsert;
+export type WebSearchAudit = typeof webSearchAudit.$inferSelect;
+export type NewWebSearchAudit = typeof webSearchAudit.$inferInsert;
+export type OnboardingRun = typeof onboardingRuns.$inferSelect;
+export type NewOnboardingRun = typeof onboardingRuns.$inferInsert;
+export type OnboardingQa = typeof onboardingQa.$inferSelect;
+export type NewOnboardingQa = typeof onboardingQa.$inferInsert;
