@@ -151,6 +151,62 @@ CREATE TABLE IF NOT EXISTS credit_purchases (
   eur REAL NOT NULL,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
+
+CREATE TABLE IF NOT EXISTS impact_recommendations (
+  id TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL,
+  research_run_id TEXT NOT NULL,
+  month TEXT NOT NULL,
+  baseline_key TEXT NOT NULL,
+  baseline_merchant_norm TEXT NOT NULL,
+  baseline_merchant_label TEXT NOT NULL,
+  baseline_category TEXT NOT NULL,
+  baseline_sub_category TEXT,
+  baseline_annual_spend_eur REAL NOT NULL,
+  baseline_annual_co2e_kg REAL NOT NULL,
+  baseline_confidence REAL NOT NULL,
+  alt_name TEXT NOT NULL,
+  alt_type TEXT NOT NULL,
+  alt_description TEXT NOT NULL,
+  alt_cost_delta_pct REAL NOT NULL,
+  alt_co2e_delta_pct REAL NOT NULL,
+  alt_cost_delta_eur_year REAL NOT NULL,
+  alt_co2e_delta_kg_year REAL NOT NULL,
+  alt_confidence REAL NOT NULL,
+  alt_feasibility TEXT NOT NULL,
+  alt_rationale TEXT NOT NULL,
+  alt_sources TEXT NOT NULL,
+  quadrant TEXT NOT NULL,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_impact_org_run ON impact_recommendations(org_id, research_run_id);
+CREATE INDEX IF NOT EXISTS idx_impact_baseline ON impact_recommendations(research_run_id, baseline_key);
+
+CREATE TABLE IF NOT EXISTS agent_runs (
+  id TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL,
+  month TEXT NOT NULL,
+  research_run_id TEXT,
+  dag_payload TEXT NOT NULL,
+  total_latency_ms INTEGER NOT NULL,
+  mock INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_agent_runs_org ON agent_runs(org_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_agent_runs_research ON agent_runs(research_run_id);
+
+CREATE TABLE IF NOT EXISTS agent_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  agent_run_id TEXT NOT NULL,
+  agent_name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  content TEXT NOT NULL,
+  tokens_in INTEGER,
+  tokens_out INTEGER,
+  cached INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_agent_messages_run ON agent_messages(agent_run_id);
 `;
 
 const dbPath = env.dbUrl.replace(/^file:/, "");

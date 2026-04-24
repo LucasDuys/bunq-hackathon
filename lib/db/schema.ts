@@ -143,6 +143,57 @@ export const creditPurchases = sqliteTable("credit_purchases", {
   createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
 });
 
+export const impactRecommendations = sqliteTable("impact_recommendations", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  researchRunId: text("research_run_id").notNull(),
+  month: text("month").notNull(),
+  baselineKey: text("baseline_key").notNull(),
+  baselineMerchantNorm: text("baseline_merchant_norm").notNull(),
+  baselineMerchantLabel: text("baseline_merchant_label").notNull(),
+  baselineCategory: text("baseline_category").notNull(),
+  baselineSubCategory: text("baseline_sub_category"),
+  baselineAnnualSpendEur: real("baseline_annual_spend_eur").notNull(),
+  baselineAnnualCo2eKg: real("baseline_annual_co2e_kg").notNull(),
+  baselineConfidence: real("baseline_confidence").notNull(),
+  altName: text("alt_name").notNull(),
+  altType: text("alt_type").notNull(),
+  altDescription: text("alt_description").notNull(),
+  altCostDeltaPct: real("alt_cost_delta_pct").notNull(),
+  altCo2eDeltaPct: real("alt_co2e_delta_pct").notNull(),
+  altCostDeltaEurYear: real("alt_cost_delta_eur_year").notNull(),
+  altCo2eDeltaKgYear: real("alt_co2e_delta_kg_year").notNull(),
+  altConfidence: real("alt_confidence").notNull(),
+  altFeasibility: text("alt_feasibility").notNull(),
+  altRationale: text("alt_rationale").notNull(),
+  altSources: text("alt_sources").notNull(),
+  quadrant: text("quadrant").notNull(),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+export const agentRuns = sqliteTable("agent_runs", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  month: text("month").notNull(),
+  researchRunId: text("research_run_id"),
+  dagPayload: text("dag_payload").notNull(),
+  totalLatencyMs: integer("total_latency_ms").notNull(),
+  mock: integer("mock", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+export const agentMessages = sqliteTable("agent_messages", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  agentRunId: text("agent_run_id").notNull(),
+  agentName: text("agent_name").notNull(),
+  role: text("role").notNull(),
+  content: text("content").notNull(),
+  tokensIn: integer("tokens_in"),
+  tokensOut: integer("tokens_out"),
+  cached: integer("cached", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
 export type Transaction = typeof transactions.$inferSelect;
 export type NewTransaction = typeof transactions.$inferInsert;
 export type EmissionFactor = typeof emissionFactors.$inferSelect;
@@ -153,3 +204,7 @@ export type AuditEvent = typeof auditEvents.$inferSelect;
 export type Org = typeof orgs.$inferSelect;
 export type Policy = typeof policies.$inferSelect;
 export type CreditProject = typeof creditProjects.$inferSelect;
+export type ImpactRecommendation = typeof impactRecommendations.$inferSelect;
+export type NewImpactRecommendation = typeof impactRecommendations.$inferInsert;
+export type AgentRun = typeof agentRuns.$inferSelect;
+export type AgentMessage = typeof agentMessages.$inferSelect;

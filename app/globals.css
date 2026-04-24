@@ -3,6 +3,52 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* DESIGN.md §2 — brand */
+  --brand-forest-950: #002e1b;
+  --brand-forest-800: #005d36;
+  --brand-forest-600: #0e6b40;
+  --brand-mint-500: #00ff95;
+  --brand-mint-200: #cdffad;
+  --brand-mint-100: #e2f6d5;
+  --brand-ink: #0e0f0c;
+  --brand-paper: #fafaf9;
+
+  /* Semantic status (light) */
+  --status-success: #17b26a;
+  --status-warning: #f79009;
+  --status-danger: #f04438;
+  --status-info: #0080ff;
+
+  /* Confidence tiers */
+  --confidence-high: #00ff95;
+  --confidence-medium: #f79009;
+  --confidence-low: #f04438;
+  --confidence-none: #9e9e9e;
+
+  /* Matrix quadrant tokens — tied to the cost × CO₂e semantic meaning, not raw hex. */
+  --quadrant-win-win: var(--status-success);
+  --quadrant-pay: var(--status-warning);
+  --quadrant-trap: #737373;
+  --quadrant-avoid: var(--status-danger);
+
+  /* Muted tints used by scatter backgrounds (kept low-opacity). */
+  --quadrant-win-win-bg: rgba(23, 178, 106, 0.08);
+  --quadrant-pay-bg: rgba(247, 144, 9, 0.07);
+  --quadrant-trap-bg: rgba(115, 115, 115, 0.06);
+  --quadrant-avoid-bg: rgba(240, 68, 56, 0.06);
+
+  /* Foreground/surface */
+  --fg-primary: #0e0f0c;
+  --fg-secondary: #454745;
+  --fg-muted: #737373;
+  --fg-on-accent: #002e1b;
+  --bg-canvas: #fafaf9;
+  --bg-surface: #ffffff;
+  --bg-surface-muted: #f6f6f6;
+  --border-default: rgba(14, 15, 12, 0.12);
+  --border-strong: rgba(14, 15, 12, 0.24);
+  --ring-accent: rgba(0, 255, 149, 0.45);
 }
 
 @theme inline {
@@ -16,6 +62,31 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --fg-primary: #fafaf9;
+    --fg-secondary: #a6a6a6;
+    --fg-muted: #737373;
+    --bg-canvas: #0a0a0a;
+    --bg-surface: #121212;
+    --bg-surface-muted: #1c1c1c;
+    --border-default: rgba(255, 255, 255, 0.1);
+    --border-strong: rgba(255, 255, 255, 0.2);
+    --ring-accent: rgba(0, 255, 149, 0.55);
+
+    /* Status + confidence — dark variants of the same semantic meanings. */
+    --status-warning: #fdb022;
+    --status-danger: #f97066;
+    --confidence-medium: #fdb022;
+    --confidence-low: #f97066;
+    --confidence-none: #737373;
+
+    --quadrant-pay: var(--status-warning);
+    --quadrant-avoid: var(--status-danger);
+    --quadrant-trap: #a1a1aa;
+    --quadrant-win-win-bg: rgba(0, 255, 149, 0.1);
+    --quadrant-pay-bg: rgba(253, 176, 34, 0.08);
+    --quadrant-trap-bg: rgba(161, 161, 170, 0.08);
+    --quadrant-avoid-bg: rgba(249, 112, 102, 0.08);
   }
 }
 
@@ -23,4 +94,5 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  font-feature-settings: "calt", "tnum";
 }
