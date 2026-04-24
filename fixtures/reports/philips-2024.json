@@ -1,0 +1,412 @@
+{
+  "company": "Koninklijke Philips N.V.",
+  "reportingYear": 2024,
+  "country": "NL",
+  "industry": "Health technology",
+  "revenueEur": 18021000000,
+  "employees": null,
+  "sourceUrl": "https://www.results.philips.com/publications/ar24/downloads/files/en/PhilipsFullAnnualReport2024-English.pdf",
+  "sourceFile": "philips-2024.pdf",
+  "framework": "CSRD_ESRS_E1",
+  "frameworkNotes": "Sustainability statement in Chapter 8. Aligns with SBTi and ESRS; GHG Protocol Corporate Accounting Standard for emissions.",
+  "assurance": {
+    "level": "limited",
+    "assurer": null,
+    "scopeNote": "Explicit assurance provider not surfaced in extracted climate section. KPMG is named as external validator of internal carbon pricing methodology (separate from sustainability-statement assurance)."
+  },
+  "emissions": {
+    "unit": "tCO2e",
+    "baseYear": 2015,
+    "reportingPeriod": "2024",
+    "scope1": {
+      "totalTco2e": 17783,
+      "byGas": {
+        "CO2": 16971,
+        "CH4": 25,
+        "N2O": 10,
+        "HFC": 550,
+        "PFC": 0,
+        "CFC": 4,
+        "HCFC": 223
+      },
+      "methodNote": "Direct emissions from fuel consumption and refrigerant use at sites with operational control. BEIS 2023 v1.1 for fossil fuels; IPCC AR6 (or AR5) for refrigerants.",
+      "uncertaintyPct": null,
+      "includesBiogenic": false
+    },
+    "scope2": {
+      "locationBasedTco2e": 157610,
+      "marketBasedTco2e": 2179,
+      "methodNote": "Market-based method is the reference for total carbon footprint. Residual-mix factors: eGrid (US), AIB European Residual Mixes 2022 v1.1 (EU), IEA (other countries).",
+      "uncertaintyPct": null
+    },
+    "scope3": [
+      {
+        "category": "cat1_purchased_goods_services",
+        "tco2e": 1396321,
+        "method": "hybrid",
+        "factorSource": "EcoInvent v3.9.1 GWP AR6 (goods, average-data method); Exiobase v3.8.2 GWP AR5/AR6 (services, spend-based)",
+        "note": "Baseline year 2020 = 1,715,819 tCO2e; reduced 19% vs baseline, 8% vs 2023.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat2_capital_goods",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial per Philips inventory boundary.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat3_fuel_energy_related",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat4_upstream_transportation",
+        "tco2e": 228409,
+        "method": "activity_based",
+        "factorSource": "BEIS 2023 v1.1 GWP AR5 (air/road/LCL); Clean Cargo v2022 GWP AR6 (FCL sea)",
+        "note": "Split introduced in 2024 (previously combined with Cat 9). Increase partly driven by updated BEIS factors (+20% for long-haul air).",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat5_waste_in_operations",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat6_business_travel",
+        "tco2e": 115534,
+        "method": "activity_based",
+        "factorSource": "BEIS 2023 v1.1 GWP AR5",
+        "note": "Post-pandemic travel recovery + restructuring-driven travel; +27% vs 2023.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat7_employee_commuting",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat8_upstream_leased_assets",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Not applicable to Philips.",
+        "excludedAsImmaterial": false,
+        "notApplicable": true
+      },
+      {
+        "category": "cat9_downstream_transportation",
+        "tco2e": 109568,
+        "method": "activity_based",
+        "factorSource": "BEIS 2023 v1.1; Clean Cargo v2022",
+        "note": "Split from Cat 4 in 2024.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat10_processing_sold_products",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Not applicable to Philips.",
+        "excludedAsImmaterial": false,
+        "notApplicable": true
+      },
+      {
+        "category": "cat11_use_of_sold_products",
+        "tco2e": 2528611,
+        "method": "activity_based",
+        "factorSource": "EcoInvent v3.9.1 GWP AR6 (country-grid average factors)",
+        "note": "Full-lifetime energy of products sold in-year. Reduced 51% vs 2020 baseline and 18% vs 2023.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat12_end_of_life",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat13_downstream_leased_assets",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Not applicable to Philips.",
+        "excludedAsImmaterial": false,
+        "notApplicable": true
+      },
+      {
+        "category": "cat14_franchises",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Not applicable to Philips.",
+        "excludedAsImmaterial": false,
+        "notApplicable": true
+      },
+      {
+        "category": "cat15_investments",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Not applicable to Philips.",
+        "excludedAsImmaterial": false,
+        "notApplicable": true
+      }
+    ],
+    "totalScope1And2Tco2e": 19962,
+    "totalTco2e": 4398405,
+    "intensity": [
+      {
+        "metric": "kgCO2e/EUR revenue",
+        "value": 0.25,
+        "scopeCoverage": ["Scope 1", "Scope 2 location-based", "Scope 3 (5 categories)"]
+      },
+      {
+        "metric": "kgCO2e/EUR revenue",
+        "value": 0.24,
+        "scopeCoverage": ["Scope 1", "Scope 2 market-based", "Scope 3 (5 categories)"]
+      }
+    ],
+    "avoidedEmissionsTco2e": null,
+    "biogenicEmissionsTco2e": 0,
+    "operationalControlBoundary": true,
+    "equityShareBoundary": false
+  },
+  "energy": {
+    "totalMwh": 464587,
+    "renewableMwh": 369642,
+    "renewablePct": 80,
+    "byFuel": {
+      "natural_gas": 78702,
+      "crude_oil_petroleum": 4773,
+      "purchased_non_renewable_electricity_heat_steam_cooling": 11025,
+      "in_contract_renewable_electricity": 26457,
+      "power_purchase_agreement": 204204,
+      "purchased_renewable_electricity_heat_steam_cooling": 134251,
+      "self_generated_non_fuel_renewable": 4730
+    },
+    "intensity": {
+      "metric": "MWh/million EUR revenue",
+      "value": 25.78
+    },
+    "highClimateImpactSectorSharePct": null
+  },
+  "targets": [
+    {
+      "name": "Scope 1 & 2 reduction 2030 (SBTi approved)",
+      "scopeCoverage": ["Scope 1", "Scope 2 market-based"],
+      "targetYear": 2030,
+      "baseYear": 2015,
+      "baseEmissionsTco2e": 134171,
+      "reductionPct": 75,
+      "targetType": "absolute",
+      "sbtiValidated": true,
+      "sbtiClassification": "1.5C",
+      "progressPct": 85
+    },
+    {
+      "name": "Scope 1 & 2 reduction 2040 (SBTi approved)",
+      "scopeCoverage": ["Scope 1", "Scope 2 market-based"],
+      "targetYear": 2040,
+      "baseYear": 2015,
+      "baseEmissionsTco2e": 134171,
+      "reductionPct": 90,
+      "targetType": "absolute",
+      "sbtiValidated": true,
+      "sbtiClassification": "1.5C",
+      "progressPct": null
+    },
+    {
+      "name": "Scope 3 reduction 2030 (SBTi approved)",
+      "scopeCoverage": ["Scope 3 cat1", "Scope 3 cat4", "Scope 3 cat6", "Scope 3 cat9", "Scope 3 cat11"],
+      "targetYear": 2030,
+      "baseYear": 2020,
+      "baseEmissionsTco2e": null,
+      "reductionPct": 42,
+      "targetType": "absolute",
+      "sbtiValidated": true,
+      "sbtiClassification": "1.5C",
+      "progressPct": 12
+    },
+    {
+      "name": "Net Zero via SBTi (year TBD)",
+      "scopeCoverage": ["Scope 1", "Scope 2", "Scope 3"],
+      "targetYear": 2050,
+      "baseYear": 2015,
+      "baseEmissionsTco2e": null,
+      "reductionPct": null,
+      "targetType": "net_zero",
+      "sbtiValidated": false,
+      "sbtiClassification": "net_zero",
+      "progressPct": null
+    }
+  ],
+  "credits": {
+    "totalTonnesRetired": 474000,
+    "removalPct": 2,
+    "reductionPct": 98,
+    "euBasedPct": null,
+    "byStandard": {
+      "Verra_VCS": 97,
+      "Gold_Standard": 3
+    },
+    "correspondingAdjustmentPct": 0,
+    "totalSpendEur": null,
+    "projects": [
+      {
+        "name": "TIST (International Small Group and Tree Planting Program)",
+        "country": "KE",
+        "type": "removal_nature",
+        "standard": "Verra_VCS",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "Smallholder farmer tree planting with CCB label; ARR nature-based solution."
+      },
+      {
+        "name": "Safe drinking water & reduced wood use",
+        "country": "UG",
+        "type": "reduction",
+        "standard": "Gold_Standard",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "Clean water provision reduces wood demand for boiling; avoided deforestation."
+      },
+      {
+        "name": "Sustainable forest production",
+        "country": "ET",
+        "type": "reduction",
+        "standard": "Verra_VCS",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "Reducing fuelwood harvest via sustainable business promotion."
+      },
+      {
+        "name": "Wind generation & employment",
+        "country": "IN",
+        "type": "reduction",
+        "standard": "Verra_VCS",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "Wind energy supply in India."
+      },
+      {
+        "name": "Clean cookstoves",
+        "country": "GH",
+        "type": "reduction",
+        "standard": "Gold_Standard",
+        "vintageYear": null,
+        "tonnesRetired": null,
+        "description": "Cookstove efficiency across Ghana and Kenya; improved respiratory health, reduced deforestation."
+      }
+    ],
+    "usedForNetClaim": false
+  },
+  "internalCarbonPrice": {
+    "pricePerTco2eEur": 150,
+    "type": "shadow",
+    "perimeterDescription": "All Philips operations. CapEx, R&D, IT, Real Estate, Businesses. Covers 100% Scope 1&2 + ~95% of gross Scope 3 (96% of overall emissions).",
+    "volumeAtStakeTco2e": 4398405,
+    "pricingMethodNote": "Derived from ReCiPe methodology combined with CE Delft environmental pricing; validated by KPMG; aligned with Philips EP&L."
+  },
+  "risks": [
+    {
+      "kind": "physical_acute",
+      "timeHorizon": "short",
+      "description": "Best site (NL, NUTS NL414) — cold stress risk across all time scales; decreases in future per NATHAN analysis.",
+      "likelihoodLabel": "very high",
+      "controlEffectivenessLabel": "high",
+      "financialImpactEur": null
+    },
+    {
+      "kind": "physical_acute",
+      "timeHorizon": "medium",
+      "description": "Pune (IN) — high physical risk in medium/long term from precipitation, heat stress, fire weather.",
+      "likelihoodLabel": "high",
+      "controlEffectivenessLabel": "medium",
+      "financialImpactEur": null
+    },
+    {
+      "kind": "physical_chronic",
+      "timeHorizon": "long",
+      "description": "Drachten (NL), Hamburg (DE), Batam (ID) — sites in proximity to sea-level-rise risk zones.",
+      "likelihoodLabel": null,
+      "controlEffectivenessLabel": null,
+      "financialImpactEur": null
+    },
+    {
+      "kind": "transition_policy",
+      "timeHorizon": "medium",
+      "description": "EU-ETS and CBAM (2026) carbon price pass-through from high-emitting suppliers (steel, iron, aluminium, glass, paper/cardboard). Assumed SSP1-1.9 max carbon prices.",
+      "likelihoodLabel": null,
+      "controlEffectivenessLabel": null,
+      "financialImpactEur": null
+    },
+    {
+      "kind": "transition_market",
+      "timeHorizon": "medium",
+      "description": "Downstream use-phase locked-in emissions vs customer demand for energy-efficient products. >60% of value-chain emissions are Cat 11.",
+      "likelihoodLabel": null,
+      "controlEffectivenessLabel": null,
+      "financialImpactEur": null
+    }
+  ],
+  "governance": {
+    "boardOversight": true,
+    "execRemunerationTiedToClimate": true,
+    "execRemunerationClimateSharePct": null,
+    "climateCommittees": ["Group Sustainability"],
+    "transitionPlanPublished": true,
+    "transitionPlanReference": "Philips Climate Resilience report 2024 (separate document); Chapter 8 of Annual Report 2024"
+  },
+  "methodology": {
+    "ghgProtocolVersion": "Corporate Accounting and Reporting Standard",
+    "scope2MethodsUsed": ["location_based", "market_based"],
+    "gwpAssessmentReport": "mixed",
+    "factorSources": [
+      "BEIS 2023 v1.1",
+      "IPCC AR5",
+      "IPCC AR6",
+      "EcoInvent v3.9.1 GWP AR6",
+      "Exiobase v3.8.2 GWP AR5/AR6",
+      "Clean Cargo v2022 GWP AR6",
+      "eGrid Residual Mix (US)",
+      "AIB European Residual Mixes 2022 v1.1",
+      "IEA emission factors 2023 v1.1"
+    ],
+    "materialityMethod": "Double Materiality Assessment 2024",
+    "restatedBaseYear": false,
+    "restatementReason": null
+  },
+  "euTaxonomy": {
+    "capexAlignedPct": 0.3,
+    "opexAlignedPct": null,
+    "revenueAlignedPct": null,
+    "climateMitigationSharePct": null,
+    "climateAdaptationSharePct": null
+  },
+  "transitionPlanSummary": "1.5°C-aligned SBTi-validated transition plan across 5 levers: energy-efficient product design + customer decarbonization support (use-phase), circular economy in purchased goods, supplier engagement via SBTi, low-carbon logistics, fossil-fuel phase-out at sites. Net-Zero commitment via SBTi in formalization.",
+  "actionSummary": "EcoDesign 100% of new product introductions by 2025; PPA portfolio (wind: Los Mirasoles US, Krammer+Bouwdokken NL, Mutkalampi FI; solar: Pontinia IT; two direct China deals); coZEV maritime shipping signatory; Green and Sustainability Innovation Bond Framework (since 2019) aligned with ICMA principles; EUR 263M Green Innovation investment 2024."
+}

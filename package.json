@@ -14,6 +14,7 @@
     "reset": "tsx scripts/reset-demo.ts",
     "bunq:keygen": "tsx scripts/bunq-keygen.ts",
     "bunq:register": "tsx scripts/register-webhook.ts",
+    "reports:coverage": "tsx scripts/reports-coverage.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
