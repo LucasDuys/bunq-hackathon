@@ -16,7 +16,7 @@ export const TrendChart = ({ data }: { data: Array<{ month: string; co2eKg: numb
         <YAxis stroke="#71717a" fontSize={11} tickLine={false} tickFormatter={(v) => `${Math.round(v)}`} />
         <Tooltip
           contentStyle={{ borderRadius: 8, fontSize: 12 }}
-          formatter={(v: number) => [`${v.toFixed(1)} kg`, "CO₂e"]}
+          formatter={(v) => [`${Number(v).toFixed(1)} kg`, "CO₂e"]}
         />
         <Area type="monotone" dataKey="co2eKg" stroke="#10b981" strokeWidth={2} fill="url(#co2grad)" />
       </AreaChart>

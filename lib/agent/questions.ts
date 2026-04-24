@@ -12,13 +12,22 @@ const OUTPUT_SCHEMA = z.object({ questions: z.array(QUESTION_SCHEMA).min(1).max(
 
 export type RefinementQuestion = z.infer<typeof QUESTION_SCHEMA>;
 
+const guessCategoryFromMerchant = (merchant: string): string => {
+  const m = merchant.toLowerCase();
+  if (/\b(amazon|coolblue|mediamarkt|bol\.com|apple|dell|ikea|office)\b/.test(m)) return "procurement";
+  if (/\b(aws|google cloud|azure|vercel|github|openai|anthropic|notion|figma|slack|linear)\b/.test(m)) return "cloud";
+  if (/\b(consult|advisory|kpmg|pwc|deloitte|ey|mckinsey|notary|legal)\b/.test(m)) return "services";
+  if (/\b(ads|marketing|google ads|facebook|meta|linkedin)\b/.test(m)) return "services";
+  return "procurement";
+};
+
 const mockQuestions = (clusters: Cluster[]): RefinementQuestion[] => {
   return clusters.slice(0, 3).map((c) => {
-    const likely = c.likelyCategory ?? "procurement";
-    const subs = SUB_CATEGORIES_BY_CATEGORY[likely] ?? ["electronics", "office_supplies"];
+    const likely = c.likelyCategory && c.likelyCategory !== "other" ? c.likelyCategory : guessCategoryFromMerchant(c.merchantLabel);
+    const subs = SUB_CATEGORIES_BY_CATEGORY[likely] ?? ["generic"];
     return {
       clusterId: c.id,
-      question: `${c.merchantLabel}: what did ${c.totalSpendEur.toFixed(0)} EUR of spend cover this month?`,
+      question: `${c.merchantLabel}: what did €${c.totalSpendEur.toFixed(0)} of spend cover this month?`,
       options: subs.slice(0, 4).map((s) => ({ label: s.replace(/_/g, " "), category: likely, subCategory: s })),
     };
   });
