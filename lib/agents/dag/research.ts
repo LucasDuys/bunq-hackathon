@@ -67,6 +67,7 @@ Operating rules:
      set the field to null — the judge agent will reconcile with our factor library.
   6. Prefer vendors with: public pricing, EU certification (Ecolabel, Blue Angel,
      Green Key, ISO 14001), B2B availability.
+  7. For each alternative, call \`record_alternative\` once. That tool is TERMINAL.
   8. When you have recorded all alternatives you can verify, stop.
 
 You have access to:
