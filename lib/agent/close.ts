@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, lt } from "drizzle-orm";
 import {
+  bunqSessions,
   closeRuns,
   db,
   emissionEstimates,
@@ -10,6 +11,8 @@ import {
   transactions,
 } from "@/lib/db/client";
 import { appendAudit } from "@/lib/audit/append";
+import { loadContext } from "@/lib/bunq/context";
+import { intraUserTransfer } from "@/lib/bunq/payments";
 import { reclassifyMerchant } from "@/lib/classify/merchant";
 import { normalizeMerchant } from "@/lib/classify/rules";
 import { CREDIT_PROJECTS, totalBudgetMix } from "@/lib/credits/projects";
@@ -234,25 +237,74 @@ const finalizeEstimates = async (closeRunId: string) => {
   }).where(eq(closeRuns.id, closeRunId)).run();
 
   appendAudit({ orgId: run.orgId, actor: "agent", type: "close.proposed", payload: { actions, outcome, finalCo2eKg: finalRollup.co2eKgPoint, finalConfidence: finalRollup.confidence }, closeRunId });
+
+  // Per spec (CONCEPT.md "Agentic action"): low-risk reserves under the policy
+  // threshold auto-execute; only over-threshold runs wait for human approval.
+  if (!outcome.requiresApproval) {
+    const exec = await approveAndExecute(closeRunId, "system");
+    return {
+      state: exec.state,
+      finalCo2eKg: finalRollup.co2eKgPoint,
+      finalConfidence: finalRollup.confidence,
+      reserveEur: outcome.reserveTotalEur,
+      actions,
+      requiresApproval: false,
+      autoExecuted: true,
+      executed: exec.executed,
+    };
+  }
+
   return { state: nextState, finalCo2eKg: finalRollup.co2eKgPoint, finalConfidence: finalRollup.confidence, reserveEur: outcome.reserveTotalEur, actions, requiresApproval: outcome.requiresApproval };
 };
 
-export const approveAndExecute = async (closeRunId: string) => {
+export const approveAndExecute = async (closeRunId: string, approver: "user" | "system" = "user") => {
   const run = db.select().from(closeRuns).where(eq(closeRuns.id, closeRunId)).all()[0];
   if (!run) throw new Error("not found");
   if (!run.proposedActions) throw new Error("no proposed actions");
 
   db.update(closeRuns).set({ state: "EXECUTING", approved: true, approvedAt: Math.floor(Date.now() / 1000) }).where(eq(closeRuns.id, closeRunId)).run();
-  appendAudit({ orgId: run.orgId, actor: "user", type: "close.approved", payload: { closeRunId }, closeRunId });
+  appendAudit({ orgId: run.orgId, actor: approver, type: "close.approved", payload: { closeRunId, auto: approver === "system" }, closeRunId });
 
   const actions = JSON.parse(run.proposedActions) as ProposedAction[];
-  // Execution is mocked at the bunq-client layer when BUNQ_MOCK=1 / DRY_RUN=1; we still log every step.
+  const org = db.select().from(orgs).where(eq(orgs.id, run.orgId)).all()[0];
+  const ctx = loadContext();
+  const session = db.select().from(bunqSessions).where(eq(bunqSessions.orgId, run.orgId)).orderBy(desc(bunqSessions.id)).limit(1).all()[0];
+  // Mock-mode placeholders: callBunq returns canned responses so these don't need to be real.
+  const userId = org?.bunqUserId ?? ctx.userId ?? "0";
+  const fromAccountId = ctx.mainAccountId ?? "1";
+  const reserveAccountId = org?.reserveAccountId ?? ctx.reserveAccountId ?? "reserve_1";
+  const token = session?.sessionToken ?? "mock_session_token";
+
   for (const a of actions) {
     appendAudit({ orgId: run.orgId, actor: "agent", type: `action.${a.kind}`, payload: a, closeRunId });
+    if (a.kind === "reserve_transfer") {
+      await intraUserTransfer({
+        userId,
+        fromAccountId,
+        toAccountId: reserveAccountId,
+        amountEur: a.amountEur,
+        description: a.description,
+        token,
+        closeRunId,
+      });
+    }
+    // credit_purchase actions stay audit-only for the hackathon (simulated marketplace).
   }
 
   db.update(closeRuns).set({ state: "COMPLETED", status: "completed", completedAt: Math.floor(Date.now() / 1000) }).where(eq(closeRuns.id, closeRunId)).run();
   appendAudit({ orgId: run.orgId, actor: "agent", type: "close.completed", payload: { actionCount: actions.length }, closeRunId });
+
+  // Snapshot a briefing into the audit chain so the run is reproducible later.
+  // Skip narrative to keep the close fast and deterministic; the report page
+  // re-renders narrative on demand.
+  try {
+    const { buildBriefing } = await import("@/lib/reports/briefing");
+    const briefing = await buildBriefing({ orgId: run.orgId, kind: "month", label: run.month, skipNarrative: true });
+    appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot", payload: briefing, closeRunId });
+  } catch (e) {
+    appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot_failed", payload: { error: String(e) }, closeRunId });
+  }
+
   return { state: "COMPLETED", executed: actions.length };
 };
 

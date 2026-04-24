@@ -22,12 +22,12 @@ The 7-agent DAG (`lib/agents/dag/`) now runs end-to-end behind `/impacts`. Deter
 - [ ] **Implementation cost = 0 everywhere.** `creditStrategy.ts::IMPLEMENTATION_COST_DEFAULT` is hard-coded to 0 because we don't want to invent numbers. Payback-period math consequently always returns 0. Wire a small per-alternative-type implementation-cost table when the UX calls for it.
 
 ## Not yet wired to real services
-Mock mode works end-to-end, but we haven't driven live traffic through either external dependency.
+Mock mode works end-to-end. Bunq live path is fully scripted but not yet exercised against the live sandbox.
 
-- [ ] **Bunq sandbox end-to-end** — generate RSA keypair (`pnpm bunq:keygen`), install, create device-server, persist session token, create sub-account for real, verify webhook signature on a real `MUTATION` event. Currently: `BUNQ_MOCK=1` default; `lib/bunq/client.ts` has the signed-call path but nothing has exercised it against the sandbox API.
+- [ ] **Bunq sandbox end-to-end** — scripts exist (`bunq:sandbox-user`, `bunq:keygen`, `bunq:bootstrap`, `bunq:create-reserve`, `bunq:sugardaddy`, `bunq:register`, `dev:live`); still need to run them in order against the sandbox to confirm a real `MUTATION` lands in `transactions` and a real intra-user transfer moves balance.
 - [ ] **Anthropic live mode** — hit Haiku 4.5 classifier and Sonnet 4.6 question generator / CSRD narrative for real. Verify JSON output compliance; handle Anthropic rate limits. Currently: `ANTHROPIC_MOCK=1` by default; live path exists, untested under load.
-- [ ] **Cloudflare Tunnel in front of `/api/webhook/bunq`** — register webhook via `pnpm bunq:register`, ingest a real sandbox payment, and confirm the MUTATION lands in our `transactions` table with a correct signature check.
-- [ ] **`sugardaddy@bunq.com` seeding** — use the sandbox bot to auto-accept RequestInquiries and pre-populate the sandbox user's balance so the Carbon Reserve transfer actually moves money on-screen in the bunq app.
+- [x] **Cloudflare Tunnel in front of `/api/webhook/bunq`** — `npm run dev:live` boots the tunnel + dev server and prints the public URL. Still need to (a) install cloudflared on the demo laptop, (b) run it, (c) paste URL into `BUNQ_WEBHOOK_URL`, (d) `npm run bunq:register`.
+- [x] **`sugardaddy@bunq.com` seeding** — `scripts/bunq-sugardaddy.ts` sends a RequestInquiry; default amount EUR 500 (override with `SUGARDADDY_AMOUNT`).
 
 ## Tax Savings & CO₂ Analysis Agent (Ben — next phase)
 
@@ -101,9 +101,13 @@ DESIGN.md is written (14-section spec). Dark theme, design tokens, section divid
 
 ## Demo / go-live
 
-- [ ] **Rehearse the 3-minute demo twice** with `pnpm reset` between. Time each step. See `research/12-demo-choreography.md`.
-- [ ] **Deploy to Vercel OR run locally behind Cloudflare Tunnel** during the demo. Confirm webhook URL stability.
-- [ ] **Backup story for "mock mode"** — if anything in the live pipeline fails, have `ANTHROPIC_MOCK=1 BUNQ_MOCK=1 DRY_RUN=1` as the safe fallback that still demos everything except real money movement.
+- [ ] **Rehearse the 3-minute demo twice** with `npm run reset` between. Time each step. See `research/12-demo-choreography.md`.
+- [ ] **Deploy to Vercel OR run locally behind Cloudflare Tunnel** during the demo. Confirm webhook URL stability. (Skippable if we commit to mock-only demo — see below.)
+- [x] **Backup story for "mock mode"** — `ANTHROPIC_MOCK=1 BUNQ_MOCK=1 DRY_RUN=1` is the safe default; `npm run dev:fire` injects synthetic webhook events so the close has fresh data to chew on without any real bunq involvement.
+
+## Ingestion (parked — needs team decision)
+
+- [ ] **Email-forward ingestion of receipts + invoices** — `receipts@<domain>` mailbox, inbound provider POSTs to `/api/inbound/email`, attachments hashed and stored in a new `receipts` table, batch-OCR'd at close. Replaces the upload UI entirely. Blocked on: provider choice (Postmark vs Cloudflare Email Routing) + domain ownership.
 
 ## References & follow-ups
 
