@@ -45,3 +45,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# forge: collab carve-out
+/.forge/*
+!/.forge/collab/
+!/.forge/collab/**
