@@ -311,6 +311,18 @@ export const approveAndExecute = async (closeRunId: string) => {
 
   db.update(closeRuns).set({ state: "COMPLETED", status: "completed", completedAt: Math.floor(Date.now() / 1000) }).where(eq(closeRuns.id, closeRunId)).run();
   appendAudit({ orgId: run.orgId, actor: "agent", type: "close.completed", payload: { actionCount: actions.length }, closeRunId });
+
+  // Snapshot a briefing into the audit chain so the run is reproducible later.
+  // Skip narrative to keep the close fast and deterministic; the report page
+  // re-renders narrative on demand.
+  try {
+    const { buildBriefing } = await import("@/lib/reports/briefing");
+    const briefing = await buildBriefing({ orgId: run.orgId, kind: "month", label: run.month, skipNarrative: true });
+    appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot", payload: briefing, closeRunId });
+  } catch (e) {
+    appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot_failed", payload: { error: String(e) }, closeRunId });
+  }
+
   return { state: "COMPLETED", executed: actions.length };
 };
 

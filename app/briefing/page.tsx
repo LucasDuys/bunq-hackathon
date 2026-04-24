@@ -1,17 +1,20 @@
 import { Card, CardBody, CardHeader, CardTitle, Badge, Stat } from "@/components/ui";
 import { buildBriefing } from "@/lib/reports/briefing";
 import { fmtEur, fmtKg } from "@/lib/utils";
-import { AlertTriangle, ArrowDownRight, ArrowUpRight, Lightbulb, Trees } from "lucide-react";
+import { AlertTriangle, ArrowDownRight, ArrowUpRight, Download, Lightbulb, Trees } from "lucide-react";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 export default async function BriefingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ month?: string; kind?: "month" | "week"; label?: string }>;
 }) {
-  const { month } = await searchParams;
-  const briefing = await buildBriefing({ month });
+  const params = await searchParams;
+  const kind = params.kind ?? "month";
+  const label = params.label ?? params.month;
+  const briefing = await buildBriefing({ kind, label });
 
   const { period, summary, topCategories, topMerchants, anomalies, swaps, reserve, narrative } = briefing;
   const deltaCo2 = summary.deltaCo2ePct;
@@ -29,7 +32,17 @@ export default async function BriefingPage({
             Internal summary. Not a regulatory disclosure.
           </p>
         </div>
-        <Badge tone="info">Auto-generated</Badge>
+        <div className="flex items-center gap-2">
+          <Badge tone="info">Auto-generated</Badge>
+          <Link
+            href={`/briefing/pdf?kind=${kind}&label=${period.label}`}
+            target="_blank"
+            className="inline-flex items-center gap-1.5 rounded-md border border-zinc-300 dark:border-zinc-700 px-3 py-1.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>PDF</span>
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

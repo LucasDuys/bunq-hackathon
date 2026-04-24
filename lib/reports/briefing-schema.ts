@@ -6,7 +6,7 @@ import { z } from "zod";
  */
 
 export const periodSchema = z.object({
-  kind: z.enum(["month", "quarter", "ytd", "custom"]),
+  kind: z.enum(["week", "month", "quarter", "ytd", "custom"]),
   label: z.string(),
   startTs: z.number(),
   endTs: z.number(),
@@ -62,6 +62,9 @@ export const swapSuggestionSchema = z.object({
   rationale: z.string(),
   currentCo2eKg: z.number(),
   currentSpendEur: z.number(),
+  merchantNorm: z.string().nullable().optional(),
+  merchantRaw: z.string().nullable().optional(),
+  generatedBy: z.enum(["category_rule", "merchant_llm"]).optional(),
 });
 
 export const reserveRecommendationSchema = z.object({

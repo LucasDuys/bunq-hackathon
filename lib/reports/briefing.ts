@@ -39,7 +39,52 @@ type CategoryRow = {
   co2eKg: number;
 };
 
-const periodFor = (kind: "month", label: string): Period => {
+/**
+ * ISO 8601 week. Label format: "YYYY-Www" e.g. "2026-W17".
+ * Returns [start, end) Unix timestamps (week starts Monday 00:00 UTC).
+ */
+const weekBounds = (label: string): { start: number; end: number } => {
+  const m = label.match(/^(\d{4})-W(\d{1,2})$/);
+  if (!m) throw new Error(`invalid ISO week label: ${label}`);
+  const y = Number(m[1]);
+  const w = Number(m[2]);
+  // Jan 4 is always in week 1 per ISO 8601
+  const jan4 = new Date(Date.UTC(y, 0, 4));
+  const jan4Dow = jan4.getUTCDay() || 7; // Monday=1..Sunday=7
+  const week1Monday = new Date(jan4);
+  week1Monday.setUTCDate(jan4.getUTCDate() - (jan4Dow - 1));
+  const start = new Date(week1Monday);
+  start.setUTCDate(week1Monday.getUTCDate() + (w - 1) * 7);
+  const end = new Date(start);
+  end.setUTCDate(start.getUTCDate() + 7);
+  return {
+    start: Math.floor(start.getTime() / 1000),
+    end: Math.floor(end.getTime() / 1000),
+  };
+};
+
+const isoWeekLabel = (d: Date): string => {
+  const target = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+  const dayNum = target.getUTCDay() || 7;
+  target.setUTCDate(target.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(target.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((target.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${target.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+};
+
+const priorWeekLabel = (label: string): string => {
+  const { start } = weekBounds(label);
+  const d = new Date((start - 7 * 86400) * 1000);
+  return isoWeekLabel(d);
+};
+
+const currentWeek = (): string => isoWeekLabel(new Date());
+
+const periodFor = (kind: "month" | "week", label: string): Period => {
+  if (kind === "week") {
+    const { start, end } = weekBounds(label);
+    return { kind, label, startTs: start, endTs: end, priorLabel: priorWeekLabel(label) };
+  }
   const { start, end } = monthBounds(label);
   const [y, m] = label.split("-").map(Number);
   const priorDate = new Date(Date.UTC(y, m - 2, 1));
@@ -222,9 +267,87 @@ const buildSwaps = (categories: CategoryRow[], maxOut = 3): SwapSuggestion[] => 
     const rule = SWAP_RULES[c.category];
     if (!rule) continue;
     const swap = rule(c);
-    if (swap && swap.expectedSavingKg >= 5) out.push(swap);
+    if (swap && swap.expectedSavingKg >= 5) out.push({ ...swap, generatedBy: "category_rule" });
   }
   return out;
+};
+
+/**
+ * Per-merchant swap suggestions from Claude. Falls back to category-rule
+ * tagged with the merchant identity when no API key is available.
+ */
+const merchantSwapSuggestions = async (top: MerchantRow[]): Promise<SwapSuggestion[]> => {
+  const candidates = top.slice(0, 3).filter((m) => m.co2eKg >= 50 && m.category);
+  if (candidates.length === 0) return [];
+
+  const fallback = (): SwapSuggestion[] => {
+    const out: SwapSuggestion[] = [];
+    for (const m of candidates) {
+      const rule = SWAP_RULES[m.category!];
+      if (!rule) continue;
+      const swap = rule({ category: m.category!, spendEur: m.spendEur, co2eKg: m.co2eKg });
+      if (!swap) continue;
+      out.push({
+        ...swap,
+        from: m.merchantRaw,
+        merchantNorm: m.merchantNorm,
+        merchantRaw: m.merchantRaw,
+        generatedBy: "category_rule",
+      });
+    }
+    return out;
+  };
+
+  if (isAnthropicMock() || !process.env.ANTHROPIC_API_KEY) return fallback();
+
+  const client = anthropic();
+  const prompt = `You are a corporate sustainability advisor. For each merchant below, suggest ONE specific actionable lower-carbon swap. Name a real alternative (provider, transport mode, technology). Cite expected savings as a percentage in [10, 90].
+
+Return JSON only, shape:
+{ "swaps": [ { "merchantNorm": "<exact id>", "to": "<short alternative description>", "expectedSavingPct": <10-90>, "rationale": "<1-2 sentence why>" } ] }
+
+Merchants:
+${candidates.map((c) => `- merchantNorm="${c.merchantNorm}" raw="${c.merchantRaw}" category="${c.category}" spendEur=${Math.round(c.spendEur)} co2eKg=${Math.round(c.co2eKg)}`).join("\n")}
+
+Rules: no emoji, rationale max 200 chars, alternative max 80 chars. Skip merchants with no good swap.`;
+
+  try {
+    const msg = await client.messages.create({
+      model: MODEL_SONNET,
+      max_tokens: 800,
+      messages: [{ role: "user", content: prompt }],
+    });
+    const text = msg.content
+      .filter((c) => c.type === "text")
+      .map((c) => (c as { text: string }).text)
+      .join("");
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) return fallback();
+    const parsed = JSON.parse(m[0]) as {
+      swaps: Array<{ merchantNorm: string; to: string; expectedSavingPct: number; rationale: string }>;
+    };
+    const out: SwapSuggestion[] = [];
+    for (const s of parsed.swaps) {
+      const merchant = candidates.find((c) => c.merchantNorm === s.merchantNorm);
+      if (!merchant) continue;
+      const pct = Math.max(10, Math.min(90, s.expectedSavingPct));
+      out.push({
+        from: merchant.merchantRaw,
+        to: s.to.slice(0, 200),
+        expectedSavingKg: merchant.co2eKg * (pct / 100),
+        expectedSavingPct: pct,
+        rationale: s.rationale.slice(0, 400),
+        currentCo2eKg: merchant.co2eKg,
+        currentSpendEur: merchant.spendEur,
+        merchantNorm: merchant.merchantNorm,
+        merchantRaw: merchant.merchantRaw,
+        generatedBy: "merchant_llm",
+      });
+    }
+    return out.length > 0 ? out : fallback();
+  } catch {
+    return fallback();
+  }
 };
 
 const buildNarrative = async (briefing: Omit<CarbonBriefing, "narrative">): Promise<string> => {
@@ -258,10 +381,13 @@ const buildNarrative = async (briefing: Omit<CarbonBriefing, "narrative">): Prom
     .trim();
 };
 
-export const buildBriefing = async (opts: { orgId?: string; month?: string } = {}): Promise<CarbonBriefing> => {
+export const buildBriefing = async (
+  opts: { orgId?: string; kind?: "month" | "week"; label?: string; skipNarrative?: boolean } = {},
+): Promise<CarbonBriefing> => {
   const orgId = opts.orgId ?? DEFAULT_ORG_ID;
-  const month = opts.month ?? currentMonth();
-  const period = periodFor("month", month);
+  const kind = opts.kind ?? "month";
+  const label = opts.label ?? (kind === "week" ? currentWeek() : currentMonth());
+  const period = periodFor(kind, label);
 
   const org = db.select().from(orgs).where(eq(orgs.id, orgId)).all()[0];
   const orgName = org?.name ?? orgId;
@@ -269,7 +395,11 @@ export const buildBriefing = async (opts: { orgId?: string; month?: string } = {
   const currentTxs = loadEnriched(orgId, period.startTs, period.endTs);
   const cur = aggregate(currentTxs);
 
-  const priorBounds = period.priorLabel ? monthBounds(period.priorLabel) : null;
+  const priorBounds = period.priorLabel
+    ? kind === "week"
+      ? weekBounds(period.priorLabel)
+      : monthBounds(period.priorLabel)
+    : null;
   const priorTxs = priorBounds ? loadEnriched(orgId, priorBounds.start, priorBounds.end) : [];
   const prior = priorTxs.length > 0 ? aggregate(priorTxs) : null;
 
@@ -292,7 +422,13 @@ export const buildBriefing = async (opts: { orgId?: string; month?: string } = {
   const mix = totalBudgetMix(tonnes);
 
   const anomalies = detectAnomalies(merchants, priorMerchants);
-  const swaps = buildSwaps(cats);
+  const merchantSwaps = await merchantSwapSuggestions(merchants);
+  const categorySwaps = buildSwaps(cats);
+  const seenCategories = new Set(merchantSwaps.map((s) => merchants.find((m) => m.merchantNorm === s.merchantNorm)?.category));
+  const swaps = [
+    ...merchantSwaps,
+    ...categorySwaps.filter((c) => !seenCategories.has(c.from)),
+  ].slice(0, 5);
 
   const skeleton: Omit<CarbonBriefing, "narrative"> = {
     orgId,
@@ -332,6 +468,6 @@ export const buildBriefing = async (opts: { orgId?: string; month?: string } = {
     },
   };
 
-  const narrative = await buildNarrative(skeleton);
+  const narrative = opts.skipNarrative ? "" : await buildNarrative(skeleton);
   return carbonBriefingSchema.parse({ ...skeleton, narrative });
 };
