@@ -1,5 +1,5 @@
 import { Card, CardBody, CardHeader, CardTitle, Badge } from "@/components/ui";
-import { DEFAULT_ORG_ID, getCategorySpendForMonth, getCloseRun, getLatestCloseRun, getLatestEstimatesForMonth } from "@/lib/queries";
+import { DEFAULT_ORG_ID, getCategorySpendForMonth, getLatestCloseRun, getLatestEstimatesForMonth } from "@/lib/queries";
 import { fmtEur, fmtKg } from "@/lib/utils";
 import { generateCsrdNarrative } from "@/lib/agent/narrative";
 import type { CreditProject } from "@/lib/db/schema";
@@ -45,19 +45,27 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
   });
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="relative z-[1] flex flex-col gap-6">
       <div className="flex items-start justify-between">
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">CSRD ESRS E1 extract</div>
-          <h1 className="text-2xl font-semibold mt-1">Monthly carbon report — {month}</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400 mt-1">Voluntary monthly slice; methodology and uncertainty quantified per GHG Protocol Scope 3.</p>
+          <div className="text-[11px] uppercase tracking-[0.8px] font-semibold" style={{ color: "var(--text-mute)" }}>
+            CSRD ESRS E1 extract
+          </div>
+          <h1 className="text-2xl font-semibold mt-1.5" style={{ color: "var(--text)" }}>
+            Monthly carbon report — {month}
+          </h1>
+          <p className="text-[13px] mt-1" style={{ color: "var(--text-dim)" }}>
+            Voluntary monthly slice; methodology and uncertainty quantified per GHG Protocol Scope 3.
+          </p>
         </div>
         <Badge tone="info">Audit-ready</Badge>
       </div>
 
       <Card>
         <CardHeader><CardTitle>Narrative summary</CardTitle></CardHeader>
-        <CardBody><p className="text-sm leading-relaxed">{narrative}</p></CardBody>
+        <CardBody>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--text-dim)" }}>{narrative}</p>
+        </CardBody>
       </Card>
 
       <Card>
@@ -65,61 +73,72 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
         <CardBody>
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-left text-xs uppercase text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
-                <th className="py-2 pr-4">Category (Scope 3, Cat 1/6)</th>
-                <th className="py-2 pr-4 text-right">Spend</th>
-                <th className="py-2 pr-4 text-right">CO₂e</th>
-                <th className="py-2 text-right">Share</th>
+              <tr className="text-left text-[10.5px] uppercase tracking-[0.6px] font-semibold" style={{ borderBottom: "1px solid var(--border)", color: "var(--text-mute)" }}>
+                <th className="py-2.5 pr-4">Category (Scope 3, Cat 1/6)</th>
+                <th className="py-2.5 pr-4 text-right">Spend</th>
+                <th className="py-2.5 pr-4 text-right">CO₂e</th>
+                <th className="py-2.5 text-right">Share</th>
               </tr>
             </thead>
             <tbody>
               {catRows.map(([cat, v]) => (
-                <tr key={cat} className="border-b last:border-0 border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2 pr-4 capitalize">{cat}</td>
-                  <td className="py-2 pr-4 text-right tabular-nums">{fmtEur(v.spendEur, 0)}</td>
-                  <td className="py-2 pr-4 text-right tabular-nums">{fmtKg(v.co2eKg)}</td>
-                  <td className="py-2 text-right tabular-nums">{totalCo2 ? `${((v.co2eKg / totalCo2) * 100).toFixed(0)}%` : "—"}</td>
+                <tr key={cat} style={{ borderBottom: "1px solid var(--border-faint)" }}>
+                  <td className="py-2.5 pr-4 capitalize" style={{ color: "var(--text)" }}>{cat}</td>
+                  <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text-dim)" }}>{fmtEur(v.spendEur, 0)}</td>
+                  <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text-dim)" }}>{fmtKg(v.co2eKg)}</td>
+                  <td className="py-2.5 text-right tabular-nums" style={{ color: "var(--text-mute)" }}>{totalCo2 ? `${((v.co2eKg / totalCo2) * 100).toFixed(0)}%` : "—"}</td>
                 </tr>
               ))}
-              <tr className="font-medium">
-                <td className="py-2 pr-4">Total</td>
-                <td className="py-2 pr-4 text-right tabular-nums">{fmtEur(catRows.reduce((s, [, v]) => s + v.spendEur, 0), 0)}</td>
-                <td className="py-2 pr-4 text-right tabular-nums">{fmtKg(totalCo2)}</td>
-                <td className="py-2 text-right">100%</td>
+              <tr className="font-semibold">
+                <td className="py-2.5 pr-4" style={{ color: "var(--text)" }}>Total</td>
+                <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text)" }}>{fmtEur(catRows.reduce((s, [, v]) => s + v.spendEur, 0), 0)}</td>
+                <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text)" }}>{fmtKg(totalCo2)}</td>
+                <td className="py-2.5 text-right" style={{ color: "var(--text)" }}>100%</td>
               </tr>
             </tbody>
           </table>
-          <p className="text-xs text-zinc-500 mt-3">Method: spend-based (Exiobase / DEFRA 2024 / ADEME Base Carbone). Uncertainty varies by factor (see ledger).</p>
+          <p className="text-xs mt-3" style={{ color: "var(--text-mute)" }}>
+            Method: spend-based (Exiobase / DEFRA 2024 / ADEME Base Carbone). Uncertainty varies by factor (see ledger).
+          </p>
         </CardBody>
       </Card>
 
       <Card>
         <CardHeader><CardTitle>E1-7 — Carbon removal and carbon credits</CardTitle></CardHeader>
         <CardBody>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div><div className="text-xs text-zinc-500 uppercase">Total credits</div><div className="text-xl font-semibold tabular-nums">{totalTonnes.toFixed(2)} t</div></div>
-            <div><div className="text-xs text-zinc-500 uppercase">EU-based</div><div className="text-xl font-semibold tabular-nums">{(euPct * 100).toFixed(0)}%</div></div>
-            <div><div className="text-xs text-zinc-500 uppercase">Removal vs reduction</div><div className="text-xl font-semibold tabular-nums">{(removalPct * 100).toFixed(0)}% removal</div></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.6px] font-semibold" style={{ color: "var(--text-mute)" }}>Total credits</div>
+              <div className="font-serif text-xl font-normal tabular-nums mt-1" style={{ color: "#fff" }}>{totalTonnes.toFixed(2)} t</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.6px] font-semibold" style={{ color: "var(--text-mute)" }}>EU-based</div>
+              <div className="font-serif text-xl font-normal tabular-nums mt-1" style={{ color: "#fff" }}>{(euPct * 100).toFixed(0)}%</div>
+            </div>
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.6px] font-semibold" style={{ color: "var(--text-mute)" }}>Removal vs reduction</div>
+              <div className="font-serif text-xl font-normal tabular-nums mt-1" style={{ color: "#fff" }}>{(removalPct * 100).toFixed(0)}% removal</div>
+            </div>
           </div>
           {mix.length > 0 && (
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-left text-xs uppercase text-zinc-500 border-b border-zinc-200 dark:border-zinc-800">
-                  <th className="py-2 pr-4">Project</th>
-                  <th className="py-2 pr-4">Type</th>
-                  <th className="py-2 pr-4">Registry</th>
-                  <th className="py-2 pr-4 text-right">Tonnes</th>
-                  <th className="py-2 text-right">EUR</th>
+                <tr className="text-left text-[10.5px] uppercase tracking-[0.6px] font-semibold" style={{ borderBottom: "1px solid var(--border)", color: "var(--text-mute)" }}>
+                  <th className="py-2.5 pr-4">Project</th>
+                  <th className="py-2.5 pr-4">Type</th>
+                  <th className="py-2.5 pr-4">Registry</th>
+                  <th className="py-2.5 pr-4 text-right">Tonnes</th>
+                  <th className="py-2.5 text-right">EUR</th>
                 </tr>
               </thead>
               <tbody>
                 {mix.map((m) => (
-                  <tr key={m.project.id} className="border-b last:border-0 border-zinc-100 dark:border-zinc-900">
-                    <td className="py-2 pr-4">{m.project.name}</td>
-                    <td className="py-2 pr-4 capitalize">{m.project.type.replace("_", " ")}</td>
-                    <td className="py-2 pr-4 text-zinc-500">{m.project.registry}</td>
-                    <td className="py-2 pr-4 text-right tabular-nums">{m.tonnes.toFixed(3)}</td>
-                    <td className="py-2 text-right tabular-nums">{fmtEur(m.eur)}</td>
+                  <tr key={m.project.id} style={{ borderBottom: "1px solid var(--border-faint)" }}>
+                    <td className="py-2.5 pr-4" style={{ color: "var(--text)" }}>{m.project.name}</td>
+                    <td className="py-2.5 pr-4 capitalize" style={{ color: "var(--text-dim)" }}>{m.project.type.replace("_", " ")}</td>
+                    <td className="py-2.5 pr-4" style={{ color: "var(--text-mute)" }}>{m.project.registry}</td>
+                    <td className="py-2.5 pr-4 text-right tabular-nums" style={{ color: "var(--text-dim)" }}>{m.tonnes.toFixed(3)}</td>
+                    <td className="py-2.5 text-right tabular-nums" style={{ color: "var(--text-dim)" }}>{fmtEur(m.eur)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -130,10 +149,10 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
 
       <Card>
         <CardHeader><CardTitle>Methodology & data lineage</CardTitle></CardHeader>
-        <CardBody className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2">
+        <CardBody className="text-sm space-y-2.5" style={{ color: "var(--text-dim)" }}>
           <p>Transactions are ingested via bunq MUTATION webhook and classified merchant-first (regex rules) with LLM fallback. Per-transaction CO₂e = spend × factor; factors are sourced from DEFRA 2024, ADEME Base Carbone, and Exiobase v3. Each factor carries an uncertainty % following GHG Protocol Tier guidance.</p>
           <p>Confidence = (1 − factor uncertainty) × classifier confidence × tier weight. Uncertainty is clustered at merchant level; a Claude Sonnet 4.6 agent generates at most three high-impact refinement questions per close to reduce variance.</p>
-          <p>Reserve allocation and credit recommendations follow a declarative policy (see <code>policies</code> row). Every state transition is appended to a SHA-256 hash-chained <code>audit_events</code> log — UPDATE and DELETE are blocked by trigger.</p>
+          <p>Reserve allocation and credit recommendations follow a declarative policy (see <code className="text-xs px-1 py-0.5 rounded" style={{ background: "var(--bg-inset)", color: "var(--text-mute)" }}>policies</code> row). Every state transition is appended to a SHA-256 hash-chained <code className="text-xs px-1 py-0.5 rounded" style={{ background: "var(--bg-inset)", color: "var(--text-mute)" }}>audit_events</code> log — UPDATE and DELETE are blocked by trigger.</p>
         </CardBody>
       </Card>
     </div>
