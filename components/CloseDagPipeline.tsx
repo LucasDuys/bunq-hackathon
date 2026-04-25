@@ -128,7 +128,7 @@ const statForPhase = (
       const answered =
         group?.entries.filter((e) => e.payload.role === "summary").length ?? 0;
       return answered > 0
-        ? `${answered} ans${answered === 1 ? "" : "wers"}`
+        ? `${answered} answer${answered === 1 ? "" : "s"}`
         : null;
     }
     case "POLICY":
@@ -171,14 +171,14 @@ export const CloseDagPipeline = ({
   const computedStatus: NodeStatus[] = useMemo(() => {
     let activeIdx = -1;
     for (let i = 0; i < NODES.length; i++) {
-      const g = phaseToGroup.get(NODES[i].key);
+      const g = getGroup(NODES[i].key);
       if (g && (g.status === "active" || g.status === "waiting")) {
         activeIdx = i;
         break;
       }
     }
-    return NODES.map((n, i) => {
-      const g = phaseToGroup.get(n.key);
+    return NODES.map((n) => {
+      const g = getGroup(n.key);
       if (g) return g.status;
       if (n.key === "REFINE") {
         const past = activeIdx > REFINE_INDEX || data.state === "COMPLETED";
@@ -186,6 +186,7 @@ export const CloseDagPipeline = ({
       }
       return "pending";
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phaseToGroup, data.state]);
 
   const completedCount = computedStatus.filter((s) => s === "done").length;
@@ -223,7 +224,7 @@ export const CloseDagPipeline = ({
           {NODES.map((node, i) => {
             const status = computedStatus[i];
             const isLast = i === NODES.length - 1;
-            const stat = statForPhase(node.key, phaseToGroup.get(node.key), data);
+            const stat = statForPhase(node.key, getGroup(node.key), data);
             const Icon = node.icon;
             const isActive = status === "active" || status === "waiting";
 
