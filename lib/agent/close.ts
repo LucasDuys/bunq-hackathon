@@ -12,6 +12,7 @@ import {
 } from "@/lib/db/client";
 import { appendAudit } from "@/lib/audit/append";
 import { loadContext } from "@/lib/bunq/context";
+import { createDraftPayment } from "@/lib/bunq/draft-payment";
 import { intraUserTransfer } from "@/lib/bunq/payments";
 import { reclassifyMerchant } from "@/lib/classify/merchant";
 import { normalizeMerchant } from "@/lib/classify/rules";
@@ -464,6 +465,56 @@ const finalizeEstimates = async (closeRunId: string) => {
       autoExecuted: true,
       executed: exec.executed,
     };
+  }
+
+  // Over-threshold: instead of waiting for an in-app approve click, fire a
+  // bunq DraftPayment so approval lives in the CFO's bunq app — bank-grade
+  // signature, not an HTTP click in our UI. The DraftPayment id is captured
+  // in the audit chain; the actual money movement waits for the
+  // /api/bunq/draft-callback route (ACCEPTED) before approveAndExecute fires.
+  const reserveAction = actions.find((a) => a.kind === "reserve_transfer");
+  if (reserveAction && reserveAction.kind === "reserve_transfer") {
+    try {
+      const ctx = loadContext();
+      const fromAccountId = ctx.mainAccountId ?? "1";
+      const orgRow = db.select().from(orgs).where(eq(orgs.id, run.orgId)).all()[0];
+      const reserveAccountId = orgRow?.reserveAccountId ?? ctx.reserveAccountId ?? "reserve_1";
+      const r = await createDraftPayment({
+        fromAccountId,
+        toAccountId: reserveAccountId,
+        amountEur: reserveAction.amountEur,
+        description: `Carbo ${run.month} close — CFO approval required`,
+        userId: orgRow?.bunqUserId ?? ctx.userId ?? "0",
+      });
+      const draftId = r?.Response?.[0]?.Id?.id;
+      appendAudit({
+        orgId: run.orgId,
+        actor: "agent",
+        type: "bunq.draft.created",
+        payload: {
+          draftId,
+          amountEur: reserveAction.amountEur,
+          fromAccountId,
+          toAccountId: reserveAccountId,
+          closeRunId,
+          reason: "over-threshold",
+        },
+        closeRunId,
+      });
+      narrate(run.orgId, closeRunId, "PROPOSE", "tool_call", `DraftPayment #${draftId} sent to CFO`, {
+        tool: "bunq",
+        meta: { draftId, amountEur: reserveAction.amountEur },
+      });
+    } catch (e) {
+      // Non-fatal: fall back to the existing in-app approve button.
+      appendAudit({
+        orgId: run.orgId,
+        actor: "system",
+        type: "bunq.draft.failed",
+        payload: { error: e instanceof Error ? e.message : String(e), closeRunId },
+        closeRunId,
+      });
+    }
   }
 
   return { state: nextState, finalCo2eKg: finalRollup.co2eKgPoint, finalConfidence: finalRollup.confidence, reserveEur: outcome.reserveTotalEur, actions, requiresApproval: outcome.requiresApproval };

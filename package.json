@@ -22,6 +22,7 @@
     "bunq:register": "tsx scripts/register-webhook.ts",
     "dev:live": "bash scripts/dev-live.sh",
     "dev:fire": "tsx scripts/fire-test-event.ts",
+    "dev:fire-draft": "tsx scripts/fire-draft-callback.ts",
     "reports:coverage": "tsx scripts/reports-coverage.ts",
     "invoice:test": "tsx scripts/test-invoice-extraction.ts",
     "invoice:test:live": "tsx scripts/test-invoice-extraction.ts --live",
