@@ -188,7 +188,7 @@ export function LaunchHeroCockpit({ elapsedMs, durationMs }: LaunchHeroCockpitPr
         }}
       >
         <div style={{ minWidth: 0 }}>
-          <CodeLabel>OVERVIEW · APRIL 2026 · LIVE</CodeLabel>
+          <CodeLabel>LIVE · APRIL 2026 · BUNQ BUSINESS</CodeLabel>
           <h1
             style={{
               fontSize: 30,
@@ -433,10 +433,30 @@ export function LaunchHeroCockpit({ elapsedMs, durationMs }: LaunchHeroCockpitPr
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
+                  gap: 8,
                   marginBottom: 10,
                 }}
               >
-                <CodeLabel>RESERVE · BUNQ SUB-ACCOUNT</CodeLabel>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 8,
+                    minWidth: 0,
+                  }}
+                >
+                  <CodeLabel>RESERVE · BUNQ SUB-ACCOUNT</CodeLabel>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: "var(--brand-green)",
+                      fontVariantNumeric: "tabular-nums",
+                      letterSpacing: "-0.01em",
+                    }}
+                  >
+                    €{reserveAmt}
+                  </span>
+                </div>
                 <span
                   style={{
                     fontSize: 11,
@@ -447,15 +467,13 @@ export function LaunchHeroCockpit({ elapsedMs, durationMs }: LaunchHeroCockpitPr
                     fontFamily:
                       "var(--font-source-code-pro), ui-monospace, monospace",
                     letterSpacing: "0.6px",
+                    flexShrink: 0,
                   }}
                 >
                   {reservePct >= 1 ? "TRANSFERRED" : "PROPOSED"}
                 </span>
               </div>
-              <ReserveLine
-                amount={reserveAmt}
-                progress={reservePct}
-              />
+              <ReserveLine progress={reservePct} />
               <div
                 style={{
                   marginTop: 8,
@@ -536,8 +554,8 @@ export function LaunchHeroCockpit({ elapsedMs, durationMs }: LaunchHeroCockpitPr
                 )}
                 <span>
                   {csrdDone
-                    ? "Monthly briefing ready"
-                    : "Composing executive narrative"}
+                    ? "Briefing ready · 12 pages"
+                    : "Drafting your monthly briefing"}
                 </span>
                 <span style={{ marginLeft: "auto" }}>
                   <FileText size={13} color="var(--fg-muted)" />
@@ -1138,103 +1156,88 @@ function SwapRow({ swap, t }: { swap: Swap; t: number }) {
   );
 }
 
-function ReserveLine({
-  amount,
-  progress,
-}: {
-  amount: number;
-  progress: number;
-}) {
+function ReserveLine({ progress }: { progress: number }) {
+  // Grid layout guarantees the labels never collide with the puck:
+  //   [Books pill] · [center track — puck travels here only] · [Vault pill]
   return (
     <div
       style={{
-        position: "relative",
         height: 44,
         borderRadius: 8,
         background: "var(--bg-inset)",
         border: "1px solid var(--border-faint)",
-        overflow: "hidden",
-        display: "flex",
+        display: "grid",
+        gridTemplateColumns: "auto minmax(0, 1fr) auto",
         alignItems: "center",
+        gap: 10,
         padding: "0 10px",
       }}
     >
-      {/* Track */}
+      {/* From pill */}
       <div
         style={{
-          position: "absolute",
-          top: "50%",
-          left: 16,
-          right: 16,
-          height: 1,
-          background: "var(--border-faint)",
-          transform: "translateY(-0.5px)",
-        }}
-      />
-      {/* From label */}
-      <div
-        style={{
-          display: "flex",
+          display: "inline-flex",
           alignItems: "center",
           gap: 6,
           fontSize: 12,
           color: "var(--fg-secondary)",
-          zIndex: 1,
+          whiteSpace: "nowrap",
         }}
       >
         <Banknote size={12} color="var(--fg-muted)" />
         Books
       </div>
-      {/* Moving puck */}
-      <div
-        style={{
-          position: "absolute",
-          left: `calc(${10 + progress * 76}% - 14px)`,
-          top: "50%",
-          transform: "translateY(-50%)",
-          width: 28,
-          height: 28,
-          borderRadius: 9999,
-          background: "var(--brand-green-soft)",
-          border: "1px solid var(--brand-green-border)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2,
-        }}
-      >
-        <Wallet size={13} color="var(--brand-green)" />
+
+      {/* Center track — relative parent so puck is bounded by this column */}
+      <div style={{ position: "relative", height: 28 }} aria-hidden>
+        {/* Hairline */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: 4,
+            right: 4,
+            height: 1,
+            background: "var(--border-faint)",
+            transform: "translateY(-0.5px)",
+          }}
+        />
+        {/* Moving puck — travels from 0% to 100% of THIS track only */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: `calc(${progress * 100}% )`,
+            transform: "translate(-50%, -50%)",
+            width: 26,
+            height: 26,
+            borderRadius: 9999,
+            background: "var(--brand-green-soft)",
+            border: "1px solid var(--brand-green-border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxSizing: "border-box",
+          }}
+        >
+          <Wallet size={12} color="var(--brand-green)" />
+        </div>
       </div>
-      {/* To label */}
+
+      {/* To pill */}
       <div
         style={{
-          marginLeft: "auto",
-          display: "flex",
+          display: "inline-flex",
           alignItems: "center",
           gap: 6,
           fontSize: 12,
           color: progress >= 1 ? "var(--brand-green)" : "var(--fg-secondary)",
-          zIndex: 1,
+          whiteSpace: "nowrap",
         }}
       >
         Carbon vault
         <ArrowDownRight size={12} />
       </div>
-      {/* Amount overlay top-right */}
-      <span
-        style={{
-          position: "absolute",
-          right: 10,
-          top: 4,
-          fontSize: 11,
-          color: "var(--brand-green)",
-          fontVariantNumeric: "tabular-nums",
-          fontFamily: "var(--font-source-code-pro), ui-monospace, monospace",
-          letterSpacing: "0.6px",
-        }}
-      >
-        €{amount}
-      </span>
     </div>
   );
 }

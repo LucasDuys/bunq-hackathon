@@ -385,8 +385,8 @@ export const TIMELINE: SceneSpec[] = [
   { id: "S01",  durationMs: 3800,  title: "Your books already know\nyour carbon footprint.",  leafOpacity: 0.4 },
   { id: "S01B", durationMs: 2800,  title: "We just need to extract it.",                      leafOpacity: 0.4 },
   { id: "S01C", durationMs: 3200,  title: "Meet Carbo.",                                       leafOpacity: 0.4 },
-  { id: "S01D", durationMs: 6500,  header: "We read every euro, find the cheaper greener swap, and write the report.",
-                                   caption: "Carbo · live carbon + savings view of your bunq books",   leafOpacity: 0 },
+  { id: "S01D", durationMs: 9000,  header: "Read every purchase. Make it green. File the report.",
+                                   caption: "Live cockpit · bunq + inbox in · briefing out",   leafOpacity: 0 },
   { id: "S02",  durationMs: 7000,  header: "Every transaction — from bunq, from your inbox, from your hand.",
                                    caption: "Reading transactions · Vodafone · KLM · Albert Heijn …", leafOpacity: 0 },
 
@@ -412,10 +412,10 @@ export const TIMELINE: SceneSpec[] = [
   // Beat 6 — alternatives → savings → compliance briefing
   { id: "S12",  durationMs: 2500,  title: "Carbo finds the swaps that pay you back.",          leafOpacity: 0.4 },
   { id: "S12B", durationMs: 8500,  header: "How we turn spend into savings.",
-                                   caption: "Two swaps · 4.13% recovered · 14 evidence sources", leafOpacity: 0 },
+                                   caption: "Two greener alternatives · 14 evidence sources", leafOpacity: 0 },
   { id: "S13",  durationMs: 7000,  header: "Swap this · save that.",
                                    caption: "Validated swaps · annual savings · win-win quadrant",  leafOpacity: 0 },
-  { id: "S13B", durationMs: 7500,  header: "Carbo returns 4.13% of your annual spend.",
+  { id: "S13B", durationMs: 7500,  header: "Carbo returns 4.13% of your annual spend with smarter taxes.",
                                    caption: "Impact workspace · 4.13% recovered · 14 evidence sources", leafOpacity: 0 },
   { id: "S13C", durationMs: 8000,  header: "The compliance report writes itself.",
                                    caption: "Monthly briefing · CSRD ESRS E1 · auto-generated", leafOpacity: 0 },

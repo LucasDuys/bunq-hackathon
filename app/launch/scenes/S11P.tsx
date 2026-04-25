@@ -1,28 +1,38 @@
 "use client";
 
 /**
- * S11P — Policy → reserve transfer + EU credit purchase.
+ * S11P — "We move the money. You approve it."
  *
- * The closing motion of the close machine. A permission prompt slides in
- * ("Approve €412 transfer …"), then auto-approves: the bunq transfer toast
- * settles green and the Puro.earth credit certificate prints line by line,
- * stamping "Retired" at the end.
+ * The closing motion of the close machine. The viewer sees the actual bunq
+ * Sub-accounts panel; €412 visibly arcs out of Operating and lands in
+ * Carbon Reserve, with both balances ticking in real time. A permission
+ * prompt gates the move so the human stays in the loop.
  *
- * Layout: white shell, no MacWindow (the two artifacts ARE the chrome).
- * Toast on the left, certificate on the right.
+ *   ──── beats ─────────────────────────────────────────────────────────
+ *   0    →  600   bunq Sub-accounts panel fades in (Carbo's proposal lined up)
+ *   600  →  2200  PermissionPrompt slides up: "You approve it."
+ *   2200 →  2700  Approve pulse → prompt dismiss
+ *   2900 →  4400  €412 puck arcs Operating ↘ Carbon Reserve, balances tick
+ *   4400 →  4800  Carbon Reserve row settles green
+ *   4800 →  6000  Puro.earth credit chip drops in below
+ *
+ * Layout: a centered MacWindow titled "bunq Business — Sub-accounts" hosts
+ * the stage. The prompt overlays the entire scene so the gating step reads
+ * unambiguously.
  */
 
 import type { SceneProps } from "../types";
 import { CameraScript } from "../components/CameraScript";
-import { ReserveTransferToast } from "../components/ReserveTransferToast";
-import { CreditCertificate } from "../components/CreditCertificate";
+import { MacWindow } from "../components/MacWindow";
+import { BunqSubAccountsStage } from "../components/BunqSubAccountsStage";
 import { PermissionPrompt } from "../components/PermissionPrompt";
 
-const SHOW_PROMPT_AT = 400;
+const PROPOSE_AT = 0;
+const PROMPT_SHOW_AT = 600;
 const APPROVE_AT = 2200;
-const SETTLE_AT = 2600;
-const PRINT_START = 2700;
-const STAMP_AT = 5300;
+const TRANSFER_START = 2900;
+const TRANSFER_ARRIVE = 4400;
+const CREDIT_AT = 4800;
 
 export default function S11P({ elapsedMs, durationMs }: SceneProps) {
   return (
@@ -30,51 +40,42 @@ export default function S11P({ elapsedMs, durationMs }: SceneProps) {
       style={{
         position: "absolute",
         inset: 0,
-        background: "#fafafa",
+        background: "#f4f3ee",
       }}
     >
       <CameraScript
         keyframes={[
-          { at: 0,    scale: 0.96, x: 0, y: 16 },
-          { at: 0.45, scale: 1.0,  x: 0, y: 0 },
-          { at: 1.0,  scale: 1.03, x: 0, y: -10 },
+          { at: 0, scale: 0.96, x: 0, y: 18 },
+          { at: 0.18, scale: 1.0, x: 0, y: 0 },
+          { at: 0.55, scale: 1.0, x: 0, y: 0 },
+          { at: 1.0, scale: 1.02, x: 0, y: -8 },
         ]}
         elapsedMs={elapsedMs}
         durationMs={durationMs}
       >
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 48,
-          }}
+        <MacWindow
+          title="bunq Business — Sub-accounts"
+          width={1180}
+          height={720}
+          glass
         >
-          {/* Left: bunq-styled transfer toast */}
-          <ReserveTransferToast
+          <BunqSubAccountsStage
             elapsedMs={elapsedMs}
-            showAt={0}
-            settleAt={SETTLE_AT}
+            proposeAt={PROPOSE_AT}
+            transferStart={TRANSFER_START}
+            transferArrive={TRANSFER_ARRIVE}
+            creditAt={CREDIT_AT}
           />
-
-          {/* Right: Puro.earth credit certificate */}
-          <CreditCertificate
-            elapsedMs={elapsedMs}
-            printStart={PRINT_START}
-            stampAt={STAMP_AT}
-          />
-        </div>
+        </MacWindow>
       </CameraScript>
 
-      {/* Permission prompt — sits on top of everything. */}
+      {/* Permission prompt — overlays everything so the user step is unmissable. */}
       <PermissionPrompt
         elapsedMs={elapsedMs}
-        showAt={SHOW_PROMPT_AT}
+        showAt={PROMPT_SHOW_AT}
         approveAt={APPROVE_AT}
-        question="Approve €412 transfer to Carbon Reserve and retire 2.84 t of EU-registered credits?"
-        description="DRY_RUN guard active · external transfer requires your approval"
+        question="Move €412 from Operating to your Carbon Reserve sub-account?"
+        description="Carbo will then retire 2.84 tCO₂e. External transfer requires your approval."
         approveLabel="Approve & transfer"
       />
     </div>
