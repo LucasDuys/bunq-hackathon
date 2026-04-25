@@ -67,7 +67,9 @@ Every `runDag()` execution writes:
 
 ## Entry points
 
-- **Canonical DAG runner:** `POST /api/impacts/research` → `runDag()` (route name misleading; it runs the full 8-agent DAG and persists via `lib/impacts/store::persistDagRun`).
+- **Canonical DAG runner:** `POST /api/impacts/research` → `runDag()` in `lib/agents/dag/index.ts` (route name misleading; it runs the full 8-agent DAG and persists via `lib/impacts/store::persistDagRun`). This is the path for new monthly-close work.
+- **What-if simulator + shared types:** `lib/agent/impacts.ts` — lightweight non-DAG path used by `app/impacts/page.tsx` (page render) and exports the `Quadrant` + `ResolvedAlternative` types consumed by `components/ImpactMatrix.tsx` and `lib/impacts/store.ts`. Intentionally retained alongside `runDag()` per R007 option B; do not delete without migrating those four call sites.
+- **Dashboard category roll-up:** `lib/agent/impact-analysis.ts::buildCategoryAnalyses` — powers the dashboard at `app/page.tsx`. Sibling of `impacts.ts`, retained under the same R007 decision.
 - **Standalone Baseline:** `POST /api/baseline/run` → `runBaseline()` only. Useful for fast iteration on the priority-target shape.
 - **Legacy close machine:** `POST /api/close/run` → `lib/agent/close.ts` (12-state). **Does not yet call `runDag()`** — see migration order in `architecture-comparison.md`.
 
