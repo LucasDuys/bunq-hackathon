@@ -124,6 +124,8 @@ export type SceneProps = {
 
 export type SceneId =
   | "S01"
+  | "S01B"
+  | "S01C"
   | "S01D"
   | "S02"
   | "S03"

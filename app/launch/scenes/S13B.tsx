@@ -276,7 +276,7 @@ function BriefingRow() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <CodeEyebrow>CARBON CFO BRIEFING · 2026-03</CodeEyebrow>
+        <CodeEyebrow>CARBON CFO BRIEFING · 2026-03 · NL · ESRS E1</CodeEyebrow>
         <span
           style={{
             display: "inline-flex",
@@ -519,7 +519,11 @@ function HeroRow({
           unit="EU credit / yr"
           tone="positive"
         />
-        <KpiCard label="JURISDICTION" value="NL" unit="VAT · ESRS E1" />
+        <KpiCard
+          label="TAX SCHEMES"
+          value="EIA · MIA · VAMIL"
+          unit="Dutch green-investment deductions"
+        />
       </div>
     </div>
   );

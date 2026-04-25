@@ -3,7 +3,10 @@
 /**
  * S02 — Spreadsheet, agent reading transactions row by row.
  *
- * Camera (unchanged): three beats, wide → settle → tighten on the gap rows.
+ * Camera: one continuous move. Hold wide for the first ~30% while the scan
+ * begins (so the viewer reads "all 12 rows · 2 gaps"), then a single eased
+ * push down-left lands on the gap rows for the rest of the shot. Three
+ * keyframes, but the first segment is a true hold — no double ease-in/out.
  *
  * Reveal: a SCAN sweeps top-to-bottom. Rows ahead of the scan render as low-
  * opacity skeletons. As the scan crosses each row, its cells fade in
@@ -53,12 +56,12 @@ export default function S02({ elapsedMs, durationMs, progress }: SceneProps) {
     >
       <CameraScript
         keyframes={[
-          // Adjusted: the table is now ~38px lower (progress bar + ticker row),
-          // so we offset y more negative on the tight beats to land on the gap rows.
-          { at: 0,    scale: 0.85, x: 0,    y: 60 },
-          { at: 0.30, scale: 1.0,  x: 0,    y: 0 },
-          { at: 0.65, scale: 1.4,  x: -120, y: -240 },
-          { at: 1.0,  scale: 1.7,  x: -180, y: -290 },
+          // The table sits ~38px below the MacWindow chrome (progress bar +
+          // ticker row), so the landing y must be more negative to put the
+          // gap rows at frame center.
+          { at: 0,    scale: 1.0, x: 0,    y: 0 },
+          { at: 0.30, scale: 1.0, x: 0,    y: 0 },
+          { at: 1.0,  scale: 1.45, x: -150, y: -260 },
         ]}
         elapsedMs={elapsedMs}
         durationMs={durationMs}
@@ -129,7 +132,7 @@ export default function S02({ elapsedMs, durationMs, progress }: SceneProps) {
                     color: "var(--fg-muted)",
                   }}
                 >
-                  Ledger · April 2026
+                  bunq · gmail · receipts · April 2026
                 </span>
                 <span
                   aria-live="polite"

@@ -20,6 +20,8 @@ import styles from "./launch.module.css";
 import { TIMELINE, TOTAL_DURATION_MS } from "./data";
 import type { SceneSpec } from "./types";
 import S01 from "./scenes/S01";
+import S01B from "./scenes/S01B";
+import S01C from "./scenes/S01C";
 import S01D from "./scenes/S01D";
 import S02 from "./scenes/S02";
 import S03 from "./scenes/S03";
@@ -42,7 +44,7 @@ import S16 from "./scenes/S16";
 
 // Order MUST match TIMELINE in data.ts.
 const SCENES = [
-  S01, S01D, S02,
+  S01, S01B, S01C, S01D, S02,
   S03, S04, S05, S06,
   S07A,
   S10, S11, S11A,

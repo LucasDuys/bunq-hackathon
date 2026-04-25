@@ -8,8 +8,11 @@
  * recent activity) inside a MacWindow with the real LaunchSidebar mounted on
  * the left.
  *
- * Camera does a slow push from a wide overview down to a tight close on the
- * NET ANNUAL IMPACT KPI card so the viewer reads the headline number.
+ * Camera: one continuous move. We hold wide for the first ~25% so the viewer
+ * registers the dashboard layout, then a single eased push lands on the
+ * NET ANNUAL IMPACT KPI. No interim stops — three keyframes is two segments,
+ * but the first segment is identical start/end (a true hold), so visually it
+ * reads as one smooth dolly.
  */
 
 import type { SceneProps } from "../types";
@@ -30,10 +33,9 @@ export default function S01D({ elapsedMs, durationMs }: SceneProps) {
     >
       <CameraScript
         keyframes={[
-          { at: 0,    scale: 0.85, x: 0,    y: 60 },
-          { at: 0.30, scale: 0.95, x: 0,    y: 20 },
-          { at: 0.70, scale: 1.20, x: -200, y: -40 },
-          { at: 1.0,  scale: 1.45, x: -260, y: -100 },
+          { at: 0,    scale: 1.0,  x: 0,    y: 0 },
+          { at: 0.25, scale: 1.0,  x: 0,    y: 0 },
+          { at: 1.0,  scale: 1.22, x: -210, y: -70 },
         ]}
         elapsedMs={elapsedMs}
         durationMs={durationMs}

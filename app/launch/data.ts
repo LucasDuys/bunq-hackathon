@@ -383,15 +383,17 @@ export const SCALE_TIERS: ScaleTier[] = [
 export const TIMELINE: SceneSpec[] = [
   // Beat 1 — problem
   { id: "S01",  durationMs: 3800,  title: "Your books already know\nyour carbon footprint.",  leafOpacity: 0.4 },
-  { id: "S01D", durationMs: 6500,  header: "We calculate and save taxes and emissions.",
-                                   caption: "Carbo · live carbon view of your bunq books",   leafOpacity: 0 },
-  { id: "S02",  durationMs: 7000,  header: "Reading every transaction.",
+  { id: "S01B", durationMs: 2800,  title: "We just need to extract it.",                      leafOpacity: 0.4 },
+  { id: "S01C", durationMs: 3200,  title: "Meet Carbo.",                                       leafOpacity: 0.4 },
+  { id: "S01D", durationMs: 6500,  header: "We read every euro, find the cheaper greener swap, and write the report.",
+                                   caption: "Carbo · live carbon + savings view of your bunq books",   leafOpacity: 0 },
+  { id: "S02",  durationMs: 7000,  header: "Every transaction — from bunq, from your inbox, from your hand.",
                                    caption: "Reading transactions · Vodafone · KLM · Albert Heijn …", leafOpacity: 0 },
 
   // Beat 2 — multimodal
-  { id: "S03",  durationMs: 3000,  title: "Some spend doesn’t explain itself.",         leafOpacity: 0.4 },
+  { id: "S03",  durationMs: 3000,  title: "However, some spend doesn’t explain itself.",         leafOpacity: 0.4 },
   { id: "S04",  durationMs: 7000,  header: "Drop the receipt · vision takes over.",
-                                   caption: "Drag receipt · vision · Albert Heijn",     leafOpacity: 0 },
+                                   caption: "Drop a receipt — or let invoices arrive by email",     leafOpacity: 0 },
   { id: "S05",  durationMs: 2500,  title: "Vision reads what bank text won’t.",         leafOpacity: 0.4 },
   { id: "S06",  durationMs: 9000,  header: "Five fields, one glance.",
                                    caption: "Extracting · merchant · date · items · VAT · total", leafOpacity: 0 },
@@ -414,11 +416,11 @@ export const TIMELINE: SceneSpec[] = [
                                    caption: "Propose: €412 → Carbon Reserve · Puro.earth credit", leafOpacity: 0 },
 
   // Beat 6 — alternatives → savings → compliance briefing
-  { id: "S12",  durationMs: 2500,  title: "Cheaper. Lower carbon. Validated.",          leafOpacity: 0.4 },
+  { id: "S12",  durationMs: 2500,  title: "Carbo finds the swaps that pay you back.",          leafOpacity: 0.4 },
   { id: "S13",  durationMs: 7000,  header: "Swap this · save that.",
-                                   caption: "Alternatives → savings · win-win quadrant",  leafOpacity: 0 },
-  { id: "S13B", durationMs: 7500,  header: "We calculate and save taxes and emissions.",
-                                   caption: "Impact workspace · 18.49 tCO₂e avoidable / yr", leafOpacity: 0 },
+                                   caption: "Validated swaps · annual savings · win-win quadrant",  leafOpacity: 0 },
+  { id: "S13B", durationMs: 7500,  header: "€2,182 in swaps. €703 in avoided credits. EIA refund queued.",
+                                   caption: "18.49 tCO₂e avoidable · €2,885 net upside · EIA · MIA · VAMIL", leafOpacity: 0 },
   { id: "S13C", durationMs: 8000,  header: "The compliance report writes itself.",
                                    caption: "Monthly briefing · CSRD ESRS E1 · auto-generated", leafOpacity: 0 },
 
