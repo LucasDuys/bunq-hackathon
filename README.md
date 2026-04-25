@@ -328,40 +328,6 @@ carbo/
 
 ---
 
-## What's real vs simulated
-
-| Real | Simulated |
-|---|---|
-| Next.js app, DB, audit chain, policy evaluator, confidence methodology | `ANTHROPIC_MOCK=1` → question gen is a deterministic mock |
-| Emission-factor math, range computation, CSRD report structure | `BUNQ_MOCK=1` → bunq API returns canned responses |
-| Webhook handler + signature verification | 3 EU credit projects (seeded, not fetched from a real registry) |
-| RSA signing for real bunq calls (turn on via `BUNQ_MOCK=0`) | "Credit purchase" = a bunq intra-user transfer with a structured description |
-
----
-
-## The ask
-
-This is a 24-hour, 3-person hackathon build. To ship to bunq Business we need:
-
-- A sandbox slot for live testing.
-- A registry partner for real EU carbon-credit settlement.
-- Design feedback on the close-and-approve flow.
-
----
-
-## Cut list (scope controls)
-
-Under time pressure, cut in this order:
-
-1. CSRD PDF print styling
-2. Impact matrix
-3. Ledger UI
-4. Optional invoice upload
-
-**Non-negotiable:** webhook ingest, classifier, close state machine, refinement, policy eval, reserve transfer, credit recommendation.
-
----
-
 <div align="center">
 
 <br />
