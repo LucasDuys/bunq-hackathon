@@ -35,6 +35,27 @@
 
 <sub>3 minutes · click-by-click · live bunq sandbox + real Claude</sub>
 
+<br />
+
+### Or skim the screenshots
+
+<a href="screenshots/">
+  <table>
+    <tr>
+      <td><img src="screenshots/desktop/01_dashboard.png" alt="Dashboard" width="260" /></td>
+      <td><img src="screenshots/desktop/10_close_detail.png" alt="Close detail" width="260" /></td>
+      <td><img src="screenshots/desktop/11_report_month.png" alt="CSRD monthly report" width="260" /></td>
+    </tr>
+    <tr>
+      <td><img src="screenshots/desktop/05_impacts.png" alt="Impacts matrix" width="260" /></td>
+      <td><img src="screenshots/desktop/08_ledger.png" alt="Hash-chained ledger" width="260" /></td>
+      <td><img src="screenshots/desktop/20_demo_deck.png" alt="Demo deck" width="260" /></td>
+    </tr>
+  </table>
+</a>
+
+**[▸ Browse the full gallery in `screenshots/`](screenshots/)** — every page · desktop + mobile · all 17 demo-deck stages · 23 launch-trailer scenes.
+
 </div>
 
 ---
