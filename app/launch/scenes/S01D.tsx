@@ -1,25 +1,25 @@
 "use client";
 
 /**
- * S01D — Dashboard intro.
+ * S01D — Hero cockpit. The wow shot.
  *
- * First real-product surface viewers see, immediately after the opening title.
- * Renders the actual Carbo dashboard (KPIs + emissions-by-category bars +
- * recent activity) inside a MacWindow with the real LaunchSidebar mounted on
- * the left.
+ * One cinematic frame that fires every Carbo capability simultaneously: live
+ * tx ingestion (bunq + email + receipt), 8-agent DAG pipeline status, hero
+ * NET ANNUAL IMPACT counting up, confidence ring, MoM sparkline, scope-by-
+ * category breakdown, win-win swaps, reserve transfer, and CSRD draft
+ * progress. The rest of the timeline elaborates each beat individually.
  *
- * Camera: one continuous move. We hold wide for the first ~25% so the viewer
- * registers the dashboard layout, then a single eased push lands on the
- * NET ANNUAL IMPACT KPI. No interim stops — three keyframes is two segments,
- * but the first segment is identical start/end (a true hold), so visually it
- * reads as one smooth dolly.
+ * Camera: hold wide for the first 25% so the viewer reads the full cockpit,
+ * then a slow methodical push toward the hero NET IMPACT card while every
+ * subsystem keeps animating. Final 12% holds tight on the hero so the
+ * count-up + confidence ring + green sparkline land in close-up.
  */
 
 import type { SceneProps } from "../types";
 import { MacWindow } from "../components/MacWindow";
 import { CameraScript } from "../components/CameraScript";
 import { LaunchSidebar } from "../components/real/LaunchSidebar";
-import { LaunchDashboard } from "../components/real/LaunchDashboard";
+import { LaunchHeroCockpit } from "../components/real/LaunchHeroCockpit";
 
 export default function S01D({ elapsedMs, durationMs }: SceneProps) {
   return (
@@ -33,15 +33,20 @@ export default function S01D({ elapsedMs, durationMs }: SceneProps) {
     >
       <CameraScript
         keyframes={[
-          { at: 0,    scale: 1.0,  x: 0,    y: 0 },
-          { at: 0.25, scale: 1.0,  x: 0,    y: 0 },
-          { at: 1.0,  scale: 1.22, x: -210, y: -70 },
+          // Settle: a hair zoomed-out so the viewer takes the whole cockpit in.
+          { at: 0,    scale: 0.94, x: 0,   y: 10 },
+          // Hold wide.
+          { at: 0.25, scale: 0.96, x: 0,   y: 0 },
+          // Slow push toward hero impact card (center column, slightly above middle).
+          { at: 0.65, scale: 1.06, x: -60, y: -40 },
+          // Land close on the hero number.
+          { at: 1.0,  scale: 1.14, x: -90, y: -70 },
         ]}
         elapsedMs={elapsedMs}
         durationMs={durationMs}
       >
         <MacWindow
-          title="Carbo — Dashboard"
+          title="Carbo — Live cockpit"
           showSidebar
           showSearch
           width={1480}
@@ -50,8 +55,11 @@ export default function S01D({ elapsedMs, durationMs }: SceneProps) {
         >
           <div style={{ display: "flex", height: "100%" }}>
             <LaunchSidebar activeKey="dashboard" />
-            <div style={{ flex: 1, minWidth: 0, overflow: "auto" }}>
-              <LaunchDashboard />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <LaunchHeroCockpit
+                elapsedMs={elapsedMs}
+                durationMs={durationMs}
+              />
             </div>
           </div>
         </MacWindow>

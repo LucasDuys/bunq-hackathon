@@ -28,13 +28,12 @@ import S03 from "./scenes/S03";
 import S04 from "./scenes/S04";
 import S05 from "./scenes/S05";
 import S06 from "./scenes/S06";
-import S07A from "./scenes/S07A";
 import S10 from "./scenes/S10";
 import S11 from "./scenes/S11";
-import S11A from "./scenes/S11A";
 import S11R from "./scenes/S11R";
 import S11P from "./scenes/S11P";
 import S12 from "./scenes/S12";
+import S12B from "./scenes/S12B";
 import S13 from "./scenes/S13";
 import S13B from "./scenes/S13B";
 import S13C from "./scenes/S13C";
@@ -46,10 +45,9 @@ import S16 from "./scenes/S16";
 const SCENES = [
   S01, S01B, S01C, S01D, S02,
   S03, S04, S05, S06,
-  S07A,
-  S10, S11, S11A,
+  S10, S11,
   S11R, S11P,
-  S12, S13, S13B, S13C,
+  S12, S12B, S13, S13B, S13C,
   S14, S15,
   S16,
 ];

@@ -66,8 +66,6 @@ export function PermissionPrompt({
         alignItems: "center",
         justifyContent: "center",
         background: `rgba(15, 15, 15, ${0.32 * (1 - fadeT) * enterT})`,
-        backdropFilter: enterT > 0.2 ? "blur(2px)" : "none",
-        WebkitBackdropFilter: enterT > 0.2 ? "blur(2px)" : "none",
         zIndex: 40,
         pointerEvents: "none",
       }}
