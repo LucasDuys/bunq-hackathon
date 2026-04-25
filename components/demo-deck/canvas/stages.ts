@@ -47,6 +47,7 @@ export type StageConfig = {
     dag?: boolean;
     bunqSub?: boolean;
     matrix?: boolean;
+    csrdReport?: boolean;
     scale?: boolean;
     co2?: boolean;
     ask?: boolean;
@@ -636,11 +637,32 @@ export const STAGES: StageConfig[] = [
     frames: { bunqSub: true },
   },
 
-  // 10 — SCALE: matrix dots lift into 3 climbing bars
+  // 10 — CSRD REPORT: every monthly close auto-renders the source PDF.
+  // The right side renders a stylised facsimile of the real report
+  // (lib/reports/render-briefing.tsx) — forest-950 header band, mint-500
+  // accent, paper body — that visually assembles itself top-to-bottom.
+  // Savings stats (6–12 weeks of staff time, €15–40k consultant fees,
+  // −80% assembly hours) sit under the caption on the left.
   {
     id: 10,
     caption: {
-      eyebrow: "Step 10 · The math at scale",
+      eyebrow: "Step 10 · The report writes itself",
+      headline: "Every monthly close auto-generates a CSRD ESRS E1 source PDF.",
+      sub: "Bunq-branded, per-row factor citations, audit chain attached. What used to take a 50-person SME 6–12 weeks of Q1 staff work, gone.",
+    },
+    txs: {},
+    receipts: {},
+    clusters: {},
+    agents: {},
+    recs: {},
+    frames: { csrdReport: true },
+  },
+
+  // 11 — SCALE: matrix dots lift into 3 climbing bars
+  {
+    id: 11,
+    caption: {
+      eyebrow: "Step 11 · The math at scale",
       headline: "What 4.5% looks like across one company, over time, across bunq's network.",
       sub: "If every quick win is taken — these are the numbers it adds up to.",
     },
@@ -652,11 +674,11 @@ export const STAGES: StageConfig[] = [
     frames: { scale: true },
   },
 
-  // 11 — CO2 PROOF: baseline vs after, side-by-side
+  // 12 — CO2 PROOF: baseline vs after, side-by-side
   {
-    id: 11,
+    id: 12,
     caption: {
-      eyebrow: "Step 11 · Carbon cut, audit-ready",
+      eyebrow: "Step 12 · Carbon cut, audit-ready",
       headline: "Same business. Same volumes. Different decisions.",
       sub: "From 240 to 150 tCO₂e per year — and a CSRD ESRS E1 report you can hand to an auditor.",
     },
@@ -668,11 +690,11 @@ export const STAGES: StageConfig[] = [
     frames: { co2: true },
   },
 
-  // 12 — ASK
+  // 13 — ASK
   {
-    id: 12,
+    id: 13,
     caption: {
-      eyebrow: "Step 12 · The ask",
+      eyebrow: "Step 13 · The ask",
       headline: "Pilot it with one bunq Business enterprise.",
       sub: "Audit-ready CSRD output by month one. We just need a sandbox slot and a credit-registry partner.",
     },

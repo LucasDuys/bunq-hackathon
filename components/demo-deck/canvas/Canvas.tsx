@@ -12,6 +12,7 @@ import {
   AskFrame,
   BunqSubAccountsFrame,
   CO2Comparison,
+  CsrdReportFrame,
   DagFlowFrame,
   HeroFrame,
   HookBackdrop,
@@ -54,6 +55,10 @@ export function Canvas({ stage }: { stage: StageConfig }) {
           />
           <BunqSubAccountsFrame visible={stage.frames.bunqSub === true} />
           <MatrixGrid visible={stage.frames.matrix === true} />
+          <CsrdReportFrame
+            visible={stage.frames.csrdReport === true}
+            caption={stage.caption}
+          />
           <ScaleStatCards visible={stage.frames.scale === true} />
           <CO2Comparison visible={stage.frames.co2 === true} />
 
