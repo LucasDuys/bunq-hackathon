@@ -126,241 +126,133 @@ flowchart LR
 | **Credit Strategy** | deterministic | Allocates reserve across EU credit projects |
 | **Executive Report** | Sonnet 4.6 | Writes prose **on top of frozen numbers** |
 
-### Per-agent state machines
+### Per-agent contracts
 
-Each agent is its own micro-FSM. Click any one to see what it ingests, how it transitions, and what flows out.
+One row per agent — what flows in, what flows out, and the single rule that defines it.
+
+| # | Agent | Ingests | Emits | Single invariant |
+|---|---|---|---|---|
+| 01 | **Spend Baseline** | `{orgId, month}` + tx rows | `BaselineOutput` (≤20 priority targets) | Never passes raw rows downstream |
+| 02 | **Research** | priority targets | `ResearchedPool` keyed by cluster | Every alternative carries ≥1 source URL |
+| 03 | **Green Alternatives** | baseline + pool | `GreenAltOutput` | Picks from the pool — cannot invent vendors |
+| 04 | **Cost Savings** | baseline + pool | `CostSavingsOutput` | Annualizes only recurring spend |
+| 05 | **Green Judge** | greenAlt + pool | `GreenJudgeOutput` | Code overrides verdict on zero-source / math mismatch |
+| 06 | **Cost Judge** | costSavings + pool | `CostJudgeOutput` | Same code-override rule as Green Judge |
+| 07 | **Credit Strategy** | both judges + baseline | `CreditStrategyOutput` | Numbers frozen by code **before** the LLM sees them |
+| 08 | **Executive Report** | judges + strategy + baseline | `ExecReportOutput` | Only `approved` / `approved_with_caveats` items appear |
 
 <details>
-<summary><b>01 — Spend Baseline</b> · deterministic · <code>lib/agents/dag/spendBaseline.ts</code></summary>
+<summary><b>▸ Show internal state machines (8 diagrams)</b></summary>
 
-| | |
-|---|---|
-| **Ingests** | `{ orgId, month }` + raw `transactions` rows + factor library |
-| **Emits** | `BaselineOutput` → Research, Green Alt, Cost Savings |
-| **Authority** | Source of truth for spend, emissions, and the priority-target list |
+<br />
+
+**01 — Spend Baseline** — pure SQL + math; no LLM call.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> LoadTx: orgId, month
-    LoadTx --> AggregateByCategory: rows
-    AggregateByCategory --> EstimatePerTx: getEmissionFactor()
-    EstimatePerTx --> RollupConfidence: per-tx point + low/high
-    RollupConfidence --> ClusterPrioritize: variance-correct, spend-weighted
-    ClusterPrioritize --> CapTo20: spend × (1 − confidence)
-    CapTo20 --> SplitByNextAgent: green / cost / both
-    SplitByNextAgent --> [*]: priority_targets[]
+    [*] --> LoadTx
+    LoadTx --> Aggregate
+    Aggregate --> EstimateEmissions
+    EstimateEmissions --> ClusterByImpact: spend × (1 − conf)
+    ClusterByImpact --> [*]: top 20
 ```
 
-**Hard rules:** never pass raw rows downstream · cap at 20 priority clusters · always include `baseline_confidence` · raise a `required_context_question` instead of guessing column meaning.
-
-</details>
-
-<details>
-<summary><b>02 — Research</b> · Sonnet 4.6 + <code>web_search_20250305</code> · <code>lib/agents/dag/research.ts</code></summary>
-
-| | |
-|---|---|
-| **Ingests** | `BaselineOutput.priority_targets` + `agentRunId` + org context |
-| **Emits** | `ResearchOutput` / `ResearchedPool` keyed by `cluster_id` → Green Alt + Cost Savings |
-| **Authority** | Owns the alternative-candidate set; downstream proposers cannot invent vendors |
+**02 — Research** — per cluster: cache lookup, else `web_search` (≤3 uses) feeding the `record_alternative` Zod tool. If zero recorded, fall back to `GREEN_TEMPLATES`.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> NextCluster
-    NextCluster --> CacheLookup: sha256(category, jurisdiction, policyDigest, week)
-    CacheLookup --> WriteAudit: hit (≤30 days)
-    CacheLookup --> ToolRunner: miss
-    ToolRunner --> WebSearch: ≤3 uses / cluster
-    WebSearch --> RecordAlternative: terminal Zod tool
-    RecordAlternative --> RecordAlternative: 0..N times
-    RecordAlternative --> CheckRecorded: agent stops
-    CheckRecorded --> TemplateFallback: 0 alternatives
-    CheckRecorded --> WriteCache: ≥1 alternative
-    TemplateFallback --> WriteCache: provenance=template
-    WriteCache --> WriteAudit
-    WriteAudit --> NextCluster: more clusters?
-    WriteAudit --> [*]: ResearchedPool
+    [*] --> CacheLookup
+    CacheLookup --> Emit: hit (≤30d)
+    CacheLookup --> WebSearch: miss
+    WebSearch --> RecordAlts
+    RecordAlts --> WriteCache: ≥1 alt
+    RecordAlts --> Template: 0 alts
+    Template --> WriteCache
+    WriteCache --> Emit
+    Emit --> [*]
 ```
 
-**Fallback ladder:** live `web_search` → cache (≤30d) → `GREEN_TEMPLATES` → empty (surfaced as `limitations[]` in the report). Every recorded alternative carries ≥1 source URL; Zod blocks prompt-injected URLs at the tool boundary.
-
-</details>
-
-<details>
-<summary><b>03 — Green Alternatives</b> · Sonnet 4.6 plain JSON · <code>lib/agents/dag/greenAlternatives.ts</code></summary>
-
-| | |
-|---|---|
-| **Ingests** | `baseline` + `researchedPool` (pre-resolved candidates per cluster) |
-| **Emits** | `GreenAltOutput` → Green Judge |
-| **Authority** | Picks **which** alternative from the pool — cannot invent new ones |
+**03 — Green Alternatives** — Sonnet picks from the pre-resolved pool; Zod re-validates the JSON.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> BuildCandidates: per cluster, pull from researchedPool
-    BuildCandidates --> RenderPrompt: cached system prompt + Zod hint
-    RenderPrompt --> CallSonnet: callAgent()
-    CallSonnet --> ParseJSON
-    ParseJSON --> ZodValidate
-    ZodValidate --> RecoverableRetry: invalid
-    RecoverableRetry --> CallSonnet
-    ZodValidate --> ScorePerResult: ok
-    ScorePerResult --> SummarizeRollup: confidence, kg saved
-    SummarizeRollup --> [*]: GreenAltOutput
+    [*] --> BuildCandidates
+    BuildCandidates --> CallSonnet
+    CallSonnet --> ZodValidate
+    ZodValidate --> CallSonnet: invalid (1 retry)
+    ZodValidate --> [*]: ok
 ```
 
-**Hard rules:** carbon-first (cost is supporting context only) · separate reduction from offsetting · `recommendation_status ∈ {recommend_switch, recommend_if_policy_allows, needs_context, no_viable_alternative_found, no_action_needed, reserve_or_offset_after_reduction_review}`.
-
-</details>
-
-<details>
-<summary><b>04 — Cost Savings</b> · Sonnet 4.6 plain JSON · <code>lib/agents/dag/costSavings.ts</code></summary>
-
-| | |
-|---|---|
-| **Ingests** | `baseline` + `researchedPool` |
-| **Emits** | `CostSavingsOutput` → Cost Judge |
-| **Authority** | Proposes vendor-switch / consolidation / bulk / cancellation options with payback math |
+**04 — Cost Savings** — detect recurring spend in SQL first, then Sonnet proposes options on annotated clusters.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> DetectRecurring: SQL on bunqPaymentDate
-    DetectRecurring --> AnnotateClusters: recurring vs one-time
-    AnnotateClusters --> RenderPrompt
-    RenderPrompt --> CallSonnet
-    CallSonnet --> ParseJSON
-    ParseJSON --> ZodValidate
-    ZodValidate --> AnnualizeRecurringOnly: rule 5
-    AnnualizeRecurringOnly --> FlagBusinessRisk: low / medium / high
-    FlagBusinessRisk --> SummarizeRollup
-    SummarizeRollup --> [*]: CostSavingsOutput
+    [*] --> DetectRecurring
+    DetectRecurring --> CallSonnet
+    CallSonnet --> ZodValidate
+    ZodValidate --> AnnualizeRecurring
+    AnnualizeRecurring --> [*]
 ```
 
-**Hard rules:** never invent live prices without a benchmark source · annualize **only** recurring savings · flag business risk on every cancellation candidate · preserve carbon side-effects (`lower / neutral / higher / unknown`).
-
-</details>
-
-<details>
-<summary><b>05 — Green Judge</b> · Sonnet 4.6 → <b>code override</b> · <code>lib/agents/dag/greenJudge.ts</code></summary>
-
-| | |
-|---|---|
-| **Ingests** | `greenAlt` + `researchedPool` (for source re-verification) |
-| **Emits** | `GreenJudgeOutput` → Credit Strategy |
-| **Authority** | LLM scores + writes prose; **code can override the verdict** on hard-rule failure |
+**05 — Green Judge** — Sonnet scores, code re-checks evidence + math, can flip the verdict to `rejected`.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> CallSonnetScores
-    CallSonnetScores --> ZodValidate
-    ZodValidate --> EvidenceCheck: source count, trusted domain
-    EvidenceCheck --> MathCheck: saved_kg vs baseline × delta
-    MathCheck --> CodeOverride: zero sources OR math mismatch
-    MathCheck --> KeepLLMVerdict: ok
-    CodeOverride --> ForceReject: verdict := rejected
-    ForceReject --> EmitAuditEvent
-    KeepLLMVerdict --> EmitAuditEvent
-    EmitAuditEvent --> [*]: GreenJudgeOutput
+    [*] --> CallSonnet
+    CallSonnet --> EvidenceCheck
+    EvidenceCheck --> MathCheck
+    MathCheck --> Override: fails
+    MathCheck --> Keep: ok
+    Override --> [*]: forced reject
+    Keep --> [*]: LLM verdict
 ```
 
-**Hard rules:** vague sustainability claims rejected · `green_score ∈ [0..100]` mapped to `{approved | approved_with_caveats | needs_context | rejected}` · every verdict written as a signed `auditEvents` row so the report can render a "judged-by" signature.
-
-</details>
-
-<details>
-<summary><b>05a — Cost Judge</b> · Sonnet 4.6 → <b>code override</b> · <code>lib/agents/dag/costJudge.ts</code></summary>
-
-| | |
-|---|---|
-| **Ingests** | `costSavings` + `researchedPool` + historical spend |
-| **Emits** | `CostJudgeOutput` → Credit Strategy |
-| **Authority** | Same code-override pattern as Green Judge — LLM scores, code enforces |
+**06 — Cost Judge** — same shape as Green Judge, swapping evidence/math for annualization, business-risk, and carbon-leak checks.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> CallSonnetScores
-    CallSonnetScores --> ZodValidate
-    ZodValidate --> AnnualizationCheck: recurring-only?
-    AnnualizationCheck --> MathCheck: saving math
-    MathCheck --> RiskCheck: business_risk stated?
-    RiskCheck --> CarbonLeakCheck: secret carbon increase?
-    CarbonLeakCheck --> CodeOverride: any rule fails
-    CarbonLeakCheck --> KeepLLMVerdict: ok
-    CodeOverride --> ForceReject
-    ForceReject --> EmitAuditEvent
-    KeepLLMVerdict --> EmitAuditEvent
-    EmitAuditEvent --> [*]: CostJudgeOutput
+    [*] --> CallSonnet
+    CallSonnet --> AnnualizationCheck
+    AnnualizationCheck --> RiskCheck
+    RiskCheck --> CarbonLeakCheck
+    CarbonLeakCheck --> Override: fails
+    CarbonLeakCheck --> Keep: ok
+    Override --> [*]: forced reject
+    Keep --> [*]: LLM verdict
 ```
 
-**Hard rules:** no fake savings · no bad annualization · no ignored business risk · no silent carbon increase · `cost_score` mapped onto the same 4-verdict set as Green Judge.
+**07 — Credit Strategy** — code computes the full net-impact formula; Sonnet only writes a ≤220-char CFO summary on top of the frozen numbers.
 
-</details>
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> ComputeImpact
+    ComputeImpact --> ComputeCreditCost
+    ComputeCreditCost --> ComputeTax
+    ComputeTax --> NetImpact
+    NetImpact --> CallSonnetForProse: numbers frozen
+    CallSonnetForProse --> SignDigest: sha256 of 4 inputs
+    SignDigest --> [*]
+```
 
-<details>
-<summary><b>06 — Credit Strategy</b> · deterministic + Sonnet 4.6 prose labels · <code>lib/agents/dag/creditStrategy.ts</code></summary>
-
-| | |
-|---|---|
-| **Ingests** | `greenJudge` + `costJudge` + `baseline` (only `approved` / `approved_with_caveats`) |
-| **Emits** | `CreditStrategyOutput` → Executive Report |
-| **Authority** | Numbers are **frozen by code** before the LLM sees them; LLM only writes `cfo_summary` + picks credit-type label |
+**08 — Executive Report** — filter to approved-only, build the cost × carbon matrix, deterministic KPIs, optional Sonnet summary, CSRD export.
 
 ```mermaid
 stateDiagram-v2
     direction LR
     [*] --> FilterApproved
-    FilterApproved --> ComputeSwitchingImpact: code, deterministic
-    ComputeSwitchingImpact --> ComputeCreditCost: getCarbonCreditPrice()
-    ComputeCreditCost --> ComputeTaxAndIncentives: NL/DE/FR/EU table
-    ComputeTaxAndIncentives --> ComputeNetImpact: canonical formula
-    ComputeNetImpact --> FreezeNumbers: pass to LLM as read-only
-    FreezeNumbers --> CallSonnetForProse: cfo_summary ≤220 chars
-    CallSonnetForProse --> ZodValidate
-    ZodValidate --> SignAuditDigest: sha256 of 4 inputs
-    SignAuditDigest --> [*]: CreditStrategyOutput
+    FilterApproved --> BuildMatrix
+    BuildMatrix --> ComputeKPIs
+    ComputeKPIs --> CallSonnetForSummary
+    CallSonnetForSummary --> CSRDExport
+    CSRDExport --> [*]
 ```
-
-**Canonical formula** (deterministic, audit-replayable):
-
-```
-net = direct_cost_saving + tax_deduction_value + subsidy_or_grant_value
-    + avoided_carbon_tax_or_ets_cost + avoided_offset_purchase_cost
-    - implementation_cost - operational_risk_adjustment
-```
-
-The audit row hashes `{greenJudgeApprovedCount, costJudgeApprovedCount, baselineTotalSpendEur, baselineTotalTco2e}` — a sign-flip in `compute()` is detectable by re-hashing the same four inputs.
-
-</details>
-
-<details>
-<summary><b>07 — Executive Report</b> · Sonnet 4.6 (optional summary) · <code>lib/agents/dag/executiveReport.ts</code></summary>
-
-| | |
-|---|---|
-| **Ingests** | `greenJudge` + `costJudge` + `creditStrategy` + `baseline` + `research` |
-| **Emits** | `ExecReportOutput` → `/report/[month]` dashboard + CSRD export + `/presentation` |
-| **Authority** | Numbers and matrix are deterministic; the LLM only writes the executive prose |
-
-```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> FilterApprovedOnly
-    FilterApprovedOnly --> BuildMatrix: cost × carbon quadrants
-    BuildMatrix --> ComputeKPIs: deterministic rollup
-    ComputeKPIs --> RankTopN: top-5 green + top-5 cost
-    RankTopN --> CallSonnetForSummary: optional, cached prompt
-    CallSonnetForSummary --> AssembleCSRDExport: ESRS E1-6 + E1-7
-    AssembleCSRDExport --> AppendAuditEvent
-    AppendAuditEvent --> [*]: ExecReportOutput
-```
-
-**Matrix logic:** low-cost / low-carbon = best · high-cost / low-carbon = ESG-positive but finance-sensitive · low-cost / high-carbon = cost-saving but carbon-risk · high-cost / high-carbon = avoid. Rejected items never appear; their reason is surfaced in `limitations[]`.
 
 </details>
 
