@@ -293,7 +293,7 @@ export default function PresentationPage() {
           No proposals, no validation, no CFO-grade net impact.
         </p>
         <div className={styles.linearFlow}>
-          {["AGGREGATE", "ESTIMATE_INITIAL", "CLUSTER", "QUESTIONS_GENERATED (Sonnet)", "AWAITING_ANSWERS", "APPLY_ANSWERS", "ESTIMATE_FINAL", "APPLY_POLICY", "PROPOSED", "AWAITING_APPROVAL", "EXECUTING", "COMPLETED"].map((s, i) => (
+          {["AGGREGATE", "ESTIMATE_INITIAL", "CLUSTER", "DAG_RUNNING (7-agent DAG)", "AWAITING_ANSWERS", "APPLY_ANSWERS", "ESTIMATE_FINAL", "APPLY_POLICY", "PROPOSED", "AWAITING_APPROVAL", "EXECUTING", "COMPLETED"].map((s, i) => (
             <span key={s} style={{ display: "contents" }}>
               <span className={styles.linearNode}>{s}</span>
               {i < 11 ? <span className={styles.linearArrow}>→</span> : null}
