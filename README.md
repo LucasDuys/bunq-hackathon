@@ -142,116 +142,173 @@ One row per agent — what flows in, what flows out, and the single rule that de
 | 08 | **Executive Report** | judges + strategy + baseline | `ExecReportOutput` | Only `approved` / `approved_with_caveats` items appear |
 
 <details>
-<summary><b>▸ Show internal state machines (8 diagrams)</b></summary>
+<summary><b>▸ How each agent actually works (8 workflows)</b></summary>
 
 <br />
 
-**01 — Spend Baseline** — pure SQL + math; no LLM call.
+**01 — Spend Baseline**
+
+> *Why score on `spend × (1 − confidence)`: that product is exactly where one refinement question or one judge override moves the most CFO-grade money. The top 20 clusters fit a 20k-token downstream budget even on 10k transactions.*
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> LoadTx
-    LoadTx --> Aggregate
-    Aggregate --> EstimateEmissions
-    EstimateEmissions --> ClusterByImpact: spend × (1 − conf)
-    ClusterByImpact --> [*]: top 20
+flowchart LR
+    A[bunq tx rows<br/>for the month] --> B[Match each row<br/>to a category<br/>via merchant rules]
+    B --> C[EUR × kgCO2e/EUR<br/>category factor]
+    C --> D[Add ± factor uncertainty<br/>→ low / point / high]
+    D --> E[Quadrature rollup<br/>variance + spend-weighted<br/>confidence]
+    E --> F[Score every cluster<br/>spend × 1−confidence]
+    F --> G[Keep top 20]
+    G --> H[Tag each:<br/>green / cost / both]
+    H --> I[priority_targets]
 ```
 
-**02 — Research** — per cluster: cache lookup, else `web_search` (≤3 uses) feeding the `record_alternative` Zod tool. If zero recorded, fall back to `GREEN_TEMPLATES`.
+---
+
+**02 — Research**
+
+> *Why fingerprint-cached web search: vendor lists and prices change weekly, not daily. A 30-day cache keyed on `(category, jurisdiction, policy, week)` lets a second company reuse the first company's research at near-zero cost. Templates only fire when the search literally returns nothing.*
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> CacheLookup
-    CacheLookup --> Emit: hit (≤30d)
-    CacheLookup --> WebSearch: miss
-    WebSearch --> RecordAlts
-    RecordAlts --> WriteCache: ≥1 alt
-    RecordAlts --> Template: 0 alts
-    Template --> WriteCache
-    WriteCache --> Emit
-    Emit --> [*]
+flowchart LR
+    A[priority_targets] --> B{Cache hit?<br/>category + jurisdiction<br/>+ policy + week}
+    B -->|hit ≤30d| H[Reuse cached vendors]
+    B -->|miss| C[Search the web<br/>≤3 queries / cluster]
+    C --> D[Extract vendor candidates<br/>from real result snippets]
+    D --> E[Validate each via<br/>record_alternative tool<br/>name · url · geography ·<br/>cost/CO2 deltas]
+    E --> F{≥1 alternative<br/>recorded?}
+    F -->|yes| G[Persist 30-day cache]
+    F -->|no| I[Fall back to<br/>GREEN_TEMPLATES]
+    I --> G
+    G --> H
+    H --> J[ResearchedPool]
 ```
 
-**03 — Green Alternatives** — Sonnet picks from the pre-resolved pool; Zod re-validates the JSON.
+---
+
+**03 — Green Alternatives**
+
+> *Why a carbon-first decision tree: cost cannot beat carbon at this stage. We only escalate to "recommend if policy allows" when there's a real cost premium, and we reject anything that isn't functionally comparable so the judge isn't stuck adjudicating apples vs oranges.*
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> BuildCandidates
-    BuildCandidates --> CallSonnet
-    CallSonnet --> ZodValidate
-    ZodValidate --> CallSonnet: invalid (1 retry)
-    ZodValidate --> [*]: ok
+flowchart LR
+    A[priority target<br/>+ vendor pool] --> B[Compute current<br/>kg CO2e baseline]
+    B --> C{Comparable<br/>alt in pool?}
+    C -->|no| D[no_viable_alternative_found]
+    C -->|yes| E{Functionally<br/>comparable?}
+    E -->|no| D
+    E -->|yes| F{Δ CO2e ≥ 10%?}
+    F -->|no| G[no_action_needed]
+    F -->|yes| H{Cost<br/>premium?}
+    H -->|none| I[recommend_switch]
+    H -->|positive| J[recommend_if_policy_allows]
 ```
 
-**04 — Cost Savings** — detect recurring spend in SQL first, then Sonnet proposes options on annotated clusters.
+---
+
+**04 — Cost Savings**
+
+> *Why detect recurring spend in SQL first: annualizing a one-time charge by multiplying by 12 is the most common LLM hallucination. We tag each cluster as recurring vs one-time before the model sees it, so only the recurring path can ever flow into annual savings.*
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> DetectRecurring
-    DetectRecurring --> CallSonnet
-    CallSonnet --> ZodValidate
-    ZodValidate --> AnnualizeRecurring
-    AnnualizeRecurring --> [*]
+flowchart LR
+    A[priority target<br/>+ 90d history] --> B[SQL: ≥3 charges<br/>same merchant<br/>= recurring]
+    B --> C{Recurring?}
+    C -->|yes| D[Annualize<br/>monthly_avg × 12]
+    C -->|no| E[One-time only<br/>no annualization]
+    D --> F{Decision tree}
+    E --> F
+    F --> G[vendor_switch<br/>cheaper equivalent]
+    F --> H[supplier_consolidation<br/>multi-vendor category]
+    F --> I[bulk_purchase<br/>high-volume]
+    F --> J[cancellation<br/>+ business_risk flag]
+    F --> K[needs_validation<br/>too speculative]
 ```
 
-**05 — Green Judge** — Sonnet scores, code re-checks evidence + math, can flip the verdict to `rejected`.
+---
+
+**05 — Green Judge**
+
+> *Why code overrides the verdict: a confident-sounding "approved" with zero source URLs, or with `saved_kg ≠ current × Δ%`, is exactly the failure mode reviewers won't catch by reading prose. We re-count and re-multiply in code; mismatches force a reject regardless of how good the writeup is.*
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> CallSonnet
-    CallSonnet --> EvidenceCheck
-    EvidenceCheck --> MathCheck
-    MathCheck --> Override: fails
-    MathCheck --> Keep: ok
-    Override --> [*]: forced reject
-    Keep --> [*]: LLM verdict
+flowchart LR
+    A[GreenAlt result] --> B[Score 0–100<br/>on 10 evaluation criteria]
+    B --> C[Map to verdict<br/>approved / w_caveats /<br/>needs_context / rejected]
+    C --> D[Code: count source URLs<br/>in researchedPool]
+    D --> E{≥1 source?}
+    E -->|no| F[OVERRIDE → rejected<br/>reason: zero_sources]
+    E -->|yes| G[Code: recompute<br/>saved_kg = current × Δ%]
+    G --> H{Within ±5%<br/>of LLM number?}
+    H -->|no| I[OVERRIDE → rejected<br/>reason: math_mismatch]
+    H -->|yes| J[Keep verdict<br/>+ apply correction]
+    F --> K[Append signed audit row]
+    I --> K
+    J --> K
 ```
 
-**06 — Cost Judge** — same shape as Green Judge, swapping evidence/math for annualization, business-risk, and carbon-leak checks.
+---
+
+**06 — Cost Judge**
+
+> *Why three guard checks: each one maps to a known failure mode of the cost agent — (1) annualizing a one-time, (2) recommending a cancellation without flagging business risk, (3) recommending a cheaper option that's secretly higher carbon. Any one trip flips the verdict.*
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> CallSonnet
-    CallSonnet --> AnnualizationCheck
-    AnnualizationCheck --> RiskCheck
-    RiskCheck --> CarbonLeakCheck
-    CarbonLeakCheck --> Override: fails
-    CarbonLeakCheck --> Keep: ok
-    Override --> [*]: forced reject
-    Keep --> [*]: LLM verdict
+flowchart LR
+    A[CostSavings result] --> B[Score 0–100]
+    B --> C[Map to verdict]
+    C --> D{Annualized<br/>a one-time?}
+    D -->|yes| E[OVERRIDE → rejected]
+    D -->|no| F{Cancellation w/o<br/>business_risk?}
+    F -->|yes| E
+    F -->|no| G{Carbon higher<br/>and unflagged?}
+    G -->|yes| E
+    G -->|no| H[Keep verdict]
+    E --> I[Append signed audit row]
+    H --> I
 ```
 
-**07 — Credit Strategy** — code computes the full net-impact formula; Sonnet only writes a ≤220-char CFO summary on top of the frozen numbers.
+---
+
+**07 — Credit Strategy**
+
+> *Why every number is computed in code first: the CFO net-impact figure is the most consequential number in the report — it goes on a signed audit chain. We compute the full formula deterministically, freeze the numbers, then only let the agent write a 220-char prose label on top. The model cannot move a single digit.*
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> ComputeImpact
-    ComputeImpact --> ComputeCreditCost
-    ComputeCreditCost --> ComputeTax
-    ComputeTax --> NetImpact
-    NetImpact --> CallSonnetForProse: numbers frozen
-    CallSonnetForProse --> SignDigest: sha256 of 4 inputs
-    SignDigest --> [*]
+flowchart LR
+    A[approved switches<br/>+ jurisdiction NL/DE/FR/EU] --> B[direct_saving =<br/>old_annual − new_annual]
+    B --> C[avoided_offset =<br/>kg_reduced/1000<br/>× credit_price]
+    C --> D[tax_deduction =<br/>deductible<br/>× marginal_rate]
+    D --> E[avoided_carbon_tax =<br/>tCO2e × EU ETS price]
+    E --> F[net = sum<br/>− implementation_cost<br/>− risk_adjustment]
+    F --> G[Allocate residual tCO2e<br/>across biochar /<br/>peatland / reforestation]
+    G --> H[Freeze numbers<br/>+ sha256 digest]
+    H --> I[Generate ≤220-char<br/>CFO prose summary<br/>on frozen numbers]
+    I --> J[CreditStrategyOutput]
 ```
 
-**08 — Executive Report** — filter to approved-only, build the cost × carbon matrix, deterministic KPIs, optional Sonnet summary, CSRD export.
+---
+
+**08 — Executive Report**
+
+> *Why a cost × carbon matrix: the CFO doesn't need 30 recommendations, they need to know which 3 to act on this month. Quadrants make the trade-off explicit. Rejected items don't appear at all but their reason surfaces in `limitations[]` so the report stays honest about its gaps.*
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    [*] --> FilterApproved
-    FilterApproved --> BuildMatrix
-    BuildMatrix --> ComputeKPIs
-    ComputeKPIs --> CallSonnetForSummary
-    CallSonnetForSummary --> CSRDExport
-    CSRDExport --> [*]
+flowchart LR
+    A[judges + strategy<br/>+ baseline] --> B[Filter to approved /<br/>approved_with_caveats]
+    B --> C[Place each rec on<br/>cost × carbon grid]
+    C --> D{Quadrant?}
+    D -->|low / low| E[best — green flag]
+    D -->|high / low| F[ESG-positive,<br/>finance-sensitive]
+    D -->|low / high| G[cost-saving,<br/>carbon-risk]
+    D -->|high / high| H[avoid / replace]
+    E --> I[Top-5 by carbon<br/>+ Top-5 by EUR]
+    F --> I
+    G --> I
+    H --> I
+    I --> J[Compute headline KPIs]
+    J --> K[Generate executive summary]
+    K --> L[Package CSRD export<br/>ESRS E1-6 + E1-7]
+    L --> M[Rejected items →<br/>limitations]
 ```
 
 </details>
