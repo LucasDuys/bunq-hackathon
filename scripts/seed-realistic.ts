@@ -421,6 +421,7 @@ const main = async () => {
   db.insert(orgs).values({
     id: ORG_ID, name: env.defaultOrgName,
     bunqUserId: "42", reserveAccountId: "reserve_1", creditsAccountId: "credits_1",
+    taxReserveAccountId: "tax_reserve_1",
   }).onConflictDoNothing().run();
   db.insert(policies).values({
     id: "pol_default", orgId: ORG_ID,
