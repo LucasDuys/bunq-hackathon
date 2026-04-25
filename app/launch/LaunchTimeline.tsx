@@ -41,7 +41,7 @@ import S13C from "./scenes/S13C";
 import S14 from "./scenes/S14";
 import S15 from "./scenes/S15";
 import S15B from "./scenes/S15B";
-import S15C from "./scenes/S15C";
+
 import S16 from "./scenes/S16";
 
 // Order MUST match TIMELINE in data.ts.
@@ -52,7 +52,7 @@ const SCENES = [
   S11R, S11P, S11Q,
   S12, S12B, S13, S13B, S13C,
   S14, S15,
-  S15B, S15C,
+  S15B,
   S16,
 ];
 
@@ -73,12 +73,16 @@ function sceneIndexFor(totalMs: number): number {
   return 0;
 }
 
+const FADE_OUT_MS = 2500;
+
 export function LaunchTimeline() {
   const [totalElapsedMs, setTotalElapsedMs] = useState(0);
   const [paused, setPaused] = useState(false);
   const lastFrameRef = useRef<number | null>(null);
   const pausedRef = useRef(paused);
   pausedRef.current = paused;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioReady, setAudioReady] = useState(false);
 
   // Dev mode: only mount the scrubber when ?dev=1.
   const [devMode, setDevMode] = useState(false);
@@ -92,6 +96,48 @@ export function LaunchTimeline() {
     if (typeof window === "undefined") return false;
     return window.location.search.includes("loop=1");
   }, []);
+
+  // Background music — start on first click, sync with pause, fade at end.
+  useEffect(() => {
+    const audio = new Audio("/launch-bg.mp3");
+    audio.loop = true;
+    audio.volume = 0.45;
+    audioRef.current = audio;
+    const startOnInteraction = () => {
+      audio.play().then(() => setAudioReady(true)).catch(() => {});
+      window.removeEventListener("click", startOnInteraction);
+      window.removeEventListener("keydown", startOnInteraction);
+    };
+    window.addEventListener("click", startOnInteraction);
+    window.addEventListener("keydown", startOnInteraction);
+    return () => {
+      window.removeEventListener("click", startOnInteraction);
+      window.removeEventListener("keydown", startOnInteraction);
+      audio.pause();
+      audio.src = "";
+    };
+  }, []);
+
+  // Sync audio pause/play + fade out near end.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audioReady) return;
+
+    if (paused || totalElapsedMs >= TOTAL_DURATION_MS) {
+      audio.pause();
+    } else {
+      audio.play().catch(() => {});
+    }
+
+    const remaining = TOTAL_DURATION_MS - totalElapsedMs;
+    if (remaining <= FADE_OUT_MS && remaining > 0) {
+      audio.volume = Math.max(0, 0.45 * (remaining / FADE_OUT_MS));
+    } else if (remaining > FADE_OUT_MS) {
+      audio.volume = 0.45;
+    } else {
+      audio.volume = 0;
+    }
+  }, [paused, totalElapsedMs, audioReady]);
 
   // Master RAF — advance clock by frame delta when not paused.
   useEffect(() => {
@@ -202,6 +248,24 @@ export function LaunchTimeline() {
           ) : null}
         </footer>
       </div>
+
+      {/* Ghost mascot — top-left corner */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/ghost.gif"
+        alt=""
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          top: 14,
+          left: 14,
+          width: 120,
+          height: 120,
+          zIndex: 10000,
+          pointerEvents: "none",
+          opacity: 0.85,
+        }}
+      />
 
       {/* Leaf — root-level so it drifts across scene boundaries. */}
       <Leaf

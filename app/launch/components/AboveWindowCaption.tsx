@@ -73,8 +73,8 @@ export function AboveWindowCaption({
         color: "#3a3a3a",
         fontFamily:
           "var(--font-source-code-pro), ui-monospace, SFMono-Regular, monospace",
-        fontSize: 14,
-        letterSpacing: "0.4px",
+        fontSize: 16,
+        letterSpacing: "0.3px",
         textTransform: "uppercase",
         whiteSpace: "nowrap",
         pointerEvents: "none",

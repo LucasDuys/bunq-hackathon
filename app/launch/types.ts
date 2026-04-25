@@ -145,7 +145,6 @@ export type SceneId =
   | "S14"
   | "S15"
   | "S15B"
-  | "S15C"
   | "S16";
 
 export type SceneSpec = {

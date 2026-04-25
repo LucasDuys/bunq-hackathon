@@ -432,9 +432,6 @@ export const TIMELINE: SceneSpec[] = [
   // Beat 7b — audit + proof
   { id: "S15B", durationMs: 6000,  header: "Every event hashes the one before it.\nChange one row — the whole chain breaks.",
                                    caption: "Every event hashes the previous one · if any row changes the chain breaks · append-only", leafOpacity: 0 },
-  { id: "S15C", durationMs: 5000,  header: "Proof of Green. One link. Anyone can verify.",
-                                   caption: "Proof of Green · scan to verify · public dashboard powered by Carbo",   leafOpacity: 0 },
-
   // Beat 8 — lockup (dramatic dark-canvas finale)
   { id: "S16",  durationMs: 7000,  leafOpacity: 0 },
 ];
