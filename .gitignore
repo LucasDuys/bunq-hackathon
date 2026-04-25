@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 env.local
+# project standardizes on npm (package-lock.json); ignore bun's lockfile
+# so a stray `bun install` doesn't drift the source of truth.
+bun.lock
 # testing
 /coverage
 
