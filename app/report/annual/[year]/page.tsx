@@ -28,6 +28,7 @@ function categoryColor(cat: string): string {
   if (c.includes("scope2") || c.includes("electric")) return "var(--cat-electricity)";
   if (c.includes("travel") || c.includes("cat6")) return "var(--cat-travel)";
   if (c.includes("digital") || c.includes("saas")) return "var(--cat-digital)";
+  if (c.includes("food") || c.includes("restaurant") || c.includes("grocer")) return "var(--cat-food)";
   if (c.includes("good") || c.includes("cat1")) return "var(--cat-goods)";
   if (c.includes("service")) return "var(--cat-services)";
   return "var(--cat-other)";

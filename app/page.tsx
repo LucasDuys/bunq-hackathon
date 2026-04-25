@@ -78,12 +78,13 @@ const catToken = (cat: string): string => {
     return "var(--cat-travel)";
   if (c.includes("digital") || c.includes("saas") || c.includes("cloud") || c.includes("software"))
     return "var(--cat-digital)";
+  if (c.includes("food") || c.includes("restaurant") || c.includes("grocer") || c.includes("catering"))
+    return "var(--cat-food)";
   if (c.includes("service") || c.includes("professional")) return "var(--cat-services)";
   if (
     c.includes("good") ||
     c.includes("procure") ||
-    c.includes("supply") ||
-    c.includes("food")
+    c.includes("supply")
   )
     return "var(--cat-goods)";
   return "var(--cat-other)";

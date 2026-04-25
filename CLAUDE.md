@@ -44,7 +44,7 @@ See `ARCHITECTURE.md` (DAG layout), `DESIGN.md` (UI), `AGENTS.md` (Next 16 + des
 
 Pages (`app/`):
 - `page.tsx` dashboard · `close/[id]/` close detail+approve · `onboarding/`, `onboarding/[runId]/` agentic onboarding.
-- Feature pages: `categories/`, `impacts/`, `invoices/`, `invoices/[id]/`, `ledger/`, `reserve/`, `tax-savings/`, `report/[month]/`, `presentation/`.
+- Feature pages: `impacts/`, `invoices/`, `invoices/[id]/`, `ledger/`, `reserve/`, `report/[month]/`, `presentation/`.
 
 API (`app/api/`):
 - `webhook/bunq/` receiver.

@@ -46,6 +46,7 @@ function categoryToken(cat: string): string {
   if (c.includes("electric") || c.includes("energy")) return "var(--cat-electricity)";
   if (c.includes("travel") || c.includes("flight") || c.includes("transport")) return "var(--cat-travel)";
   if (c.includes("digital") || c.includes("saas") || c.includes("software")) return "var(--cat-digital)";
+  if (c.includes("food") || c.includes("restaurant") || c.includes("grocer")) return "var(--cat-food)";
   if (c.includes("service")) return "var(--cat-services)";
   if (c.includes("good") || c.includes("procure")) return "var(--cat-goods)";
   return "var(--cat-other)";

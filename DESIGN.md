@@ -92,6 +92,7 @@ All tokens live in `app/globals.css` under `@theme inline` for Tailwind v4. **Ne
 | Scope 3 — Travel | `#7c66dc` | Radix purple 10 |
 | Scope 3 — Digital / SaaS | `#5fb9ff` | Radix indigo 10 |
 | Scope 3 — Services | `#f7b955` | Radix yellow A7 |
+| Scope 3 — Food & catering | `#f76b15` | Radix orange 9 |
 | Uncategorised | `#898989` | Pure muted grey |
 
 ### 2.6 Semantic / status

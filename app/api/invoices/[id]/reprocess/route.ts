@@ -24,6 +24,14 @@ export const POST = async (
     return NextResponse.json({ error: "Invoice not found" }, { status: 404 });
   }
 
+  const SUPPORTED_MIME = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf"];
+  if (!SUPPORTED_MIME.includes(invoice.fileMime)) {
+    return NextResponse.json(
+      { error: `Cannot reprocess file of type ${invoice.fileMime}. Supported: ${SUPPORTED_MIME.join(", ")}` },
+      { status: 422 },
+    );
+  }
+
   const fullPath = path.resolve(process.cwd(), invoice.filePath);
   if (!existsSync(fullPath)) {
     return NextResponse.json(

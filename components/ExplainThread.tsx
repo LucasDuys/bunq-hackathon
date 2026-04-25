@@ -25,7 +25,7 @@ const BOLD_RE = /\*\*([^*]+)\*\*/g;
 const CODE_RE = /`([^`]+)`/g;
 
 const hrefForCitation = (kind: string, id: string): string | null => {
-  if (kind === "tx") return `/categories?tx=${encodeURIComponent(id)}`;
+  if (kind === "tx") return `/ledger?tx=${encodeURIComponent(id)}`;
   if (kind === "run") return `/close/${encodeURIComponent(id)}`;
   if (kind === "event") return "/ledger";
   if (kind === "factor") return null;
