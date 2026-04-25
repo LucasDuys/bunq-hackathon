@@ -24,6 +24,7 @@ import { env } from "@/lib/env";
 import { runDag } from "@/lib/agents/dag";
 import type { AgentContext } from "@/lib/agents/dag/types";
 import { computeClusters, type Cluster } from "./clusters";
+import { getTaxSavingsForMonth } from "@/lib/queries";
 
 export type { Cluster };
 
@@ -44,6 +45,7 @@ export type CloseState =
 
 export type ProposedAction =
   | { kind: "reserve_transfer"; amountEur: number; description: string }
+  | { kind: "tax_reserve_transfer"; amountEur: number; description: string; schemesCovered: string[] }
   | { kind: "credit_purchase"; projectId: string; tonnes: number; eur: number };
 
 const monthBounds = (month: string) => {
@@ -403,8 +405,28 @@ const finalizeEstimates = async (closeRunId: string) => {
   });
   db.update(closeRuns).set({ state: "PROPOSED" }).where(eq(closeRuns.id, closeRunId)).run();
   const creditMix = totalBudgetMix(finalRollup.co2eKgPoint / 1000);
+
+  // Tax savings capture — compute monthly EUR figure from scheme-specific rollups
+  // (MIA / VAMIL / EIA / EU ETS pass-through / green-financing rate advantage).
+  // Earmark the amount into a dedicated Tax Reserve sub-account for year-end
+  // reconciliation against actual RVO-approved deductions. "Potential" never
+  // "realized" — labels enforced here and in every downstream surface.
+  const taxSavings = getTaxSavingsForMonth(run.orgId, run.month);
+  const taxReserveAmountEur = Math.round(taxSavings.totalPotentialSavingsEur * 100) / 100;
+  const taxSchemesCovered = taxSavings.byScheme
+    .filter((s) => s.totalEur > 0)
+    .map((s) => s.schemeId);
+
   const actions: ProposedAction[] = [
     { kind: "reserve_transfer", amountEur: outcome.reserveTotalEur, description: `Carbo ${run.month} close` },
+    ...(taxReserveAmountEur > 0
+      ? [{
+          kind: "tax_reserve_transfer" as const,
+          amountEur: taxReserveAmountEur,
+          description: `Potential tax savings capture · ${run.month} · year-end reconciliation`,
+          schemesCovered: taxSchemesCovered,
+        }]
+      : []),
     ...creditMix.map((m) => ({ kind: "credit_purchase" as const, projectId: m.project.id, tonnes: m.tonnes, eur: m.eur })),
   ];
 
@@ -466,6 +488,7 @@ export const approveAndExecute = async (closeRunId: string, approver: "user" | "
   const userId = org?.bunqUserId ?? ctx.userId ?? "0";
   const fromAccountId = ctx.mainAccountId ?? "1";
   const reserveAccountId = org?.reserveAccountId ?? ctx.reserveAccountId ?? "reserve_1";
+  const taxReserveAccountId = org?.taxReserveAccountId ?? "tax_reserve_1";
   const token = session?.sessionToken ?? "mock_session_token";
 
   for (const a of actions) {
@@ -485,6 +508,27 @@ export const approveAndExecute = async (closeRunId: string, approver: "user" | "
         closeRunId,
       });
       narrate(run.orgId, closeRunId, "EXECUTE", "tool_result", `Carbon Reserve credited · €${a.amountEur.toFixed(2)}`);
+    } else if (a.kind === "tax_reserve_transfer") {
+      narrate(run.orgId, closeRunId, "EXECUTE", "tool_call", `Earmarking €${a.amountEur.toFixed(2)} to your Tax Reserve`, {
+        tool: "bunq",
+        meta: {
+          fromAccountId,
+          toAccountId: taxReserveAccountId,
+          amountEur: a.amountEur,
+          description: a.description,
+          schemesCovered: a.schemesCovered,
+        },
+      });
+      await intraUserTransfer({
+        userId,
+        fromAccountId,
+        toAccountId: taxReserveAccountId,
+        amountEur: a.amountEur,
+        description: a.description,
+        token,
+        closeRunId,
+      });
+      narrate(run.orgId, closeRunId, "EXECUTE", "tool_result", `Tax Reserve credited · €${a.amountEur.toFixed(2)} · ${a.schemesCovered.length} scheme${a.schemesCovered.length === 1 ? "" : "s"}`);
     } else if (a.kind === "credit_purchase") {
       const project = CREDIT_PROJECTS.find((p) => p.id === a.projectId);
       const projectLabel = project?.name ?? a.projectId;

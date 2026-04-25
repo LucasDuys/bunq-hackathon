@@ -7,6 +7,7 @@ export const orgs = sqliteTable("orgs", {
   bunqUserId: text("bunq_user_id"),
   reserveAccountId: text("reserve_account_id"),
   creditsAccountId: text("credits_account_id"),
+  taxReserveAccountId: text("tax_reserve_account_id"),
   createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
 });
 

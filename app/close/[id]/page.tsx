@@ -557,6 +557,23 @@ export default async function CloseRunPage({
                           — {a.description}
                         </span>
                       </>
+                    ) : a.kind === "tax_reserve_transfer" ? (
+                      <>
+                        Earmark{" "}
+                        <span
+                          className="tabular-nums"
+                          style={{ color: "var(--fg-primary)" }}
+                        >
+                          {fmtEur(a.amountEur)}
+                        </span>{" "}
+                        to Tax Reserve
+                        <span
+                          className="ml-2"
+                          style={{ color: "var(--fg-muted)" }}
+                        >
+                          — {a.description}
+                        </span>
+                      </>
                     ) : (
                       <>
                         Purchase{" "}
@@ -575,7 +592,13 @@ export default async function CloseRunPage({
                     )}
                   </div>
                   <Badge
-                    tone={a.kind === "reserve_transfer" ? "info" : "default"}
+                    tone={
+                      a.kind === "reserve_transfer"
+                        ? "info"
+                        : a.kind === "tax_reserve_transfer"
+                          ? "positive"
+                          : "default"
+                    }
                   >
                     {a.kind.replace(/_/g, " ")}
                   </Badge>

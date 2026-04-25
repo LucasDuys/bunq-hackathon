@@ -154,7 +154,7 @@ const run = async () => {
   const orgId = "org_acme_bv";
 
   // Org + policy
-  db.insert(orgs).values({ id: orgId, name: env.defaultOrgName, bunqUserId: "42", reserveAccountId: "reserve_1", creditsAccountId: "credits_1" }).onConflictDoNothing().run();
+  db.insert(orgs).values({ id: orgId, name: env.defaultOrgName, bunqUserId: "42", reserveAccountId: "reserve_1", creditsAccountId: "credits_1", taxReserveAccountId: "tax_reserve_1" }).onConflictDoNothing().run();
   db.insert(policies).values({ id: "pol_default", orgId, rules: JSON.stringify(DEFAULT_POLICY), active: true }).onConflictDoNothing().run();
 
   upsertFactors();

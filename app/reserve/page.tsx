@@ -28,6 +28,19 @@ type CreditMixRow = {
   eur: number;
 };
 
+type ProposedAction =
+  | { kind: "reserve_transfer"; amountEur: number; description: string }
+  | { kind: "tax_reserve_transfer"; amountEur: number; description: string; schemesCovered: string[] }
+  | { kind: "credit_purchase"; projectId: string; tonnes: number; eur: number };
+
+const SCHEME_LABELS: Record<string, string> = {
+  eia: "EIA",
+  mia: "MIA",
+  vamil: "VAMIL",
+  eu_ets_passthrough: "EU ETS",
+  green_financing: "Green financing",
+};
+
 const typeLabel = (type: string): string =>
   type.replace(/_/g, " ");
 
@@ -41,6 +54,16 @@ export default async function ReservePage() {
   const totalTonnes = mix.reduce((s, m) => s + m.tonnes, 0);
   const totalEur = mix.reduce((s, m) => s + m.eur, 0);
   const reserveEur = latest?.reserveEur ?? 0;
+
+  // Tax Reserve — parse the latest close's proposed_actions for the tax_reserve_transfer.
+  const proposedActions: ProposedAction[] = latest?.proposedActions
+    ? (JSON.parse(latest.proposedActions) as ProposedAction[])
+    : [];
+  const taxAction = proposedActions.find(
+    (a): a is Extract<ProposedAction, { kind: "tax_reserve_transfer" }> => a.kind === "tax_reserve_transfer",
+  );
+  const taxReserveEur = taxAction?.amountEur ?? 0;
+  const taxSchemesCovered = taxAction?.schemesCovered ?? [];
 
   // Offset rate = € reserved per tonne of recommended coverage.
   const offsetRatePerTonne =
@@ -172,6 +195,59 @@ export default async function ReservePage() {
           </CardBody>
         </Card>
       </div>
+
+      {/* ── Tax Reserve (second sub-account) ─────────────────── */}
+      <SectionDivider label="Tax reserve" />
+      <Card className="ca-card--lg">
+        <CardBody className="!px-8 !py-8">
+          <div className="flex items-start justify-between gap-8 flex-wrap">
+            <div className="flex flex-col gap-3">
+              <CodeLabel>Tax reserve — potential year-end savings</CodeLabel>
+              <div
+                className="tabular-nums"
+                style={{
+                  fontSize: 40,
+                  fontWeight: 400,
+                  lineHeight: 1.0,
+                  letterSpacing: "-0.02em",
+                  color: "var(--fg-primary)",
+                }}
+              >
+                {fmtEur(taxReserveEur, 0)}
+              </div>
+              <div
+                className="text-[13px] max-w-[60ch]"
+                style={{ color: "var(--fg-secondary)" }}
+              >
+                Earmarked into a second bunq sub-account at each close. Not realised savings —
+                reconciled against actual RVO-approved deductions at year-end filing.
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 items-start">
+              <CodeLabel>Schemes covered</CodeLabel>
+              <div className="flex flex-wrap gap-1.5">
+                {taxSchemesCovered.length > 0 ? (
+                  taxSchemesCovered.map((s) => (
+                    <Badge key={s} tone="positive">
+                      {SCHEME_LABELS[s] ?? s}
+                    </Badge>
+                  ))
+                ) : (
+                  <span className="text-[12px]" style={{ color: "var(--fg-muted)" }}>
+                    No schemes applied this close.
+                  </span>
+                )}
+              </div>
+              <div
+                className="text-[12px] mt-2"
+                style={{ color: "var(--fg-muted)" }}
+              >
+                Dutch: EIA · MIA · VAMIL · EU: ETS pass-through · green financing
+              </div>
+            </div>
+          </div>
+        </CardBody>
+      </Card>
 
       <SectionDivider label="Transfers" />
 
