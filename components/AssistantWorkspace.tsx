@@ -61,11 +61,13 @@ export const AssistantWorkspace = ({
     setTimeout(() => composerRef.current?.focus(), 200);
   }, [hydrated, initialMetric, initialScope, metric, openExplain]);
 
-  // Auto-scroll thread to bottom while streaming.
+  // Auto-scroll thread to bottom while streaming, but only if the user
+  // hasn't scrolled up to read earlier messages.
   useEffect(() => {
     const el = threadScrollRef.current;
     if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (nearBottom) el.scrollTop = el.scrollHeight;
   }, [messages, headline, status]);
 
   const entry = metric ? METRIC_REGISTRY[metric] : null;
@@ -123,7 +125,7 @@ export const AssistantWorkspace = ({
 
       {/* Card-shell containing thread + composer */}
       <div
-        className="flex flex-col rounded-[16px] overflow-hidden"
+        className="flex flex-col rounded-[16px]"
         style={{
           background: "var(--bg-canvas)",
           border: "1px solid var(--border-default)",
@@ -132,8 +134,8 @@ export const AssistantWorkspace = ({
       >
         <div
           ref={threadScrollRef}
-          className="flex-1 overflow-y-auto px-7 py-7"
-          style={{ maxHeight: "min(70dvh, 720px)" }}
+          className="flex-1 overflow-y-auto px-7 py-7 rounded-t-[16px]"
+          style={{ maxHeight: "min(60dvh, 720px)" }}
         >
           <ExplainThread
             messages={messages}

@@ -138,7 +138,7 @@ export default async function LedgerPage() {
         </CardHeader>
         <CardBody className="!px-0 !py-0">
           <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[13px]" style={{ minWidth: 780 }}>
               <thead>
                 <tr
                   className="text-left"

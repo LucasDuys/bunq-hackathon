@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { FileText, Mail, Upload as UploadIcon, Link2 } from "lucide-react";
-import { Badge, Card, CardBody, CardHeader, CardTitle, Stat, SectionDivider } from "@/components/ui";
+import { Badge, Card, CardBody, CardHeader, CardTitle, CodeLabel, Stat, SectionDivider } from "@/components/ui";
 import { InvoiceUpload } from "@/components/InvoiceUpload";
 import { ExplainButton } from "@/components/ExplainButton";
 import { DEFAULT_ORG_ID, getInvoicesForOrg, getInvoiceStats } from "@/lib/queries";
-import { fmtEur, fmtPct } from "@/lib/utils";
+import { fmtEur } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -17,13 +17,14 @@ export default async function InvoicesPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.8px] font-semibold" style={{ color: "var(--text-mute)" }}>
-            Documents
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight mt-1.5" style={{ color: "var(--text)" }}>
+          <CodeLabel>Documents</CodeLabel>
+          <h1
+            className="text-[36px] leading-[1.1] tracking-[-0.015em] mt-2"
+            style={{ color: "var(--fg-primary)" }}
+          >
             Invoice ingestion
           </h1>
-          <p className="text-[13px] mt-1" style={{ color: "var(--text-dim)" }}>
+          <p className="text-[14px] mt-2 max-w-[66ch]" style={{ color: "var(--fg-secondary)" }}>
             Upload invoices or forward them to your Carbo inbox. Claude extracts line items, categories, and VAT automatically.
           </p>
         </div>
@@ -81,7 +82,7 @@ export default async function InvoicesPage() {
         </CardHeader>
         <CardBody>
           {invoiceList.length === 0 ? (
-            <p className="text-sm py-8 text-center" style={{ color: "var(--text-mute)" }}>
+            <p className="text-sm py-8 text-center" style={{ color: "var(--fg-muted)" }}>
               No invoices yet. Upload one above or forward to your Carbo inbox.
             </p>
           ) : (
@@ -89,18 +90,18 @@ export default async function InvoicesPage() {
               <table className="w-full text-xs">
                 <thead>
                   <tr
-                    className="text-left text-[10px] uppercase tracking-[0.5px] font-semibold"
-                    style={{ borderBottom: "1px solid var(--border)", color: "var(--text-faint)" }}
+                    className="text-left"
+                    style={{ borderBottom: "1px solid var(--border-faint)" }}
                   >
-                    <th className="py-2.5 pr-3">Merchant</th>
-                    <th className="py-2.5 pr-3">Invoice #</th>
-                    <th className="py-2.5 pr-3 text-right">Total</th>
-                    <th className="py-2.5 pr-3 text-right">VAT</th>
-                    <th className="py-2.5 pr-3">Category</th>
-                    <th className="py-2.5 pr-3">Source</th>
-                    <th className="py-2.5 pr-3">Status</th>
-                    <th className="py-2.5 pr-3">Linked</th>
-                    <th className="py-2.5 pr-3">Date</th>
+                    <th className="py-2.5 pr-3"><CodeLabel>Merchant</CodeLabel></th>
+                    <th className="py-2.5 pr-3"><CodeLabel>Invoice #</CodeLabel></th>
+                    <th className="py-2.5 pr-3 text-right"><CodeLabel>Total</CodeLabel></th>
+                    <th className="py-2.5 pr-3 text-right"><CodeLabel>VAT</CodeLabel></th>
+                    <th className="py-2.5 pr-3"><CodeLabel>Category</CodeLabel></th>
+                    <th className="py-2.5 pr-3"><CodeLabel>Source</CodeLabel></th>
+                    <th className="py-2.5 pr-3"><CodeLabel>Status</CodeLabel></th>
+                    <th className="py-2.5 pr-3"><CodeLabel>Linked</CodeLabel></th>
+                    <th className="py-2.5 pr-3"><CodeLabel>Date</CodeLabel></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -110,25 +111,25 @@ export default async function InvoicesPage() {
                         <Link
                           href={`/invoices/${inv.id}`}
                           className="font-medium hover:underline"
-                          style={{ color: "var(--text)" }}
+                          style={{ color: "var(--fg-primary)" }}
                         >
                           {inv.merchantRaw ?? inv.fileName}
                         </Link>
                       </td>
-                      <td className="py-2.5 pr-3 font-mono text-[11px]" style={{ color: "var(--text-mute)" }}>
+                      <td className="py-2.5 pr-3 font-mono text-[11px]" style={{ color: "var(--fg-muted)" }}>
                         {inv.invoiceNumber ?? "—"}
                       </td>
-                      <td className="py-2.5 pr-3 text-right tabular-nums" style={{ color: "var(--text)" }}>
+                      <td className="py-2.5 pr-3 text-right tabular-nums" style={{ color: "var(--fg-primary)" }}>
                         {fmtEur(inv.totalCents / 100)}
                       </td>
-                      <td className="py-2.5 pr-3 text-right tabular-nums" style={{ color: "var(--text-mute)" }}>
+                      <td className="py-2.5 pr-3 text-right tabular-nums" style={{ color: "var(--fg-muted)" }}>
                         {inv.vatCents ? fmtEur(inv.vatCents / 100) : "—"}
                       </td>
                       <td className="py-2.5 pr-3">
                         {inv.category ? (
                           <Badge tone="default">{inv.category}</Badge>
                         ) : (
-                          <span style={{ color: "var(--text-faint)" }}>—</span>
+                          <span style={{ color: "var(--fg-faint)" }}>—</span>
                         )}
                       </td>
                       <td className="py-2.5 pr-3">
@@ -147,12 +148,12 @@ export default async function InvoicesPage() {
                       </td>
                       <td className="py-2.5 pr-3">
                         {inv.linkedTxId ? (
-                          <Link2 className="h-3.5 w-3.5" style={{ color: "var(--green)" }} />
+                          <Link2 className="h-3.5 w-3.5" style={{ color: "var(--brand-green)" }} />
                         ) : (
-                          <span style={{ color: "var(--text-faint)" }}>—</span>
+                          <span style={{ color: "var(--fg-faint)" }}>—</span>
                         )}
                       </td>
-                      <td className="py-2.5 pr-3 tabular-nums" style={{ color: "var(--text-mute)" }}>
+                      <td className="py-2.5 pr-3 tabular-nums" style={{ color: "var(--fg-muted)" }}>
                         {inv.invoiceDate
                           ? new Date(inv.invoiceDate * 1000).toLocaleDateString("en-NL", { day: "numeric", month: "short", year: "numeric" })
                           : new Date(inv.createdAt * 1000).toLocaleDateString("en-NL", { day: "numeric", month: "short", year: "numeric" })}

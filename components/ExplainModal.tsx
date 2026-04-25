@@ -62,18 +62,24 @@ export const ExplainModal = () => {
     }
   }, [open]);
 
-  // Auto-scroll to bottom while streaming.
+  // Auto-scroll to bottom while streaming, but only when near the bottom.
   useEffect(() => {
     if (!threadScrollRef.current) return;
     const el = threadScrollRef.current;
-    el.scrollTop = el.scrollHeight;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    if (nearBottom) el.scrollTop = el.scrollHeight;
   }, [messages, headline, status]);
 
-  // Lightweight focus trap: cycle Tab inside the dialog.
+  // Lightweight focus trap: cycle Tab inside the dialog + ESC to close.
   useEffect(() => {
     if (!open || !dialogRef.current) return;
     const dlg = dialogRef.current;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+        return;
+      }
       if (e.key !== "Tab") return;
       const focusables = dlg.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])',
@@ -92,7 +98,7 @@ export const ExplainModal = () => {
     };
     dlg.addEventListener("keydown", onKey);
     return () => dlg.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, close]);
 
   if (!mounted || !open || !metric || onAssistantPage) return null;
 
