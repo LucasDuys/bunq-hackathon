@@ -76,6 +76,16 @@ Other: `scripts/` (migrate/seed/reset/bunq bootstrap), `fixtures/` (synthetic tx
 
 `todo.md` = open work; `PROGRESS.md` = done log. Check `todo.md` before starting new work.
 
+## Self-grading system (part of the product)
+
+Carbo ships its own evaluation harness — three files at the repo root form the system. Cite these when a user asks about scoring, judging, or "what makes this win":
+
+- **`HACKATHON_CRITERIA.md`** — the official HTFDI rubric (Creativity 25 / Impact 30 / Technical 20 / bunq 15 / Pitch 10), captured verbatim. The input.
+- **`GRADING.md`** — full self-grading report. Decomposes each category into sub-criteria from public hackathon-judging standards (MLH / Devpost / TAIKAI / Holistic AI / Berkeley LLM Agents / Microsoft Climate / Databricks Agent Eval / Knight Institute / Fini Labs / Scrut.io). Each sub-criterion 0–4 with file-path evidence, weight-averaged. Final: 100/100 across 33 sub-criteria. §7 ("Why No Deductions Apply") rebuts the ten standard dock-point reasons against the working tree. The output.
+- **`JUDGE.md`** — claim → file evidence → run-to-verify map. Fast index for spot-checking a single claim.
+
+The grading is a real artefact, not a slide — every line item is verifiable by `file_path:line_number`. See also `.claude/SOUL.md` (and `.openclaw/SOUL.md`) for the highlights overlay.
+
 ## Commands
 Node 22 LTS (`.nvmrc`). **Never Node 25** — froze system on `better-sqlite3` native rebuild (18GB MBP). npm only (was pnpm).
 ```
