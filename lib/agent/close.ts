@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gte, lt } from "drizzle-orm";
 import {
+  auditEvents,
   bunqSessions,
   closeRuns,
   db,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/db/client";
 import { appendAudit } from "@/lib/audit/append";
 import { loadContext } from "@/lib/bunq/context";
+import { createDraftPayment } from "@/lib/bunq/draft-payment";
 import { intraUserTransfer } from "@/lib/bunq/payments";
 import { reclassifyMerchant } from "@/lib/classify/merchant";
 import { normalizeMerchant } from "@/lib/classify/rules";
@@ -527,6 +529,56 @@ const finalizeEstimates = async (closeRunId: string) => {
     };
   }
 
+  // Over-threshold: instead of waiting for an in-app approve click, fire a
+  // bunq DraftPayment so approval lives in the CFO's bunq app — bank-grade
+  // signature, not an HTTP click in our UI. The DraftPayment id is captured
+  // in the audit chain; the actual money movement waits for the
+  // /api/bunq/draft-callback route (ACCEPTED) before approveAndExecute fires.
+  const reserveAction = actions.find((a) => a.kind === "reserve_transfer");
+  if (reserveAction && reserveAction.kind === "reserve_transfer") {
+    try {
+      const ctx = loadContext();
+      const fromAccountId = ctx.mainAccountId ?? "1";
+      const orgRow = db.select().from(orgs).where(eq(orgs.id, run.orgId)).all()[0];
+      const reserveAccountId = orgRow?.reserveAccountId ?? ctx.reserveAccountId ?? "reserve_1";
+      const r = await createDraftPayment({
+        fromAccountId,
+        toAccountId: reserveAccountId,
+        amountEur: reserveAction.amountEur,
+        description: `Carbo ${run.month} close — CFO approval required`,
+        userId: orgRow?.bunqUserId ?? ctx.userId ?? "0",
+      });
+      const draftId = r?.Response?.[0]?.Id?.id;
+      appendAudit({
+        orgId: run.orgId,
+        actor: "agent",
+        type: "bunq.draft.created",
+        payload: {
+          draftId,
+          amountEur: reserveAction.amountEur,
+          fromAccountId,
+          toAccountId: reserveAccountId,
+          closeRunId,
+          reason: "over-threshold",
+        },
+        closeRunId,
+      });
+      narrate(run.orgId, closeRunId, "PROPOSE", "tool_call", `DraftPayment #${draftId} sent to CFO`, {
+        tool: "bunq",
+        meta: { draftId, amountEur: reserveAction.amountEur },
+      });
+    } catch (e) {
+      // Non-fatal: fall back to the existing in-app approve button.
+      appendAudit({
+        orgId: run.orgId,
+        actor: "system",
+        type: "bunq.draft.failed",
+        payload: { error: e instanceof Error ? e.message : String(e), closeRunId },
+        closeRunId,
+      });
+    }
+  }
+
   return { state: nextState, finalCo2eKg: finalRollup.co2eKgPoint, finalConfidence: finalRollup.confidence, reserveEur: outcome.reserveTotalEur, actions, requiresApproval: outcome.requiresApproval };
 };
 
@@ -616,6 +668,50 @@ export const approveAndExecute = async (closeRunId: string, approver: "user" | "
     appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot", payload: briefing, closeRunId });
   } catch (e) {
     appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot_failed", payload: { error: String(e) }, closeRunId });
+  }
+
+  // Auto-generate the bunq-branded carbon report PDFs the company files for
+  // CSRD ESRS E1-7. The pitch: bunq generates the report; the company just
+  // downloads it. Failure here is non-fatal — close stays COMPLETED and the
+  // manual /briefing/pdf route still works.
+  if (env.carboAutoExport) {
+    try {
+      const { writeMonthlyReport, writeAnnualReport } = await import("@/lib/reports/auto-export");
+      const monthly = await writeMonthlyReport({ orgId: run.orgId, label: run.month, closeRunId });
+      narrate(run.orgId, closeRunId, "COMPLETE", "tool_result", `Monthly report generated · ${monthly.relPath}`, {
+        tool: "bunq.report",
+        meta: { bytes: monthly.bytes, sha256: monthly.sha256.slice(0, 16) },
+      });
+
+      const [yearStr, monthStr] = run.month.split("-");
+      const year = Number(yearStr);
+      if (monthStr === "12" && Number.isFinite(year)) {
+        const existing = db.select().from(auditEvents)
+          .where(and(eq(auditEvents.orgId, run.orgId), eq(auditEvents.type, "bunq.report.generated")))
+          .all()
+          .some((r) => {
+            try {
+              const p = JSON.parse(r.payload) as { kind?: string; period?: { label?: string } };
+              return p.kind === "annual" && p.period?.label === String(year);
+            } catch { return false; }
+          });
+        if (!existing) {
+          const annual = await writeAnnualReport({ orgId: run.orgId, year, closeRunId });
+          narrate(run.orgId, closeRunId, "COMPLETE", "tool_result", `Annual report generated · ${annual.relPath}`, {
+            tool: "bunq.report",
+            meta: { bytes: annual.bytes, sha256: annual.sha256.slice(0, 16) },
+          });
+        }
+      }
+    } catch (e) {
+      appendAudit({
+        orgId: run.orgId,
+        actor: "agent",
+        type: "bunq.report.failed",
+        payload: { error: e instanceof Error ? e.message : String(e), month: run.month },
+        closeRunId,
+      });
+    }
   }
 
   return { state: "COMPLETED", executed: actions.length };

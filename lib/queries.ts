@@ -212,3 +212,32 @@ export const getInvoiceStats = (orgId: string) =>
     linked: sql<number>`coalesce(sum(case when linked_tx_id is not null then 1 else 0 end), 0)`,
     totalAmountCents: sql<number>`coalesce(sum(total_cents), 0)`,
   }).from(invoices).where(eq(invoices.orgId, orgId)).all()[0];
+
+export type GeneratedReport = {
+  kind: "month" | "annual";
+  relPath: string;
+  bytes: number;
+  sha256: string;
+  period: { label: string; startTs?: number; endTs?: number };
+  createdAt: number;
+};
+
+/** Read the most recent N `bunq.report.generated` audit rows. Used by the dashboard Reports panel. */
+export const getGeneratedReports = (orgId = DEFAULT_ORG_ID, limit = 6): GeneratedReport[] => {
+  const rows = db.select()
+    .from(auditEvents)
+    .where(and(eq(auditEvents.orgId, orgId), eq(auditEvents.type, "bunq.report.generated")))
+    .orderBy(desc(auditEvents.id))
+    .limit(limit)
+    .all();
+  const out: GeneratedReport[] = [];
+  for (const r of rows) {
+    try {
+      const p = JSON.parse(r.payload) as Omit<GeneratedReport, "createdAt">;
+      out.push({ ...p, createdAt: r.createdAt });
+    } catch {
+      // skip malformed
+    }
+  }
+  return out;
+};
