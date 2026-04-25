@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, gte, lt } from "drizzle-orm";
 import {
+  auditEvents,
   bunqSessions,
   closeRuns,
   db,
@@ -606,6 +607,50 @@ export const approveAndExecute = async (closeRunId: string, approver: "user" | "
     appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot", payload: briefing, closeRunId });
   } catch (e) {
     appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot_failed", payload: { error: String(e) }, closeRunId });
+  }
+
+  // Auto-generate the bunq-branded carbon report PDFs the company files for
+  // CSRD ESRS E1-7. The pitch: bunq generates the report; the company just
+  // downloads it. Failure here is non-fatal — close stays COMPLETED and the
+  // manual /briefing/pdf route still works.
+  if (env.carboAutoExport) {
+    try {
+      const { writeMonthlyReport, writeAnnualReport } = await import("@/lib/reports/auto-export");
+      const monthly = await writeMonthlyReport({ orgId: run.orgId, label: run.month, closeRunId });
+      narrate(run.orgId, closeRunId, "COMPLETE", "tool_result", `Monthly report generated · ${monthly.relPath}`, {
+        tool: "bunq.report",
+        meta: { bytes: monthly.bytes, sha256: monthly.sha256.slice(0, 16) },
+      });
+
+      const [yearStr, monthStr] = run.month.split("-");
+      const year = Number(yearStr);
+      if (monthStr === "12" && Number.isFinite(year)) {
+        const existing = db.select().from(auditEvents)
+          .where(and(eq(auditEvents.orgId, run.orgId), eq(auditEvents.type, "bunq.report.generated")))
+          .all()
+          .some((r) => {
+            try {
+              const p = JSON.parse(r.payload) as { kind?: string; period?: { label?: string } };
+              return p.kind === "annual" && p.period?.label === String(year);
+            } catch { return false; }
+          });
+        if (!existing) {
+          const annual = await writeAnnualReport({ orgId: run.orgId, year, closeRunId });
+          narrate(run.orgId, closeRunId, "COMPLETE", "tool_result", `Annual report generated · ${annual.relPath}`, {
+            tool: "bunq.report",
+            meta: { bytes: annual.bytes, sha256: annual.sha256.slice(0, 16) },
+          });
+        }
+      }
+    } catch (e) {
+      appendAudit({
+        orgId: run.orgId,
+        actor: "agent",
+        type: "bunq.report.failed",
+        payload: { error: e instanceof Error ? e.message : String(e), month: run.month },
+        closeRunId,
+      });
+    }
   }
 
   return { state: "COMPLETED", executed: actions.length };
