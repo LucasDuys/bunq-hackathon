@@ -33,7 +33,7 @@
 import { useMemo } from "react";
 import { AlertCircle } from "lucide-react";
 import type { TransactionRow } from "../types";
-import { fmtEur, fmtKg } from "@/lib/utils";
+import { fmtEur, fmtKg, displayConfidence } from "@/lib/utils";
 
 const CATEGORY_DOT: Record<string, string> = {
   Travel: "var(--cat-travel)",
@@ -656,11 +656,12 @@ function UnknownChip() {
 
 /** Mini ConfidenceBar — same colour rules as the full one but compact (no labels). */
 function MiniConfidenceBar({ value, animate }: { value: number; animate?: boolean }) {
-  const pct = Math.max(0, Math.min(100, Math.round(value * 100)));
+  const calibrated = displayConfidence(value);
+  const pct = Math.max(0, Math.min(100, Math.round(calibrated * 100)));
   const tone =
-    value >= 0.85
+    calibrated >= 0.85
       ? "var(--confidence-high)"
-      : value >= 0.6
+      : calibrated >= 0.6
         ? "var(--confidence-medium)"
         : "var(--confidence-low)";
   return (

@@ -1,5 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { cn, displayConfidence } from "@/lib/utils";
 
 /* ── Card ── */
 
@@ -174,11 +174,12 @@ export const ConfidenceBar = ({
   value: number;
   animate?: boolean;
 }) => {
-  const pct = Math.max(0, Math.min(100, Math.round(value * 100)));
+  const calibrated = displayConfidence(value);
+  const pct = Math.max(0, Math.min(100, Math.round(calibrated * 100)));
   const tone =
-    value >= 0.85
+    calibrated >= 0.85
       ? "var(--confidence-high)"
-      : value >= 0.6
+      : calibrated >= 0.6
         ? "var(--confidence-medium)"
         : "var(--confidence-low)";
 
