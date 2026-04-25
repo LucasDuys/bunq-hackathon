@@ -825,7 +825,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
             </View>
           )}
 
-          <View style={styles.section}>
+          <View style={styles.section} wrap={false}>
             <Text style={styles.sectionTitle}>Top categories</Text>
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { flex: 3 }]}>Category</Text>
@@ -834,7 +834,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
               <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>Share</Text>
             </View>
             {b.topCategories.map((c) => (
-              <View key={c.category} style={styles.tableRow}>
+              <View key={c.category} style={styles.tableRow} wrap={false}>
                 <Text style={[styles.td, { flex: 3, textTransform: "capitalize" }]}>{c.category.replace(/_/g, " ")}</Text>
                 <Text style={[styles.tdNumeric, { flex: 2, textAlign: "right" }]}>{fmtEur(c.spendEur)}</Text>
                 <Text style={[styles.tdNumeric, { flex: 2, textAlign: "right" }]}>{fmtKg(c.co2eKg)}</Text>
@@ -848,7 +848,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
             ))}
           </View>
 
-          <View style={styles.section}>
+          <View style={styles.section} wrap={false}>
             <Text style={styles.sectionTitle}>Top emitting merchants</Text>
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { flex: 4 }]}>Merchant</Text>
@@ -858,7 +858,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
               <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>Share</Text>
             </View>
             {b.topMerchants.map((m) => (
-              <View key={m.merchantNorm} style={styles.tableRow}>
+              <View key={m.merchantNorm} style={styles.tableRow} wrap={false}>
                 <View style={{ flex: 4 }}>
                   <Text style={styles.td}>{m.merchantRaw}</Text>
                   {m.category && <Text style={styles.tdMuted}>{m.category.replace(/_/g, " ")}</Text>}
