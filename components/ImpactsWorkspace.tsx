@@ -184,28 +184,53 @@ const LensToggle = ({ lens, onChange }: { lens: Lens; onChange: (l: Lens) => voi
         type="button"
         onClick={() => onChange(value)}
         aria-pressed={active}
-        className="inline-flex items-center justify-center h-7 px-3 text-[12px] font-medium tabular-nums rounded-full transition-[background,color] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-green)]"
+        className="inline-flex items-center justify-center h-8 px-4 text-[13px] font-medium tabular-nums rounded-full transition-[background,color,box-shadow] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-green)]"
         style={{
-          color: active ? "var(--fg-primary)" : "var(--fg-muted)",
-          background: active ? "var(--bg-button)" : "transparent",
+          color: active ? "var(--fg-primary)" : "var(--fg-secondary)",
+          background: active ? "var(--bg-canvas)" : "transparent",
+          boxShadow: active
+            ? "0 0 0 1px var(--brand-green-border) inset, 0 1px 2px rgba(0,0,0,0.25)"
+            : "none",
         }}
       >
+        {value === "co2" && active ? (
+          <span
+            className="h-1.5 w-1.5 rounded-full mr-1.5"
+            style={{ background: "var(--brand-green)" }}
+            aria-hidden
+          />
+        ) : null}
+        {value === "eur" && active ? (
+          <span
+            className="h-1.5 w-1.5 rounded-full mr-1.5"
+            style={{ background: "var(--brand-green)" }}
+            aria-hidden
+          />
+        ) : null}
         {label}
       </button>
     );
   };
   return (
-    <div
-      className="inline-flex items-center gap-0.5 rounded-full p-0.5 ml-1"
-      role="group"
-      aria-label="Lens"
-      style={{
-        background: "var(--bg-inset)",
-        border: "1px solid var(--border-default)",
-      }}
-    >
-      <Btn value="co2" label="CO₂e" />
-      <Btn value="eur" label="€" />
+    <div className="inline-flex items-center gap-2 shrink-0">
+      <span
+        className="text-[10.5px] uppercase tracking-[0.6px] font-normal hidden sm:inline"
+        style={{ color: "var(--text-mute)" }}
+      >
+        View as
+      </span>
+      <div
+        className="inline-flex items-center gap-0.5 rounded-full p-0.5"
+        role="group"
+        aria-label="Choose lens: CO₂e or euro"
+        style={{
+          background: "var(--bg-inset)",
+          border: "1px solid var(--border-strong)",
+        }}
+      >
+        <Btn value="co2" label="CO₂e" />
+        <Btn value="eur" label="€" />
+      </div>
     </div>
   );
 };
@@ -276,22 +301,28 @@ const HeroBriefing = ({
     <Card className="relative overflow-hidden">
       <div className="relative grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-10 p-8">
         <div className="flex flex-col gap-5 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Sparkles className="h-4 w-4" style={{ color: "var(--green-bright)" }} aria-hidden />
-            <span
-              className="text-[11px] uppercase tracking-[0.14em] font-normal"
-              style={{ color: "var(--text-mute)" }}
-            >
-              Carbon CFO briefing · {dag?.executiveReport.analysis_period ?? "latest run"}
-            </span>
-            {taxReviewRequired ? <Badge tone="warning">Tax advisor review</Badge> : null}
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <Sparkles
+                className="h-4 w-4 shrink-0"
+                style={{ color: "var(--green-bright)" }}
+                aria-hidden
+              />
+              <span
+                className="text-[11px] uppercase tracking-[0.14em] font-normal"
+                style={{ color: "var(--text-mute)" }}
+              >
+                Carbon CFO briefing · {dag?.executiveReport.analysis_period ?? "latest run"}
+              </span>
+              {taxReviewRequired ? <Badge tone="warning">Tax advisor review</Badge> : null}
+            </div>
             <LensToggle lens={lens} onChange={onLensChange} />
           </div>
-          <div className="flex items-baseline gap-3 flex-wrap">
+          <div className="flex items-baseline gap-3 flex-wrap min-w-0">
             <div
-              className="font-normal tabular-nums leading-none"
+              className="font-normal tabular-nums leading-none break-words min-w-0"
               style={{
-                fontSize: "clamp(56px, 7vw, 88px)",
+                fontSize: "clamp(40px, 5.4vw, 72px)",
                 letterSpacing: "-0.03em",
                 color:
                   lens === "co2"
@@ -303,7 +334,7 @@ const HeroBriefing = ({
             >
               {lens === "co2" ? fmtKg(heroCo2eKg) : signedEur(heroEur)}
             </div>
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-0.5 min-w-0">
               <span className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-mute)] font-normal">
                 {lens === "co2" ? "Avoidable / yr" : "Net / yr"}
               </span>

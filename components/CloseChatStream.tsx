@@ -23,6 +23,7 @@ import {
   Sparkles,
   Wallet,
 } from "lucide-react";
+import { CloseDagPipeline } from "./CloseDagPipeline";
 
 type NarratePhase =
   | "INGEST"
@@ -797,6 +798,8 @@ export const CloseChatStream = ({
 
   return (
     <section className="ca-card cs-stream" aria-label="Live agent transcript">
+      <CloseDagPipeline groups={renderedSteps} data={data} live={live} />
+
       <header className="cs-stream__head">
         <div className="cs-stream__progress">
           <div className="flex items-center gap-2 flex-wrap">

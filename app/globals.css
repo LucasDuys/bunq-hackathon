@@ -1057,6 +1057,475 @@ p, li, dd, blockquote {
   .close-rail-sticky { top: 56px; }
 }
 
+/* ── Close · DAG pipeline ── */
+
+.dag {
+  position: relative;
+  padding: 18px 20px 20px;
+  border-bottom: 1px solid var(--border-faint);
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 50% -20%,
+      rgba(62, 207, 142, 0.04) 0%,
+      transparent 70%
+    );
+  overflow: hidden;
+}
+
+/* One-shot scan line that sweeps L→R on mount, hinting "live circuit". */
+.dag::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -240px;
+  width: 240px;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(62, 207, 142, 0.08) 45%,
+    rgba(62, 207, 142, 0.18) 50%,
+    rgba(62, 207, 142, 0.08) 55%,
+    transparent 100%
+  );
+  animation: dag-scan 2200ms cubic-bezier(0.23, 1, 0.32, 1) 200ms 1 forwards;
+  pointer-events: none;
+}
+
+@keyframes dag-scan {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(calc(100% + 100vw)); }
+}
+
+.dag__head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.dag__head-eyebrow {
+  color: var(--fg-muted);
+}
+
+.dag__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--brand-green);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.dag__live-dot {
+  position: relative;
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--brand-green);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+.dag__live-dot::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: var(--brand-green);
+  opacity: 0;
+  animation: dag-live-ring 1.5s ease-out infinite;
+}
+
+@keyframes dag-live-ring {
+  0%   { transform: scale(0.5); opacity: 0.45; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.dag__head-headline {
+  color: var(--fg-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+}
+
+.dag__head-count {
+  margin-left: auto;
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.dag__head-count-sep { opacity: 0.5; }
+.dag__head-count-label { margin-left: 6px; text-transform: uppercase; }
+
+/* The horizontal pipeline rail */
+.dag__rail-wrap {
+  position: relative;
+}
+
+.dag__row {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  position: relative;
+}
+
+.dag__cell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+  padding-top: 18px;
+  animation: dag-cell-in 420ms cubic-bezier(0.23, 1, 0.32, 1) both;
+  animation-delay: calc(var(--cell-index, 0) * 60ms);
+}
+
+@keyframes dag-cell-in {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Tiny ordinal sticker above each node. */
+.dag__cell-index {
+  position: absolute;
+  top: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: var(--fg-faint);
+  opacity: 0.55;
+  transition: color 200ms ease-out, opacity 200ms ease-out;
+}
+.dag__cell--active .dag__cell-index,
+.dag__cell--waiting .dag__cell-index { color: var(--brand-green); opacity: 1; }
+.dag__cell--done .dag__cell-index    { color: var(--fg-secondary); opacity: 0.85; }
+.dag__cell--error .dag__cell-index   { color: var(--status-danger); opacity: 1; }
+
+/* Node — 36px circle, border-defined depth (no shadow). */
+.dag__node-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  z-index: 2;
+}
+
+.dag__node {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  border: 1px solid var(--border-default);
+  background: var(--bg-canvas);
+  color: var(--fg-muted);
+  z-index: 3;
+  transition:
+    border-color 200ms ease-out,
+    color 200ms ease-out,
+    background 200ms ease-out;
+}
+
+.dag__node-icon {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+}
+
+.dag__node--pending  { color: var(--fg-faint); }
+.dag__node--done     { border-color: var(--brand-green); color: var(--brand-green); }
+.dag__node--active   { border-color: var(--brand-green); color: var(--brand-green); }
+.dag__node--waiting  { border-color: var(--status-warning); color: var(--status-warning); }
+.dag__node--error    { border-color: var(--status-danger); color: var(--status-danger); }
+.dag__node--skipped  { border-color: var(--border-faint); color: var(--fg-faint); opacity: 0.45; }
+
+/* Done check pop-in (one-shot). */
+.dag__node--done .dag__node-icon {
+  animation: dag-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes dag-pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
+/* Rotating arc orbiting the active node. Built from a conic-gradient
+   masked into a 2-3px ring just outside the node border. */
+.dag__node-orbit {
+  position: absolute;
+  inset: 4px;
+  border-radius: 9999px;
+  pointer-events: none;
+  z-index: 2;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 200deg,
+    rgba(62, 207, 142, 0.55) 250deg,
+    rgba(62, 207, 142, 1)   320deg,
+    transparent 360deg
+  );
+  -webkit-mask: radial-gradient(
+    circle,
+    transparent 17px,
+    #000 18px,
+    #000 21px,
+    transparent 22px
+  );
+          mask: radial-gradient(
+    circle,
+    transparent 17px,
+    #000 18px,
+    #000 21px,
+    transparent 22px
+  );
+  animation: dag-spin 1.6s linear infinite;
+}
+
+@keyframes dag-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Soft halo on active node — radial gradient, NOT box-shadow (per DESIGN.md). */
+.dag__node-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(62, 207, 142, 0.22) 0%,
+    rgba(62, 207, 142, 0.08) 40%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 1;
+  animation: dag-breathe 2.4s ease-in-out infinite;
+}
+
+@keyframes dag-breathe {
+  0%, 100% { opacity: 0.55; transform: scale(0.9); }
+  50%      { opacity: 1;    transform: scale(1.15); }
+}
+
+/* Edges connect node[i] center → node[i+1] center, sliced inside the cell.
+   Cell width = 100% / 8. Half a cell on each side of the icon, minus 22px
+   padding to the icon edges, gives `width: 100% - 44px` starting at
+   `left: 50% + 22px`. Cells overflow visible by default so the edge
+   visually extends into the next cell. */
+.dag__edge {
+  position: absolute;
+  top: calc(18px + 22px); /* cell padding-top + half node wrap */
+  left: calc(50% + 22px);
+  width: calc(100% - 44px);
+  height: 1px;
+  pointer-events: none;
+  z-index: 1;
+  transform: translateY(-0.5px);
+}
+
+.dag__edge-track {
+  position: absolute;
+  inset: 0;
+  background: var(--border-default);
+  transition: background 400ms ease-out;
+}
+
+.dag__edge--done .dag__edge-track {
+  background: var(--brand-green);
+}
+
+.dag__edge--skipped .dag__edge-track {
+  background: var(--border-faint);
+  opacity: 0.6;
+}
+
+.dag__edge--active .dag__edge-track {
+  background: linear-gradient(
+    90deg,
+    var(--brand-green) 0%,
+    rgba(62, 207, 142, 0.6) 28%,
+    var(--border-default) 32%,
+    var(--border-default) 100%
+  );
+}
+
+/* Marching dashes along the active edge. */
+.dag__edge-dashes {
+  position: absolute;
+  top: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(62, 207, 142, 0.55) 0px,
+    rgba(62, 207, 142, 0.55) 4px,
+    transparent 4px,
+    transparent 12px
+  );
+  background-size: 12px 3px;
+  background-position: 0 50%;
+  animation: dag-dashes 700ms linear infinite;
+  opacity: 0.7;
+}
+
+@keyframes dag-dashes {
+  to { background-position: 12px 50%; }
+}
+
+/* Travelling photons along the active edge. Three staggered for a steady
+   stream feel without overwhelming the eye. */
+.dag__particle {
+  position: absolute;
+  top: 50%;
+  left: -3px;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 9999px;
+  background: var(--brand-green);
+  animation: dag-particle 1.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+
+.dag__particle::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    rgba(62, 207, 142, 0.55) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+.dag__particle--d2 {
+  animation-delay: 0.5s;
+  opacity: 0.7;
+}
+.dag__particle--d3 {
+  animation-delay: 1s;
+  opacity: 0.45;
+}
+
+@keyframes dag-particle {
+  0%   { transform: translateX(0);                       opacity: 0; }
+  10%  { opacity: 1; }
+  85%  { opacity: 1; }
+  100% { transform: translateX(calc(100% + 6px));        opacity: 0; }
+}
+
+/* Meta below each node */
+.dag__meta {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  text-align: center;
+  min-width: 0;
+  max-width: 100%;
+  padding: 0 4px;
+}
+
+.dag__label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  transition: color 200ms ease-out;
+  white-space: nowrap;
+}
+
+.dag__cell--done .dag__label,
+.dag__cell--active .dag__label   { color: var(--fg-primary); }
+.dag__cell--waiting .dag__label  { color: var(--status-warning); }
+.dag__cell--error .dag__label    { color: var(--status-danger); }
+.dag__cell--skipped .dag__label  { opacity: 0.45; }
+
+.dag__stat {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--fg-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  font-feature-settings: "tnum";
+  transition: color 200ms ease-out;
+}
+
+.dag__cell--done .dag__stat,
+.dag__cell--active .dag__stat {
+  color: var(--fg-primary);
+  animation: dag-stat-flash 700ms ease-out both;
+}
+
+.dag__cell--waiting .dag__stat { color: var(--status-warning); }
+.dag__cell--error .dag__stat   { color: var(--status-danger); }
+
+.dag__stat[data-empty="true"] {
+  color: var(--fg-faint);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+}
+
+@keyframes dag-stat-flash {
+  0%   { color: var(--brand-green); }
+  100% { color: var(--fg-primary); }
+}
+
+/* Mobile: keep horizontal but allow scroll, shrink padding. */
+@media (max-width: 720px) {
+  .dag {
+    padding: 14px 12px 16px;
+    overflow-x: auto;
+  }
+  .dag__head { gap: 10px; margin-bottom: 16px; }
+  .dag__head-headline { font-size: 12px; }
+  .dag__rail-wrap {
+    min-width: 680px;
+  }
+  .dag__row {
+    min-width: 680px;
+  }
+}
+
+/* Reduced motion — keep state visible, kill movement. */
+@media (prefers-reduced-motion: reduce) {
+  .dag::after,
+  .dag__node-orbit,
+  .dag__node-glow,
+  .dag__live-dot::after,
+  .dag__edge-dashes,
+  .dag__particle,
+  .dag__cell {
+    animation: none !important;
+  }
+  .dag__node-orbit { display: none; }
+  .dag__node-glow  { display: none; }
+}
+
 /* ── Reduced motion ── */
 
 @media (prefers-reduced-motion: reduce) {
