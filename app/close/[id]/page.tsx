@@ -23,7 +23,6 @@ import {
   Stat,
 } from "@/components/ui";
 import { ApproveButton, QuestionCard } from "@/components/CloseActions";
-import { AuditQR } from "@/components/AuditQR";
 import { CloseChatStream } from "@/components/CloseChatStream";
 import { CloseDagFlow } from "@/components/CloseDagFlow";
 import { CloseDagPanel } from "@/components/CloseDagPanel";
@@ -824,48 +823,6 @@ export default async function CloseRunPage({
             </CardBody>
           </Card>
 
-          {/* ─── Audit QR — scannable proof of offset ─── */}
-          {closeDigest && (
-            <Card>
-              <CardBody className="flex flex-col sm:flex-row items-center gap-6 py-6">
-                <AuditQR runId={id} digest={closeDigest.digest} />
-                <div className="flex flex-col gap-2 text-center sm:text-left">
-                  <span
-                    className="text-[14px]"
-                    style={{ color: "var(--fg-primary)" }}
-                  >
-                    Proof of carbon offset
-                  </span>
-                  <p
-                    className="text-[13px] leading-[1.5] m-0 max-w-[280px]"
-                    style={{ color: "var(--fg-secondary)" }}
-                  >
-                    Scan the QR code to verify this close run's audit chain,
-                    or open the link on your laptop. Every event is SHA-256
-                    chained — altering any record breaks the chain.
-                  </p>
-                  <span
-                    className="text-[12px] tabular-nums"
-                    style={{
-                      color: "var(--fg-muted)",
-                      fontFamily: "var(--font-source-code-pro, monospace)",
-                    }}
-                  >
-                    {closeDigest.payload.auditEventCount} events · chain{" "}
-                    {chain?.valid ? "intact" : "broken"}
-                  </span>
-                  <Link
-                    href={`/verify/${id}?digest=${closeDigest.digest}`}
-                    className="inline-flex items-center gap-1.5 text-[13px] no-underline mt-1"
-                    style={{ color: "var(--brand-green-link)" }}
-                  >
-                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                    Open verification page
-                  </Link>
-                </div>
-              </CardBody>
-            </Card>
-          )}
         </section>
       )}
 

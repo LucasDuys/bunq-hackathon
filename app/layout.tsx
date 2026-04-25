@@ -3,6 +3,7 @@ import { Inter, Source_Code_Pro } from "next/font/google";
 import { Sidebar } from "@/components/Sidebar";
 import { ExplainProvider } from "@/components/ExplainProvider";
 import { ExplainModal } from "@/components/ExplainModal";
+import { ProofFloatingBadge } from "@/components/ProofFloatingBadge";
 import "./globals.css";
 
 const inter = Inter({
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
           </main>
           <ExplainModal />
+          <ProofFloatingBadge orgId="org_acme_bv" />
         </ExplainProvider>
       </body>
     </html>
