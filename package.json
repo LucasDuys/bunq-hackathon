@@ -25,6 +25,7 @@
     "dev:fire": "tsx scripts/fire-test-event.ts",
     "dev:fire-draft": "tsx scripts/fire-draft-callback.ts",
     "reports:coverage": "tsx scripts/reports-coverage.ts",
+    "reports:mock": "tsx scripts/render-mock-pdf.ts",
     "invoice:test": "tsx scripts/test-invoice-extraction.ts",
     "invoice:test:live": "tsx scripts/test-invoice-extraction.ts --live",
     "typecheck": "tsc --noEmit"
