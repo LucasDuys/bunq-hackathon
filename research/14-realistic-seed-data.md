@@ -146,6 +146,23 @@ scripts/seed-realistic.ts --months=12 --employees=50 --seed=42
 
 Output: ~600 transactions/year for the canonical Acme BV profile.
 
+## Demo stress tests (overlay)
+
+The base distribution above gives Acme BV financial realism, but a 12-month run of *only* the base distribution can underwhelm in a 3-minute demo because every cluster ends up well-classified and every category is "normal." `scripts/seed-realistic.ts` therefore injects a small **demo overlay** (~1% of the annual transaction count) where each entry exercises one Carbo feature end-to-end. The overlay is gated by `--stress-tests=true` (default on) and documented here so reviewers can see exactly what's seeded.
+
+| # | Tx | When | Feature exercised |
+|---|----|------|---|
+| 1 | EMIRATES AIRLINE DUBAI · AMS-DXB business class · €4 280 | M-1 | Long-haul outlier; high-confidence rule match in `lib/classify/rules.ts` (`emirates`) but the size dominates the close → forces a refinement question and a clear green-alternative recommendation (rail / shorter destination). |
+| 2 | Daikin Climate B.V. · Heat pump 8 kW + installation · €8 420 | M-3 | Out-of-catalogue merchant → clusters as low-confidence; description carries the EIA notification number → the tax-savings agent routes the deduction into the **tax-reserve sub-account**. |
+| 3 | Maritime Logistics BV · "Inv 2025-2042" · €2 840 | M-7 | Generic SEPA whose only useful context is on the invoice. Exercises the **Gmail invoice polling + extraction** pipeline; the close stays in CLUSTER until the invoice link arrives. |
+| 4 | Shell Recharge Fleet · 3 × diesel refuels in one week · €255 total | M-5 | Fleet-fuel cluster — three same-merchant tx in 72 h. Drives the uncertainty-clustering UI and is the canonical "switch to bunq Green Driving" green-alternative win. |
+| 5 | Mebin BV · Concrete delivery for office build-out · €5 410 | M-9 | Construction-grade carbon, well outside the SaaS-company prior. Surfaces in the impacts matrix as a non-obvious quadrant entry and gives the executive-report agent a concrete YoY recommendation. |
+| 6 | Snowflake Computing · Data warehouse setup · €3 180 | M-4 | Out-of-catalogue SaaS → falls through rule-matching to the Haiku LLM classifier; tests the rule → LLM → cache pipeline. |
+
+When `--include-prior-year` is set, four additional entries seed the prior 12 months as a "pre-Carbo era" — UNITED AIRLINES SAN FRAN long-haul (M-13), BP Nederland diesel (M-15), Vattenfall grey-grid electricity (M-18, `forceCategory=true` so the YoY narrative reads "we switched to Greenchoice"), and QATAR AIRWAYS DOHA long-haul (M-20). The annual-report narrative agent uses these to anchor the YoY delta in concrete merchant changes rather than abstract percentages.
+
+The overlay is intentionally small (~8 tx in 600/yr, ~1.3%) and explicitly tagged with `bunqTxId` prefix `bunq_stress_` so any reviewer can `SELECT * FROM transactions WHERE bunq_tx_id LIKE 'bunq_stress_%'` to see what's seeded versus what's organically generated. Running `--stress-tests=false` disables the overlay entirely.
+
 ## Honest gaps in the research
 
 - bunq sandbox doesn't publish exact descriptor truncation rules for card MUTATION events — patterns above are inferred from Mastercard NameLoc conventions. Validate against a real sandbox dump before locking the generator.

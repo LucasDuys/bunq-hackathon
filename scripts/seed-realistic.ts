@@ -14,10 +14,22 @@ import { env } from "@/lib/env";
  *
  * Deterministic: same --seed flag yields the same dataset.
  *
+ * Two demo overlays sit on top of the base distribution:
+ *   1. STRESS_TESTS — ~8 transactions/year that each exercise one Carbo
+ *      feature (long-haul outlier, invoice-required SEPA, EIA-eligible
+ *      heat pump, fleet-cluster, construction outlier, out-of-catalogue
+ *      SaaS). Tagged in research/14 so reviewers can see what's seeded.
+ *   2. --include-prior-year — extends the run to 24 months and seeds
+ *      4 additional "pre-Carbo era" stress events into the prior year
+ *      (long-haul flights, grey-grid electricity, diesel-heavy travel)
+ *      so the annual report's YoY narrative has substance.
+ *
  * Usage:
  *   npm run seed:realistic
  *   npm run seed:realistic -- --months=12 --seed=42
  *   npm run seed:realistic -- --months=6 --seed=99
+ *   npm run seed:realistic -- --include-prior-year
+ *   npm run seed:realistic -- --stress-tests=false        # disable overlay
  */
 
 // ---------- CLI ----------
@@ -27,7 +39,10 @@ const args = Object.fromEntries(
     return [k, v ?? "true"];
   }),
 );
-const MONTHS = Number(args.months ?? "12");
+const INCLUDE_PRIOR_YEAR = args["include-prior-year"] === "true";
+const STRESS_TESTS_ENABLED = args["stress-tests"] !== "false";
+// --include-prior-year promotes a 12-month run to 24 months by default.
+const MONTHS = Number(args.months ?? (INCLUDE_PRIOR_YEAR ? "24" : "12"));
 const SEED = Number(args.seed ?? "42");
 const ORG_ID = "org_acme_bv";
 
@@ -255,7 +270,59 @@ type Tx = {
   timestamp: number; // unix
   category: string;
   subCategory: string | null;
+  forceCategory?: boolean;
 };
+
+// ---------- Demo stress tests ----------
+// Each entry is a single transaction injected at a specific monthsAgo
+// offset (0 = current month). Designed to exercise one Carbo feature
+// each — see research/14 §"Demo stress tests" for the mapping.
+//
+// monthsAgo 0..11 → current year.  12..23 → prior year (only seeded
+// when --include-prior-year is set).
+type StressTx = {
+  monthsAgo: number;
+  day: number;
+  merchantRaw: string;
+  description: string;
+  amountEur: number;
+  category: string;
+  subCategory: string | null;
+  // Stress tests skip the classifier override (we keep our category)
+  // when forceCategory=true. Otherwise the classifier decides — which
+  // is the realistic path for genuine uncertainty.
+  forceCategory?: boolean;
+};
+
+const STRESS_TESTS: StressTx[] = [
+  // --- Current year ---
+  // 1. Long-haul outlier: high-carbon flight + obvious green-alt target.
+  //    "Emirates" matches the long-haul rule in lib/classify/rules.ts.
+  { monthsAgo: 1, day: 18, merchantRaw: "EMIRATES AIRLINE DUBAI", description: "AMS-DXB business class — Q4 client kickoff", amountEur: 4280, category: "travel", subCategory: "flight_longhaul" },
+  // 2. EIA-eligible heat pump: routes to tax-reserve sub-account.
+  //    Out of merchant catalogue → high uncertainty for the cluster agent.
+  { monthsAgo: 3, day: 12, merchantRaw: "Daikin Climate B.V.", description: "Warmtepomp 8kW + installatie (EIA-meldingsnr 250042)", amountEur: 8420, category: "procurement", subCategory: null },
+  // 3. Generic SEPA needing invoice ingestion: descriptor is just an invoice
+  //    number; classifier falls to other.generic until invoice link arrives.
+  { monthsAgo: 7, day: 22, merchantRaw: "Maritime Logistics BV", description: "Inv 2025-2042", amountEur: 2840, category: "other", subCategory: null },
+  // 4. Fleet-fuel cluster: three Shell tx in one week → clustering target.
+  { monthsAgo: 5, day: 14, merchantRaw: "Shell Recharge Fleet", description: "Fleet refuel — driver 1", amountEur: 92.40, category: "fuel", subCategory: "diesel" },
+  { monthsAgo: 5, day: 15, merchantRaw: "Shell Recharge Fleet", description: "Fleet refuel — driver 2", amountEur: 78.10, category: "fuel", subCategory: "diesel" },
+  { monthsAgo: 5, day: 16, merchantRaw: "Shell Recharge Fleet", description: "Fleet refuel — driver 3", amountEur: 84.50, category: "fuel", subCategory: "diesel" },
+  // 5. Construction outlier: cement/concrete is high-carbon and out of
+  //    catalogue; surfaces in the impacts matrix as a non-obvious win.
+  { monthsAgo: 9, day: 7, merchantRaw: "Mebin BV", description: "Beton levering — kantooruitbreiding", amountEur: 5410, category: "procurement", subCategory: null },
+  // 6. Out-of-catalogue SaaS: tests the classifier's LLM fallback path.
+  { monthsAgo: 4, day: 19, merchantRaw: "Snowflake Computing", description: "Data warehouse — initial setup", amountEur: 3180, category: "cloud", subCategory: null },
+
+  // --- Prior year (pre-Carbo era; only seeded with --include-prior-year) ---
+  // Designed to make the YoY narrative read "we cleaned this up": more
+  // long-haul flights, grey-grid electricity, diesel-heavy travel.
+  { monthsAgo: 13, day: 18, merchantRaw: "UNITED AIRLINES SAN FRAN", description: "AMS-SFO business class — pre-Carbo era", amountEur: 4920, category: "travel", subCategory: "flight_longhaul" },
+  { monthsAgo: 15, day: 8, merchantRaw: "BP Nederland B.V.", description: "Diesel — old company-car policy", amountEur: 145, category: "fuel", subCategory: "diesel" },
+  { monthsAgo: 18, day: 5, merchantRaw: "Vattenfall N.V.", description: "Office grey-grid electricity (pre-Greenchoice)", amountEur: 980, category: "utilities", subCategory: "electricity", forceCategory: true },
+  { monthsAgo: 20, day: 12, merchantRaw: "QATAR AIRWAYS DOHA", description: "AMS-DOH-PEK long-haul economy", amountEur: 1840, category: "travel", subCategory: "flight_longhaul" },
+];
 
 const seasonMultiplier = (month: number): number => {
   if (month === 12) return 1.15;
@@ -359,6 +426,25 @@ const generateTransactions = (months: number): Tx[] => {
         subCategory: item.subCategory,
       });
     }
+
+    // Demo stress-test injections for this month, if any.
+    if (STRESS_TESTS_ENABLED) {
+      for (const st of STRESS_TESTS) {
+        if (st.monthsAgo !== i) continue;
+        const day = Math.min(st.day, daysInMonth(year, month));
+        const ts = Math.floor(Date.UTC(year, month - 1, day, rng.int(9, 17), rng.int(0, 59), rng.int(0, 59)) / 1000);
+        txs.push({
+          bunqTxId: `bunq_stress_${txCounter++}`,
+          merchantRaw: st.merchantRaw,
+          description: st.description,
+          amountEur: st.amountEur,
+          timestamp: ts,
+          category: st.category,
+          subCategory: st.subCategory,
+          forceCategory: st.forceCategory,
+        });
+      }
+    }
   }
 
   // Sort by timestamp ascending so the audit chain reads chronologically.
@@ -438,9 +524,13 @@ const main = async () => {
   for (const t of txs) {
     const merchantNorm = normalizeMerchant(t.merchantRaw);
     const cls = await classifyMerchant(t.merchantRaw, t.description);
-    // For payroll/rent we want our hand-set category to win (otherwise the classifier flags them as "other").
-    const category = t.subCategory === "payroll" || t.subCategory === "rent" ? t.category : cls.category;
-    const subCategory = t.subCategory === "payroll" || t.subCategory === "rent" ? t.subCategory : cls.subCategory;
+    // Hand-set category wins for payroll/rent (the classifier would flag them
+    // as "other") and for stress tests with forceCategory=true (e.g. the
+    // prior-year grey-grid Vattenfall row, where we want the category locked
+    // in for the YoY narrative).
+    const lockCategory = t.subCategory === "payroll" || t.subCategory === "rent" || t.forceCategory === true;
+    const category = lockCategory ? t.category : cls.category;
+    const subCategory = lockCategory ? t.subCategory : cls.subCategory;
 
     db.insert(transactions).values({
       id: `tx_${t.bunqTxId}`,
@@ -460,13 +550,28 @@ const main = async () => {
     }).onConflictDoNothing().run();
     inserted += 1;
   }
-  appendAudit({ orgId: ORG_ID, actor: "system", type: "transactions.seeded", payload: { count: inserted, months: MONTHS, seed: SEED, profile: "realistic" } });
+  appendAudit({
+    orgId: ORG_ID,
+    actor: "system",
+    type: "transactions.seeded",
+    payload: {
+      count: inserted,
+      months: MONTHS,
+      seed: SEED,
+      profile: "realistic",
+      stressTests: STRESS_TESTS_ENABLED,
+      includePriorYear: INCLUDE_PRIOR_YEAR,
+    },
+  });
 
   // Summary
   const totalEur = txs.reduce((s, t) => s + t.amountEur, 0);
+  const stressCount = txs.filter((t) => t.bunqTxId.startsWith("bunq_stress_")).length;
   console.log(`Seeded ${inserted} transactions across ${MONTHS} months.`);
   console.log(`  total EUR: ${totalEur.toLocaleString("en-NL", { maximumFractionDigits: 0 })}`);
   console.log(`  monthly avg: ${(inserted / MONTHS).toFixed(1)} tx, EUR ${(totalEur / MONTHS).toLocaleString("en-NL", { maximumFractionDigits: 0 })}`);
+  if (STRESS_TESTS_ENABLED) console.log(`  stress-test overlay: ${stressCount} tx (see research/14 §"Demo stress tests")`);
+  if (INCLUDE_PRIOR_YEAR) console.log(`  prior-year coverage: enabled (24-month window, pre-Carbo era handicap applied)`);
 };
 
 main().catch((e) => {
