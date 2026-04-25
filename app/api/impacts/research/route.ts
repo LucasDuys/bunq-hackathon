@@ -47,6 +47,10 @@ export const POST = async (req: Request) => {
       },
     });
 
+    // R009 / T010 — additionally surface the full `DagRunResult` so consumers
+    // that need every agent's output (e.g. the presentation page's live-run
+    // replay) can render it without a second request. Keeps existing fields
+    // for back-compat with `RunImpactResearch.tsx` (which ignores the body).
     return NextResponse.json({
       agentRunId,
       researchRunId,
@@ -55,6 +59,16 @@ export const POST = async (req: Request) => {
       metrics: dag.metrics,
       totalLatencyMs: dag.totalLatencyMs,
       kpis: dag.executiveReport.kpis,
+      runId: dag.runId,
+      baseline: dag.baseline,
+      research: dag.research,
+      greenAlt: dag.greenAlt,
+      costSavings: dag.costSavings,
+      greenJudge: dag.greenJudge,
+      costJudge: dag.costJudge,
+      creditStrategy: dag.creditStrategy,
+      executiveReport: dag.executiveReport,
+      mock_agent_count: dag.mock_agent_count,
     });
   } catch (e) {
     return NextResponse.json({ error: (e as Error).message }, { status: 500 });
