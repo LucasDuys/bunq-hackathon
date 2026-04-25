@@ -49,13 +49,18 @@
 
 ## The 60-second pitch
 
-**The problem.** Around **800,000 EU SMBs** now fall under VSME / CSRD-lite reporting from financial-year 2026. They have to disclose carbon emissions but cannot afford to: a carbon accountant runs **€30k+/year**, and existing software requires **6-week onboarding** plus invoice plumbing the SMB doesn't have. Most will fail to comply, fudge the numbers, or buy worthless offsets.
+**The problem.** The EU Omnibus Directive (Feb 2026) cut mandatory CSRD scope by ~85% — only companies with **>1,000 employees** and **>€450M turnover** must report, starting FY2027.[^1] But that didn't make the work disappear: it pushed it down the supply chain. SMEs now face a flood of carbon-data requests from large customers and banks, capped at the **VSME** (Voluntary SME Standard, EFRAG → European Commission, July 2025).[^2] The current options are bad: SaaS tooling runs **€1k–€5k/year for the light tier**, in-depth consulting **starts at €10k+**, and enterprise platforms **€2k–€25k+/year**.[^3] Manual VSME drafts take weeks.[^4]
 
 **The insight.** bunq Business already has the only signal a credible estimate needs: *what was bought, from whom, for how much.*
 
 **The build.** Carbo plugs into the bunq webhook in minutes. Every transaction becomes a calibrated emissions estimate with an explicit confidence range. Once a month, an **8-agent DAG** runs, surfaces **2–3 refinement questions** (only the high-spend low-confidence ones), and proposes a **reserve transfer + EU carbon-credit allocation**. The user clicks **Approve & transfer €X**. Money moves from the main bunq account to a **bunq Reserve sub-account**, recorded on a **SHA-256 hash-chained audit ledger** that satisfies an external auditor.
 
-**The demo numbers.** 61 transactions · €39k spend · 4.8 tCO₂e in EU credits across biochar / peatland / reforestation · CSRD ESRS E1-6 + E1-7 report · audit chain valid.
+**The demo numbers** *(measured from the seeded SQLite, not aspirational)*. 181 transactions over 90 days · €54,730 total spend · ~7.5 tCO₂e per monthly close · EU credits split across biochar / peatland / reforestation · CSRD ESRS E1-6 + E1-7 report · audit chain valid.
+
+[^1]: [Council of the EU — Omnibus simplification press release, Feb 2026](https://www.consilium.europa.eu/en/press/press-releases/2026/02/24/council-signs-off-simplification-of-sustainability-reporting-and-due-diligence-requirements-to-boost-eu-competitiveness/) · [BDO — CSRD post-Omnibus revised scope](https://www.bdo.com/insights/sustainability-and-esg/csrd-post-omnibus-revised-scope-and-requirements)
+[^2]: [European Commission — VSME recommendation](https://finance.ec.europa.eu/publications/commission-presents-voluntary-sustainability-reporting-standard-ease-burden-smes_en) · [EFRAG — SMEs and Sustainability Reporting](https://www.efrag.org/en/smes-and-sustainability-reporting)
+[^3]: [D-Carbonize — Carbon accounting cost breakdown](https://d-carbonize.eu/blog/carbon-accounting-cost/) · [EcoHedge — Cost of carbon accounting for SMEs](https://www.ecohedge.com/blog/how-much-does-carbon-accounting-cost-for-smes/)
+[^4]: [GoClimate — Comparing the Top 5 VSME Tools](https://www.goclimate.com/knowledge/articles/comparing-the-top-5-vsme-tools)
 
 ---
 
@@ -440,10 +445,10 @@ curl -X POST http://localhost:3000/api/impacts/research \
 
 | # | Route | What you see |
 |---|---|---|
-| 1 | **`/`** | Dashboard, 61 tx, €39k spend. Click **Run Carbon Close**. |
+| 1 | **`/`** | Dashboard — 181 tx over 90 days, €54.7k spend. Click **Run Carbon Close**. |
 | 2 | **`/close/[id]`** | Pipeline animates `INGEST → CLASSIFY → ESTIMATE → CLUSTER`. Pauses at 3 refinement questions surfaced by spend-weighted uncertainty. |
 | 3 | (modal) | Answer each → confidence rises (method flips `spend_based → refined`). |
-| 4 | **`/close/[id]`** | Proposed actions — reserve transfer + 4.8 t of EU credits across biochar / peatland / reforestation. Click **Approve & execute**. |
+| 4 | **`/close/[id]`** | Proposed actions — reserve transfer + ~7.5 tCO₂e of EU credits across biochar / peatland / reforestation. Click **Approve & execute**. |
 | 5 | **`/report/2026-04`** | CSRD ESRS E1-6 + E1-7 report, ready for export. |
 | 6 | **`/ledger`** | SHA-256 chain renders a live "Chain valid" badge. |
 | 7 | **`/impacts`** | Cost-vs-carbon 2×2 matrix of switch recommendations. |
@@ -558,40 +563,6 @@ carbo/
 ├── research/                domain briefs that feed the agents (01..13)
 └── scripts/                 migrate / seed / reset / bunq bootstrap / DAG smoke
 ```
-
----
-
-## What's real vs simulated
-
-| Real | Simulated |
-|---|---|
-| Next.js app, DB, audit chain, policy evaluator, confidence methodology | `ANTHROPIC_MOCK=1` → question gen is a deterministic mock |
-| Emission-factor math, range computation, CSRD report structure | `BUNQ_MOCK=1` → bunq API returns canned responses |
-| Webhook handler + signature verification | 3 EU credit projects (seeded, not fetched from a real registry) |
-| RSA signing for real bunq calls (turn on via `BUNQ_MOCK=0`) | "Credit purchase" = a bunq intra-user transfer with a structured description |
-
----
-
-## The ask
-
-This is a 24-hour, 3-person hackathon build. To ship to bunq Business we need:
-
-- A sandbox slot for live testing.
-- A registry partner for real EU carbon-credit settlement.
-- Design feedback on the close-and-approve flow.
-
----
-
-## Cut list (scope controls)
-
-Under time pressure, cut in this order:
-
-1. CSRD PDF print styling
-2. Impact matrix
-3. Ledger UI
-4. Optional invoice upload
-
-**Non-negotiable:** webhook ingest, classifier, close state machine, refinement, policy eval, reserve transfer, credit recommendation.
 
 ---
 
