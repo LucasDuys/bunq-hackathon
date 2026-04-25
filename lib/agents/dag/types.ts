@@ -23,6 +23,13 @@ export interface AgentContext {
   dryRun: boolean;
   mock: boolean;
   auditLog: (event: { type: string; payload: Record<string, unknown> }) => Promise<void>;
+  /**
+   * R002 / T002 — set by `runDag` before invoking each agent so per-agent
+   * observability rows in `agent_messages` (mock_path, tokens, cached) can be
+   * keyed back to the same runId that `runDag` returns. Optional so callers
+   * outside the DAG (legacy spendBaseline tests, etc.) keep working.
+   */
+  agentRunId?: string;
 }
 
 export interface AgentRunMetrics {
@@ -69,11 +76,17 @@ export interface PriorityTarget {
 }
 
 // plans/matrix-research.md §6 — evidence-backed alternatives from the Research Agent.
+// R010 / T006 — `logoUrl` is a deterministic Google s2 favicon URL keyed off
+// `domain`. We populate it in code after the LLM returns (never asked from the
+// model) so the executive matrix can render real vendor logos with no extra
+// network calls. Survives `orgNeutralizeForCache` since logoUrl depends solely
+// on the already-org-neutral `domain` field.
 export interface EvidenceSource {
   title: string;
   url: string;
   snippet: string | null;
   domain: string;
+  logoUrl: string;
   fetched_at: number; // unix sec
 }
 
@@ -156,6 +169,11 @@ export interface GreenAltOutput {
       source: "api" | "emission_factor_library" | "historical_data" | "simulated" | "assumption";
       confidence: Confidence;
       comparability_notes: string;
+      // R010 / T006 — populated in code by case-insensitive substring match of
+      // `alternative_name` (when the alt is a product/supplier) against the
+      // research sources for the same cluster. Null when no match.
+      suggested_vendor_domain: string | null;
+      suggested_vendor_logo_url: string | null;
     }>;
     recommendation_status:
       | "recommend_switch"
@@ -208,6 +226,11 @@ export interface CostSavingsOutput {
       business_risk: "low" | "medium" | "high";
       carbon_effect: "lower" | "neutral" | "higher" | "unknown";
       notes: string;
+      // R010 / T006 — populated in code by case-insensitive substring match of
+      // `option_name` against the research sources for the same cluster. Null
+      // when the option is not a vendor switch or no matching source is found.
+      suggested_vendor_domain: string | null;
+      suggested_vendor_logo_url: string | null;
     }>;
     recommendation_status:
       | "recommend_switch"
@@ -401,6 +424,23 @@ export interface ExecReportOutput {
   limitations: string[];
 }
 
+/**
+ * R001 / T005 — payload shape for the `agent.credit_strategy.run` audit event
+ * emitted by `runDag`. The signed `input_digest_sha256` lets a reviewer detect
+ * a sign-flip or formula bug post-hoc by re-hashing the four inputs and
+ * comparing against the recorded digest.
+ */
+export interface CreditAuditPayload {
+  orgId: string;
+  month: string;
+  runId: string;
+  total_net_company_scale_financial_impact_eur: number;
+  total_emissions_reduced_tco2e: number;
+  total_recommended_credit_purchase_cost_eur: number;
+  tax_advisor_review_required: boolean;
+  input_digest_sha256: string;
+}
+
 export interface DagRunResult {
   runId: string;
   baseline: BaselineOutput;
@@ -412,5 +452,12 @@ export interface DagRunResult {
   creditStrategy: CreditStrategyOutput;
   executiveReport: ExecReportOutput;
   metrics: Record<AgentName, AgentRunMetrics>;
+  /**
+   * R002.AC4 — top-level count of LLM-using agents that took the mock path on
+   * this run. 0 means every Sonnet-using agent reached the API; 7 means the
+   * full LLM panel was mocked (intended in `ANTHROPIC_MOCK=1`, a degradation
+   * signal otherwise). Reads from `agent_messages.mock_path` keyed by runId.
+   */
+  mock_agent_count: number;
   totalLatencyMs: number;
 }

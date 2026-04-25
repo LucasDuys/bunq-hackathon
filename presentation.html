@@ -559,7 +559,7 @@ const App = () => {
           No proposals, no validation, no CFO-grade net impact.
         </p>
         <div class="linearFlow">
-          ${["AGGREGATE","ESTIMATE_INITIAL","CLUSTER","QUESTIONS_GENERATED (Sonnet)","AWAITING_ANSWERS","APPLY_ANSWERS","ESTIMATE_FINAL","APPLY_POLICY","PROPOSED","AWAITING_APPROVAL","EXECUTING","COMPLETED"].map((s, i) => html`
+          ${["AGGREGATE","ESTIMATE_INITIAL","CLUSTER","DAG_RUNNING (7-agent DAG)","AWAITING_ANSWERS","APPLY_ANSWERS","ESTIMATE_FINAL","APPLY_POLICY","PROPOSED","AWAITING_APPROVAL","EXECUTING","COMPLETED"].map((s, i) => html`
             <${React.Fragment} key=${s}>
               <span class="linearNode">${s}</span>
               ${i < 11 ? html`<span class="linearArrow">→</span>` : null}

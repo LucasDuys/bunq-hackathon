@@ -40,6 +40,7 @@ import {
   type AltTemplate,
 } from "./tools";
 import { callAgentWithTools, isMock, type WebSearchHit } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 // -----------------------------------------------------------------------------
 // System prompt — cached; do not mutate at runtime.
@@ -133,11 +134,45 @@ const readCache = (key: string): ResearchedAlternative[] | null => {
   const age = Math.floor(Date.now() / 1000) - row.createdAt;
   if (age > row.ttlSec) return null;
   try {
-    return JSON.parse(row.alternativesJson) as ResearchedAlternative[];
+    const alts = JSON.parse(row.alternativesJson) as ResearchedAlternative[];
+    // R010 / T006 — re-derive `logoUrl` on read for cache rows written before
+    // the field existed. logoUrl is a deterministic function of `domain`, so
+    // back-filling on read costs nothing and keeps consumers from having to
+    // null-guard a field the type contract says is always present.
+    for (const a of alts) {
+      for (const s of a.sources) {
+        if (!s.logoUrl && s.domain) s.logoUrl = logoFor(s.domain);
+      }
+    }
+    return alts;
   } catch {
     return null;
   }
 };
+
+// R003 — strip per-row identifying detail before persisting to the multi-tenant
+// research_cache. Cache rows are keyed by (category, jurisdiction, policyDigest, week)
+// without orgId, so two NL orgs on the default policy share rows. We keep the
+// amortization benefit but neutralize the payload: source URLs collapse to
+// `https://{domain}`, snippets drop, vendor URLs collapse to the same prefix.
+// Live (non-cached) runs still return full URLs from the in-flight invocation.
+const orgNeutralizeForCache = (alts: ResearchedAlternative[]): ResearchedAlternative[] =>
+  alts.map((a) => ({
+    ...a,
+    url: a.url ? `https://${new URL(a.url).hostname.replace(/^www\./, "")}` : null,
+    sources: a.sources.map((s) => ({
+      title: s.domain || s.title,
+      url: s.domain ? `https://${s.domain}` : s.url,
+      snippet: null,
+      domain: s.domain,
+      // R010 / T006 — `logoUrl` is a deterministic function of `domain`, which
+      // is itself the org-neutral identifier. Re-deriving on cache write keeps
+      // the field consistent with the post-neutralization domain (and means
+      // older cache rows without the field are repaired on the next write).
+      logoUrl: s.domain ? logoFor(s.domain) : s.logoUrl,
+      fetched_at: s.fetched_at,
+    })),
+  }));
 
 const writeCache = (params: {
   key: string;
@@ -152,6 +187,7 @@ const writeCache = (params: {
 }): void => {
   const ttl = env.researchCacheTtlDays * 86_400;
   const sourcesCount = params.alternatives.reduce((s, a) => s + a.sources.length, 0);
+  const neutralized = orgNeutralizeForCache(params.alternatives);
   db.insert(researchCache)
     .values({
       cacheKey: params.key,
@@ -161,7 +197,7 @@ const writeCache = (params: {
       jurisdiction: params.jurisdiction,
       policyDigest: params.policyDigest,
       weekBucket: params.weekBucket,
-      alternativesJson: JSON.stringify(params.alternatives),
+      alternativesJson: JSON.stringify(neutralized),
       sourcesCount,
       searchRequestsUsed: params.searchesUsed,
       ttlSec: ttl,
@@ -169,7 +205,7 @@ const writeCache = (params: {
     .onConflictDoUpdate({
       target: researchCache.cacheKey,
       set: {
-        alternativesJson: JSON.stringify(params.alternatives),
+        alternativesJson: JSON.stringify(neutralized),
         sourcesCount,
         searchRequestsUsed: params.searchesUsed,
         createdAt: Math.floor(Date.now() / 1000),
@@ -213,6 +249,13 @@ const domainOf = (url: string): string => {
   }
 };
 
+// R010 / T006 — deterministic vendor-logo URL keyed off `domain`. We never
+// fetch the favicon at runtime: the executive matrix's <img> tag does that
+// once on render. Keeping the pattern centralised means the matcher in
+// costSavings/greenAlternatives does not need its own copy of the template.
+const logoFor = (domain: string): string =>
+  `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+
 // -----------------------------------------------------------------------------
 // Fallback ladder — deterministic synthesis from template library when live search
 // is unavailable or returns zero results. Provenance reflects this honestly.
@@ -233,13 +276,17 @@ const templateToResearched = (
   confidence: t.confidence,
   feasibility: mapTemplateFeasibility(t.feasibility),
   geography: "EU",
-  sources: t.sources.map((s) => ({
-    title: s.title,
-    url: s.url,
-    snippet: null,
-    domain: domainOf(s.url),
-    fetched_at: Math.floor(Date.now() / 1000),
-  })),
+  sources: t.sources.map((s) => {
+    const domain = domainOf(s.url);
+    return {
+      title: s.title,
+      url: s.url,
+      snippet: null,
+      domain,
+      logoUrl: logoFor(domain),
+      fetched_at: Math.floor(Date.now() / 1000),
+    };
+  }),
   provenance,
   freshness_days: 0,
   flags: t.simulated ? ["single_source_only"] : [],
@@ -359,13 +406,17 @@ const researchOneCluster = async (
       ) {
         return "SKIPPED: alternative matches incumbent; did not record.";
       }
-      const sources: EvidenceSource[] = args.source_urls.map((url) => ({
-        title: url,
-        url,
-        snippet: null,
-        domain: domainOf(url),
-        fetched_at: Math.floor(Date.now() / 1000),
-      }));
+      const sources: EvidenceSource[] = args.source_urls.map((url) => {
+        const domain = domainOf(url);
+        return {
+          title: url,
+          url,
+          snippet: null,
+          domain,
+          logoUrl: logoFor(domain),
+          fetched_at: Math.floor(Date.now() / 1000),
+        };
+      });
       const id = sha256(`${target.cluster_id}|${args.name}|${args.vendor ?? ""}`).slice(0, 16);
       const alt: ResearchedAlternative = {
         id,
@@ -504,6 +555,9 @@ export interface ResearchInput {
 export async function run(input: ResearchInput, ctx: AgentContext): Promise<ResearchOutput> {
   const policy = derivePolicy(ctx);
   const targets = input.baseline.priority_targets.slice(0, env.researchMaxClusters);
+  // R002 — researcher's mock branch is global (`isMock() || env.researchDisabled`),
+  // so the whole-agent mode is decided once here and applies to every cluster.
+  const usedMock = isMock() || env.researchDisabled;
   const results = await mapPool(targets, env.researchConcurrency, (t) =>
     researchOneCluster(t, policy, ctx, input.agentRunId),
   );
@@ -516,6 +570,12 @@ export async function run(input: ResearchInput, ctx: AgentContext): Promise<Rese
   const totalSearches = results.reduce((s, r) => s + r.searches_used, 0);
   // At $10/1000 requests → ~€0.0094/req (USD/EUR loose).
   const webSearchSpendEur = Number((totalSearches * 0.0094).toFixed(4));
+
+  recordAgentMessage(ctx, {
+    agentName: "research_agent",
+    usedMock,
+    webSearchRequests: totalSearches,
+  });
 
   await ctx.auditLog({
     type: "agent.research.run",

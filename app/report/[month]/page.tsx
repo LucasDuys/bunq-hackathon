@@ -5,13 +5,40 @@ import {
   getLatestEstimatesForMonth,
 } from "@/lib/queries";
 import { fmtEur, fmtKg, fmtPct } from "@/lib/utils";
-import { generateCsrdNarrative } from "@/lib/agent/narrative";
 import type { CreditProject } from "@/lib/db/schema";
 import { ConfidenceBar } from "@/components/ui";
 import { ExplainButton } from "@/components/ExplainButton";
 import { ShieldCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * R008.AC2 / T012 — `lib/agent/narrative.ts` was deleted as part of the
+ * close-machine ↔ runDag consolidation. The CSRD narrative has always been a
+ * deterministic 4-sentence factual summary in mock mode (the only mode the
+ * report page is rendered in for the hackathon demo); we inline that body
+ * here so the page keeps producing the same output without owning a separate
+ * Sonnet touchpoint. If a future spec needs an LLM-written narrative again,
+ * call `runDag` (single LLM entry point) and add a narrative shape to the
+ * executive report agent — do not resurrect a per-page Anthropic call.
+ */
+const buildCsrdNarrative = (params: {
+  month: string;
+  totalCo2eKg: number;
+  confidence: number;
+  topCategories: Array<{ category: string; co2eKg: number; spendEur: number }>;
+  reserveEur: number;
+  creditTonnes: number;
+  euPct: number;
+}): string => {
+  const { month, totalCo2eKg, confidence, topCategories, reserveEur, creditTonnes, euPct } = params;
+  return [
+    `In ${month}, reported Scope 3 emissions were estimated at ${(totalCo2eKg / 1000).toFixed(2)} tCO₂e with ${(confidence * 100).toFixed(0)}% data-quality confidence (spend-based method, Exiobase/DEFRA 2024 factors).`,
+    `Top emission drivers: ${topCategories.slice(0, 3).map((c) => `${c.category} (${(c.co2eKg / 1000).toFixed(2)} tCO₂e)`).join(", ")}.`,
+    `A Carbo Reserve of €${reserveEur.toFixed(2)} was allocated, funding ${creditTonnes.toFixed(2)} tCO₂e of carbon credits (${euPct.toFixed(0)}% EU-based, removal-weighted).`,
+    `Methodology: GHG Protocol Scope 3 Category 1/6; data-quality Tier 3 unless refined; uncertainty quantified per category. Credit recommendations exclude non-EU offsets per policy.`,
+  ].join(" ");
+};
 
 function categoryToken(cat: string): string {
   const c = cat.toLowerCase();
@@ -72,7 +99,7 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
   const confidence = run?.finalConfidence ?? 0.6;
   const headlineCo2 = run?.finalCo2eKg ?? totalCo2;
 
-  const narrative = await generateCsrdNarrative({
+  const narrative = buildCsrdNarrative({
     month,
     totalCo2eKg: headlineCo2,
     confidence,

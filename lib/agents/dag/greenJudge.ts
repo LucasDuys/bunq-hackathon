@@ -12,6 +12,7 @@
 import { z } from "zod";
 import type { AgentContext, GreenAltOutput, GreenJudgeOutput, ResearchedPool } from "./types";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 export const SYSTEM_PROMPT = `You are the Green Judge Agent for Carbon Autopilot for bunq Business.
 
@@ -224,11 +225,15 @@ const buildUserMessage = (greenAlt: GreenAltOutput): string => {
     JSON.stringify(greenAlt, null, 2),
     "",
     "Return strict JSON: { judged_results: [...] }. One judged_results entry per agent result, in the same order.",
+    "",
+    "Each judged_results entry MUST include EVERY field below, even when null. Do not omit fields.",
+    'Skeleton: {"cluster_id":"string","transaction_id":null,"verdict":"approved|approved_with_caveats|needs_context|rejected","approved_recommendation":"string|null","confidence":number,"issues_found":["string"],"audit_summary":"string","green_score":number,"corrected_current_kg_co2e":number|null,"corrected_potential_kg_co2e_saved":number|null}',
   ].join("\n");
 };
 
 export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<GreenJudgeOutput> {
   if (isMock()) {
+    recordAgentMessage(ctx, { agentName: "green_judge_agent", usedMock: true });
     const out = buildMock(input.greenAlt, input.researchedPool);
     for (const j of out.judged_results) {
       await ctx.auditLog({ type: "agent.green_judge.verdict", payload: { cluster_id: j.cluster_id, verdict: j.verdict, score: j.green_score } });
@@ -236,12 +241,22 @@ export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<Gr
     return out;
   }
   try {
-    const { jsonText } = await callAgent({
+    const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: buildUserMessage(input.greenAlt),
-      maxTokens: 3000,
+      maxTokens: 20000,
     });
-    if (!jsonText) return buildMock(input.greenAlt, input.researchedPool);
+    if (!jsonText) {
+      recordAgentMessage(ctx, { agentName: "green_judge_agent", usedMock: true });
+      return buildMock(input.greenAlt, input.researchedPool);
+    }
+    recordAgentMessage(ctx, {
+      agentName: "green_judge_agent",
+      usedMock,
+      tokensIn,
+      tokensOut,
+      cached,
+    });
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     // Even when Sonnet returns verdicts, we recompute math AND the evidence gate in code —
     // the judge cannot approve a zero-source recommendation regardless of its self-rating.
@@ -286,7 +301,9 @@ export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<Gr
           .map((j) => j.approved_recommendation ?? j.cluster_id ?? "unknown"),
       },
     };
-  } catch {
+  } catch (err) {
+    console.error("[green_judge_agent] live call failed, falling back to mock:", err);
+    recordAgentMessage(ctx, { agentName: "green_judge_agent", usedMock: true });
     return buildMock(input.greenAlt, input.researchedPool);
   }
 }

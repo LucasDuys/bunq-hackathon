@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import sampleRun from "@/fixtures/demo-runs/sample-run.json";
 import styles from "./presentation.module.css";
+import { Badge } from "@/components/ui";
 import type { DagRunResult, AgentName } from "@/lib/agents/dag/types";
 
 const DEMO_ENABLED = process.env.NEXT_PUBLIC_DEMO === "1";
@@ -192,6 +193,96 @@ function DagReplay({ data }: { data: DagRunResult }) {
   );
 }
 
+/**
+ * R009 / T010 — Live-run section: lazily fetches a real DAG run from
+ * `POST /api/impacts/research` the first time the user scrolls it into view,
+ * then renders the response through the same `<DagReplay>` shape used by the
+ * baked fixture. On any failure (non-2xx, network error, malformed payload)
+ * we fall back to the bundled sample run and show a small "demo replay (live
+ * unavailable)" badge so the demo never goes blank.
+ *
+ * IntersectionObserver-driven (no third-party hook); `prefers-reduced-motion`
+ * is irrelevant here because the trigger is scroll position, not animation.
+ */
+type LiveRunStatus = "idle" | "fetching" | "live" | "fallback";
+
+function isFullDagPayload(value: unknown): value is DagRunResult {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.runId === "string" &&
+    typeof v.totalLatencyMs === "number" &&
+    typeof v.baseline === "object" && v.baseline !== null &&
+    typeof v.greenAlt === "object" && v.greenAlt !== null &&
+    typeof v.costSavings === "object" && v.costSavings !== null &&
+    typeof v.greenJudge === "object" && v.greenJudge !== null &&
+    typeof v.costJudge === "object" && v.costJudge !== null &&
+    typeof v.creditStrategy === "object" && v.creditStrategy !== null &&
+    typeof v.executiveReport === "object" && v.executiveReport !== null &&
+    typeof v.metrics === "object" && v.metrics !== null
+  );
+}
+
+function LiveRunSection({ fallback }: { fallback: DagRunResult }) {
+  const [status, setStatus] = useState<LiveRunStatus>("idle");
+  const [data, setData] = useState<DagRunResult>(fallback);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const fetchedRef = useRef(false);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node) return;
+    if (fetchedRef.current) return;
+
+    const trigger = async () => {
+      if (fetchedRef.current) return;
+      fetchedRef.current = true;
+      setStatus("fetching");
+      try {
+        const res = await fetch("/api/impacts/research", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        const payload: unknown = await res.json();
+        if (!isFullDagPayload(payload)) throw new Error("payload missing dag fields");
+        setData(payload);
+        setStatus("live");
+      } catch {
+        // Keep the fixture data already in state; flip the badge.
+        setStatus("fallback");
+      }
+    };
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            void trigger();
+            observer.disconnect();
+            break;
+          }
+        }
+      },
+      { threshold: 0.25 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={sentinelRef}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        {status === "fetching" ? <Badge tone="info">Fetching live run…</Badge> : null}
+        {status === "live" ? <Badge tone="positive">Live run · {data.runId}</Badge> : null}
+        {status === "fallback" ? <Badge tone="warning">demo replay (live unavailable)</Badge> : null}
+      </div>
+      <DagReplay data={data} />
+    </div>
+  );
+}
+
 function Nav({ active, onJump }: { active: string; onJump: (id: string) => void }) {
   return (
     <nav className={styles.nav} aria-label="Presentation sections">
@@ -336,7 +427,7 @@ export default function PresentationPage() {
             "AGGREGATE",
             "ESTIMATE_INITIAL",
             "CLUSTER",
-            "QUESTIONS_GENERATED (Sonnet)",
+            "DAG_RUNNING (8-agent DAG)",
             "AWAITING_ANSWERS",
             "APPLY_ANSWERS",
             "ESTIMATE_FINAL",
@@ -387,13 +478,13 @@ export default function PresentationPage() {
       {/* ── Live run ─────────────────────────── */}
       <section className={styles.section} data-section="replay">
         <span className={styles.eyebrow}>Live run</span>
-        <h2 className={styles.h2}>Baked replay from a real DAG run.</h2>
+        <h2 className={styles.h2}>A real DAG run, fetched on scroll.</h2>
         <p className={styles.lead}>
-          Pre-recorded outputs from a <code>runDag()</code> execution on March 2026 mock data.
-          Every payload below is the agent&rsquo;s real structured response, not hand-written
-          commentary.
+          The first time this section scrolls into view we hit <code>POST /api/impacts/research</code> for a fresh
+          <code> runDag()</code> execution. Every payload below is the agent&rsquo;s real structured response, not hand-written
+          commentary. If the API is unavailable we keep the baked March 2026 fixture and flag it with a small badge.
         </p>
-        <DagReplay data={run} />
+        <LiveRunSection fallback={run} />
       </section>
 
       {/* ── CFO report ───────────────────────── */}

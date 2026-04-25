@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import { detectRecurringSpend, findCostSaving, type AltTemplate, type RecurringSpend } from "./tools";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 export const SYSTEM_PROMPT = `You are the Cost Savings Agent for Carbon Autopilot for bunq Business.
 
@@ -58,6 +59,11 @@ const OPTION_SCHEMA = z.object({
   business_risk: z.enum(["low", "medium", "high"]),
   carbon_effect: z.enum(["lower", "neutral", "higher", "unknown"]),
   notes: z.string(),
+  // R010 / T006 — vendor-logo enrichment. Both fields default to null; the
+  // post-parse pass in `run()` overwrites them via `matchVendorToSource` so
+  // the LLM is never asked to emit them.
+  suggested_vendor_domain: z.string().nullable().default(null),
+  suggested_vendor_logo_url: z.string().nullable().default(null),
 });
 
 const RESULT_SCHEMA = z.object({
@@ -138,6 +144,72 @@ const mapType = (t: AltTemplate["type"]): z.infer<typeof OPTION_SCHEMA>["option_
 
 type Option = z.infer<typeof OPTION_SCHEMA>;
 
+// R010 / T006 — case-insensitive substring match between a vendor name and the
+// research sources for a single cluster. Matching against the FIRST domain
+// segment (e.g. "transportenvironment" not "transportenvironment.org") keeps
+// short vendor names (e.g. "FairPhone") from coincidentally matching every
+// source's `.com` / `.org` suffix. Sources passed in must come from the same
+// cluster — global-pool matches would surface logos from unrelated categories.
+const matchVendorToSource = (
+  vendorName: string | null,
+  sources: { domain: string; title: string; logoUrl: string }[],
+): { domain: string; logoUrl: string } | null => {
+  if (!vendorName) return null;
+  const v = vendorName.toLowerCase();
+  for (const s of sources) {
+    if (s.domain) {
+      const head = s.domain.split(".")[0].toLowerCase();
+      if (v.includes(head) || s.domain.toLowerCase().includes(v)) {
+        return { domain: s.domain, logoUrl: s.logoUrl };
+      }
+    }
+    if (s.title && s.title.toLowerCase().includes(v)) {
+      return { domain: s.domain, logoUrl: s.logoUrl };
+    }
+  }
+  return null;
+};
+
+// Flatten the per-cluster researched alternatives into a single source pool so
+// the matcher sees every source the Research Agent surfaced for this cluster.
+const collectClusterSources = (
+  researched: ResearchedAlternative[],
+): { domain: string; title: string; logoUrl: string }[] => {
+  const out: { domain: string; title: string; logoUrl: string }[] = [];
+  for (const a of researched) {
+    for (const s of a.sources) {
+      out.push({ domain: s.domain, title: s.title, logoUrl: s.logoUrl });
+    }
+  }
+  return out;
+};
+
+// R010 / T006 — populate `suggested_vendor_*` on every option in-place using
+// the per-cluster source pool. Vendor-switch + supplier_consolidation +
+// renegotiation are the option types where matching a real merchant logo is
+// meaningful; policy/usage/cancellation rows stay null. We treat the option's
+// `option_name` as the vendor candidate string.
+const enrichCostOptionsWithLogos = (
+  options: Option[],
+  researched: ResearchedAlternative[],
+): void => {
+  const sources = collectClusterSources(researched);
+  for (const o of options) {
+    const isVendorish =
+      o.option_type === "vendor_switch" ||
+      o.option_type === "supplier_consolidation" ||
+      o.option_type === "renegotiation";
+    if (!isVendorish) {
+      o.suggested_vendor_domain = null;
+      o.suggested_vendor_logo_url = null;
+      continue;
+    }
+    const m = matchVendorToSource(o.option_name, sources);
+    o.suggested_vendor_domain = m?.domain ?? null;
+    o.suggested_vendor_logo_url = m?.logoUrl ?? null;
+  }
+};
+
 const templateToOption = (t: AltTemplate, annualSpendEur: number): Option => {
   const annualSaving = -annualSpendEur * t.costDeltaPct;
   return {
@@ -158,6 +230,10 @@ const templateToOption = (t: AltTemplate, annualSpendEur: number): Option => {
             ? "neutral"
             : "unknown",
     notes: t.rationale,
+    // R010 / T006 — filled in by the post-build matcher pass. Default null so
+    // template-only options that have no matching research source are honest.
+    suggested_vendor_domain: null,
+    suggested_vendor_logo_url: null,
   };
 };
 
@@ -179,6 +255,8 @@ const researchedToOption = (a: ResearchedAlternative, annualSpendEur: number): O
     business_risk: businessRisk,
     carbon_effect: carbonEffect,
     notes: a.description,
+    suggested_vendor_domain: null,
+    suggested_vendor_logo_url: null,
   };
 };
 
@@ -207,9 +285,15 @@ const mockOutput = (
         business_risk: "low",
         carbon_effect: "lower",
         notes: `Recurring ${b.recurring.monthsPresent} months in a row; audit usage & renegotiate.`,
+        suggested_vendor_domain: null,
+        suggested_vendor_logo_url: null,
       };
       options.push(recurringOption);
     }
+    // R010 / T006 — code-side vendor logo enrichment. Mock path uses the same
+    // pool the live path will see (b.researched), so the matcher exercise here
+    // is identical to production.
+    enrichCostOptionsWithLogos(options, b.researched);
     const topSaving = options.reduce((s, o) => Math.max(s, o.estimated_annual_saving_eur ?? 0), 0);
     return {
       cluster_id: b.target.cluster_id,
@@ -324,6 +408,9 @@ const buildUserMessage = (baseline: BaselineOutput, bundles: Bundle[]): string =
   lines.push(
     "",
     "Return strict JSON: { results: [...] }. Keep every option grounded in the researched or library list — no invented vendors.",
+    "",
+    "Each result MUST include EVERY field below, even when null. Do not omit fields.",
+    'Skeleton: {"cluster_id":"string","transaction_id":null,"merchant":"string","current_spend":{"amount_eur":number,"monthly_spend_eur":number|null,"annualized_spend_eur":number|null,"category":"string","data_basis":"single_transaction|recurring_pattern|category_cluster|invoice|assumption"},"cost_saving_options":[{"option_name":"string","option_type":"vendor_switch|supplier_consolidation|bulk_purchase|cancellation|usage_reduction|renegotiation|policy_change","estimated_monthly_saving_eur":number|null,"estimated_annual_saving_eur":number|null,"one_time_saving_eur":number|null,"confidence":number,"source":"historical_data|pricing_api|benchmark|assumption|simulated","business_risk":"low|medium|high","carbon_effect":"lower|neutral|higher|unknown","notes":"string"}],"recommendation_status":"recommend_switch|review_recurring_spend|consolidate_supplier|bulk_purchase_opportunity|needs_validation|no_action_needed","recommended_action":"string","approval_required":boolean,"reasoning_summary":"string"}',
   );
   return lines.join("\n");
 };
@@ -332,17 +419,34 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
   const recurring = detectRecurringSpend(ctx.orgId, 3, 6);
   const bundles = buildBundles(input.baseline, recurring, input.researchedPool);
   if (bundles.length === 0 || isMock()) {
+    recordAgentMessage(ctx, { agentName: "cost_savings_agent", usedMock: true });
     return mockOutput(input.baseline, recurring, input.researchedPool);
   }
   try {
-    const { jsonText } = await callAgent({
+    const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: buildUserMessage(input.baseline, bundles),
-      maxTokens: 4000,
+      maxTokens: 20000,
     });
-    if (!jsonText) return mockOutput(input.baseline, recurring, input.researchedPool);
+    if (!jsonText) {
+      recordAgentMessage(ctx, { agentName: "cost_savings_agent", usedMock: true });
+      return mockOutput(input.baseline, recurring, input.researchedPool);
+    }
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const results = parsed.results;
+    // R010 / T006 — post-parse enrichment: walk each result, look up the
+    // research sources for that cluster, run `enrichCostOptionsWithLogos` so
+    // the LLM never sees `suggested_vendor_logo_url` and the matcher stays
+    // deterministic. cluster_id null (rare — happens when LLM omits it) leaves
+    // options unmatched, which is honest.
+    const researchedByCluster = new Map<string, ResearchedAlternative[]>();
+    for (const b of bundles) {
+      researchedByCluster.set(b.target.cluster_id, b.researched);
+    }
+    for (const r of results) {
+      const researched = r.cluster_id ? researchedByCluster.get(r.cluster_id) ?? [] : [];
+      enrichCostOptionsWithLogos(r.cost_saving_options, researched);
+    }
     const totalObserved = results.reduce((s, r) => s + (r.current_spend.annualized_spend_eur ?? 0), 0);
     const totalMonthly = results.reduce(
       (s, r) => s + Math.max(0, ...r.cost_saving_options.map((o) => o.estimated_monthly_saving_eur ?? 0)),
@@ -355,6 +459,13 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
     const avgConf = results.length > 0
       ? results.reduce((s, r) => s + (r.cost_saving_options[0]?.confidence ?? 0.5), 0) / results.length
       : 0;
+    recordAgentMessage(ctx, {
+      agentName: "cost_savings_agent",
+      usedMock,
+      tokensIn,
+      tokensOut,
+      cached,
+    });
     return {
       agent: "cost_savings_agent",
       company_id: input.baseline.company_id,
@@ -375,7 +486,9 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
         average_confidence: Number(avgConf.toFixed(3)),
       },
     };
-  } catch {
+  } catch (err) {
+    console.error("[cost_savings_agent] live call failed, falling back to mock:", err);
+    recordAgentMessage(ctx, { agentName: "cost_savings_agent", usedMock: true });
     return mockOutput(input.baseline, recurring, input.researchedPool);
   }
 }

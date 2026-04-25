@@ -18,6 +18,7 @@ import type {
 } from "./types";
 import { findLowerCarbonAlternative, getEmissionFactor, type AltTemplate } from "./tools";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 export const SYSTEM_PROMPT = `You are the Green Alternatives Agent for Carbon Autopilot for bunq Business.
 
@@ -51,6 +52,11 @@ const ALT_SCHEMA = z.object({
   source: z.enum(["api", "emission_factor_library", "historical_data", "simulated", "assumption"]),
   confidence: z.number().min(0).max(1),
   comparability_notes: z.string(),
+  // R010 / T006 — vendor-logo enrichment, populated by the post-parse pass
+  // (never asked from the LLM). Defaults to null so live JSON without these
+  // fields parses cleanly; the matcher fills them in code.
+  suggested_vendor_domain: z.string().nullable().default(null),
+  suggested_vendor_logo_url: z.string().nullable().default(null),
 });
 
 const RESULT_SCHEMA = z.object({
@@ -110,7 +116,67 @@ const buildCandidates = (baseline: BaselineOutput, pool: ResearchedPool | undefi
     .filter((c) => c.templates.length > 0 || c.researched.length > 0);
 };
 
-const templateToAlternative = (t: AltTemplate, baseKg: number) => ({
+type Alt = z.infer<typeof ALT_SCHEMA>;
+
+// R010 / T006 — case-insensitive substring match between an alternative name
+// and the per-cluster research sources. Mirrors `costSavings::matchVendorToSource`
+// — keeping the helper local rather than shared so neither agent has to import
+// from the other (they run in parallel and any cross-import would create
+// avoidable coupling). Sources passed in MUST be the same cluster's pool —
+// matching against the global pool produces false-positive logos from
+// unrelated categories.
+const matchVendorToSource = (
+  vendorName: string | null,
+  sources: { domain: string; title: string; logoUrl: string }[],
+): { domain: string; logoUrl: string } | null => {
+  if (!vendorName) return null;
+  const v = vendorName.toLowerCase();
+  for (const s of sources) {
+    if (s.domain) {
+      const head = s.domain.split(".")[0].toLowerCase();
+      if (v.includes(head) || s.domain.toLowerCase().includes(v)) {
+        return { domain: s.domain, logoUrl: s.logoUrl };
+      }
+    }
+    if (s.title && s.title.toLowerCase().includes(v)) {
+      return { domain: s.domain, logoUrl: s.logoUrl };
+    }
+  }
+  return null;
+};
+
+const collectClusterSources = (
+  researched: ResearchedAlternative[],
+): { domain: string; title: string; logoUrl: string }[] => {
+  const out: { domain: string; title: string; logoUrl: string }[] = [];
+  for (const a of researched) {
+    for (const s of a.sources) {
+      out.push({ domain: s.domain, title: s.title, logoUrl: s.logoUrl });
+    }
+  }
+  return out;
+};
+
+// R010 / T006 — only product/supplier alternatives carry a meaningful "vendor"
+// concept. Behavior + travel_mode + procurement_policy alternatives are
+// process changes, not switches to a named brand, so we leave their logo
+// fields null even when a research source happens to substring-match.
+const enrichGreenAltsWithLogos = (alts: Alt[], researched: ResearchedAlternative[]): void => {
+  const sources = collectClusterSources(researched);
+  for (const a of alts) {
+    const isVendorish = a.alternative_type === "product" || a.alternative_type === "supplier";
+    if (!isVendorish) {
+      a.suggested_vendor_domain = null;
+      a.suggested_vendor_logo_url = null;
+      continue;
+    }
+    const m = matchVendorToSource(a.alternative_name, sources);
+    a.suggested_vendor_domain = m?.domain ?? null;
+    a.suggested_vendor_logo_url = m?.logoUrl ?? null;
+  }
+};
+
+const templateToAlternative = (t: AltTemplate, baseKg: number): Alt => ({
   alternative_name: t.name,
   alternative_type: mapType(t.type),
   estimated_kg_co2e: Number((baseKg * (1 + t.co2eDeltaPct)).toFixed(1)),
@@ -121,6 +187,8 @@ const templateToAlternative = (t: AltTemplate, baseKg: number) => ({
   source: (t.simulated ? "simulated" : "emission_factor_library") as "simulated" | "emission_factor_library",
   confidence: t.confidence,
   comparability_notes: t.rationale,
+  suggested_vendor_domain: null,
+  suggested_vendor_logo_url: null,
 });
 
 const mapResearchedType = (
@@ -138,7 +206,7 @@ const mapResearchedType = (
   }
 };
 
-const researchedToAlternative = (a: ResearchedAlternative, baseKg: number) => {
+const researchedToAlternative = (a: ResearchedAlternative, baseKg: number): Alt => {
   const co2eDelta = a.co2e_delta_pct ?? 0;
   const saved = -baseKg * co2eDelta;
   const sourceLabel = a.provenance === "template" ? "emission_factor_library" : "api";
@@ -153,6 +221,8 @@ const researchedToAlternative = (a: ResearchedAlternative, baseKg: number) => {
     source: sourceLabel as "api" | "emission_factor_library" | "historical_data" | "simulated" | "assumption",
     confidence: a.confidence,
     comparability_notes: a.description,
+    suggested_vendor_domain: null,
+    suggested_vendor_logo_url: null,
   };
 };
 
@@ -183,6 +253,9 @@ const mockOutput = (baseline: BaselineOutput, pool: ResearchedPool | undefined):
     const alts = c.researched.length > 0
       ? c.researched.map((r) => researchedToAlternative(r, baseKg))
       : c.templates.map((t) => templateToAlternative(t, baseKg));
+    // R010 / T006 — vendor-logo enrichment using THIS cluster's research pool
+    // (never the global pool, to avoid cross-category logo bleed).
+    enrichGreenAltsWithLogos(alts, c.researched);
     const topSaving = alts.reduce((s, a) => Math.max(s, a.carbon_saving_kg ?? 0), 0);
     return {
       cluster_id: c.target.cluster_id,
@@ -287,30 +360,56 @@ const buildUserMessage = (baseline: BaselineOutput, candidates: CandidateBundle[
     "",
     "Return strict JSON: { results: [...] } where each result matches the schema in the system prompt.",
     "Keep every alternative grounded in either the researched or the library-fallback list. Do not invent new vendors.",
+    "",
+    "Each result MUST include EVERY field below, even when null. Do not omit fields.",
+    'Skeleton: {"cluster_id":"string","transaction_id":null,"merchant":"string","current_purchase":{"raw_description":"string","normalized_item_or_category":"string","amount_eur":number,"estimated_kg_co2e":number|null,"confidence":number,"data_basis":"item_level|category_level|merchant_level|spend_based|unknown"},"alternatives":[{"alternative_name":"string","alternative_type":"product|supplier|behavior|travel_mode|procurement_policy","estimated_kg_co2e":number|null,"carbon_saving_kg":number|null,"carbon_saving_percent":number|null,"estimated_price_eur":number|null,"price_delta_eur":number|null,"source":"api|emission_factor_library|historical_data|simulated|assumption","confidence":number,"comparability_notes":"string"}],"recommendation_status":"recommend_switch|recommend_if_policy_allows|needs_context|no_viable_alternative_found|no_action_needed|reserve_or_offset_after_reduction_review","recommended_action":"string","reasoning_summary":"string"}',
   );
   return lines.join("\n");
 };
 
-export async function run(input: GreenAltInput, _ctx: AgentContext): Promise<GreenAltOutput> {
+export async function run(input: GreenAltInput, ctx: AgentContext): Promise<GreenAltOutput> {
   const candidates = buildCandidates(input.baseline, input.researchedPool);
   if (candidates.length === 0 || isMock()) {
+    recordAgentMessage(ctx, { agentName: "green_alternatives_agent", usedMock: true });
     return mockOutput(input.baseline, input.researchedPool);
   }
   try {
-    const { jsonText } = await callAgent({
+    const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: buildUserMessage(input.baseline, candidates),
-      maxTokens: 4000,
+      maxTokens: 20000,
     });
-    if (!jsonText) return mockOutput(input.baseline, input.researchedPool);
+    if (!jsonText) {
+      recordAgentMessage(ctx, { agentName: "green_alternatives_agent", usedMock: true });
+      return mockOutput(input.baseline, input.researchedPool);
+    }
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const results = parsed.results;
+    // R010 / T006 — post-parse vendor-logo enrichment. Same `cluster_id ->
+    // researched[]` lookup pattern as costSavings; null cluster_id leaves the
+    // alternatives unmatched (honest behavior — we can't trust a cross-cluster
+    // logo when we don't know which cluster the LLM was scoring).
+    const researchedByCluster = new Map<string, ResearchedAlternative[]>();
+    for (const c of candidates) {
+      researchedByCluster.set(c.target.cluster_id, c.researched);
+    }
+    for (const r of results) {
+      const researched = r.cluster_id ? researchedByCluster.get(r.cluster_id) ?? [] : [];
+      enrichGreenAltsWithLogos(r.alternatives, researched);
+    }
     const totalCurrent = results.reduce((s, r) => s + (r.current_purchase.estimated_kg_co2e ?? 0), 0);
     const totalSaved = results.reduce(
       (s, r) => s + Math.max(0, ...r.alternatives.map((a) => a.carbon_saving_kg ?? 0)),
       0,
     );
     const avgConf = results.length > 0 ? results.reduce((s, r) => s + r.current_purchase.confidence, 0) / results.length : 0;
+    recordAgentMessage(ctx, {
+      agentName: "green_alternatives_agent",
+      usedMock,
+      tokensIn,
+      tokensOut,
+      cached,
+    });
     return {
       agent: "green_alternatives_agent",
       company_id: input.baseline.company_id,
@@ -330,7 +429,9 @@ export async function run(input: GreenAltInput, _ctx: AgentContext): Promise<Gre
         average_confidence: Number(avgConf.toFixed(3)),
       },
     };
-  } catch {
+  } catch (err) {
+    console.error("[green_alternatives_agent] live call failed, falling back to mock:", err);
+    recordAgentMessage(ctx, { agentName: "green_alternatives_agent", usedMock: true });
     return mockOutput(input.baseline, input.researchedPool);
   }
 }

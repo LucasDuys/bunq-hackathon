@@ -22,6 +22,13 @@ export type LlmCallResult = {
   tokensIn: number;
   tokensOut: number;
   cached: boolean;
+  /**
+   * R002.AC1 — `false` when this result came from a real Anthropic API call
+   * (the only path through `callAgent`). Agents that take their own
+   * `buildMock()` branch never reach `callAgent`; they synthesize the
+   * `usedMock: true` signal themselves via `recordAgentMessage`.
+   */
+  usedMock: boolean;
 };
 
 export type LlmCallOptions = {
@@ -63,7 +70,7 @@ export const callAgent = async (opts: LlmCallOptions): Promise<LlmCallResult> =>
   const cached = (usage.cache_read_input_tokens ?? 0) > 0;
   const tokensOut = usage.output_tokens ?? 0;
 
-  return { jsonText, rawText, tokensIn, tokensOut, cached };
+  return { jsonText, rawText, tokensIn, tokensOut, cached, usedMock: false };
 };
 
 export type WebSearchHit = {
@@ -83,6 +90,12 @@ export type ToolRunResult = {
   webSearchRequests: number;
   serverToolUseCount: number;
   webSearchHits: WebSearchHit[]; // harvested from web_search_tool_result blocks
+  /**
+   * R002.AC1 — research agent parity with `callAgent`. Always `false` here
+   * because `callAgentWithTools` only runs when the live API is used; the
+   * research agent's mock branch in `research.ts` never reaches this function.
+   */
+  usedMock: boolean;
 };
 
 export type ToolCallOptions = {
@@ -123,7 +136,12 @@ export const callAgentWithTools = async (opts: ToolCallOptions): Promise<ToolRun
     messages: [userMessage],
   });
 
-  const finalMessage = await runner.done();
+  // SDK 0.91.0 quirk: BetaToolRunner.done() returns the completion promise
+  // without consuming the async iterator, so the promise never resolves and
+  // Node exits cleanly with code 0. runUntilDone() consumes the iterator
+  // first via `for await (const _ of this)` then awaits completion. See
+  // node_modules/@anthropic-ai/sdk/.../BetaToolRunner.ts:369-396.
+  const finalMessage = await runner.runUntilDone();
   const usage = (finalMessage.usage ?? {}) as {
     input_tokens?: number;
     output_tokens?: number;
@@ -181,5 +199,6 @@ export const callAgentWithTools = async (opts: ToolCallOptions): Promise<ToolRun
     webSearchRequests,
     serverToolUseCount,
     webSearchHits,
+    usedMock: false,
   };
 };

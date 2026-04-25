@@ -123,6 +123,33 @@ The 12-state machine in `lib/agent/close.ts` still calls `lib/agent/questions.ts
 - [ ] No new dependencies; reuses existing `DagReplay` component shape.
 - [ ] `app/presentation/page.tsx` typecheck clean.
 
+### R010: Source + vendor logo enrichment
+
+Surface real vendor logos and domains on the executive matrix so the demo shows recognizable brands, not bare URLs. No new LLM calls — derive everything from URLs the research agent already returns.
+
+**Acceptance Criteria:**
+- [ ] `lib/agents/dag/research.ts` Zod output schema gains, per source: `domain: string` (hostname stripped of leading `www.`) and `logoUrl: string` (deterministic pattern `https://www.google.com/s2/favicons?domain=${domain}&sz=64`).
+- [ ] Both fields are populated in code after the LLM returns (not requested from the model); `buildMock()` for research populates them too.
+- [ ] `lib/agents/dag/costSavings.ts` and `lib/agents/dag/greenAlternatives.ts` Zod outputs gain, per recommendation: `suggested_vendor_domain: string | null` and `suggested_vendor_logo_url: string | null`, populated in code by case-insensitive substring match of `suggested_vendor` against research `sources[].domain` / source title; `null` when no match.
+- [ ] `buildMock()` for costSavings + greenAlternatives populates the two new fields with deterministic values.
+- [ ] Executive report payload carries the logos through unchanged — no transformation.
+- [ ] Test: research output for a single category with 2 URLs returns both entries with non-empty `domain` and `logoUrl`.
+- [ ] Test: a costSavings recommendation whose `suggested_vendor` matches a research source gets a non-null `suggested_vendor_logo_url`; one that doesn't match gets `null`.
+
+### R011: Mock baseline harness
+
+Build a repeatable DAG baseline runner so we can measure per-agent latency, JSON-parse failures, mock-path usage, and inter-agent errors without watching logs. Mock mode by default (zero Anthropic cost); `--live` for a final real-run check.
+
+**Acceptance Criteria:**
+- [ ] `scripts/dag-baseline.ts` exists, invokable via `pnpm exec tsx scripts/dag-baseline.ts [--runs N] [--live]`.
+- [ ] Default: 5 runs, `ANTHROPIC_MOCK=1`. `--live` unsets mock for that invocation only.
+- [ ] Per run, collects per agent: `latency_ms`, `tokens_in`, `tokens_out`, `cached`, `used_mock`, `parse_ok` (boolean — did the agent's Zod parse succeed).
+- [ ] Catches inter-agent errors: if `runDag()` throws or any stage returns a parse failure, the run is recorded as failed with `{ stage, reason }` instead of aborting the batch.
+- [ ] Writes `.forge/reports/baseline-<ISO-timestamp>.md` containing: per-agent latency p50/p95 (or single-sample for 1-run), token totals, mock-path count per agent, parse-failure count per agent, batch-level failure list, and a dump of `run[0].DagRunResult` for eyeball accuracy check.
+- [ ] Creates `.forge/reports/` if missing.
+- [ ] 5 mock runs complete in <30s on a warm machine.
+- [ ] If extending `scripts/dag-smoke.ts` is materially faster than a standalone script (>2x less work), that fallback is acceptable as long as the per-agent table + report file are still produced.
+
 ## Future Considerations
 
 - **Per-run dashboard tile** showing `mock_agent_count` + `cache_hit_pct` so degraded runs surface visually.

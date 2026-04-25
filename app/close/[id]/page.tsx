@@ -63,7 +63,9 @@ const STATE_TO_PHASE: Record<string, PhaseKey> = {
   AGGREGATE: "INGEST",
   ESTIMATE_INITIAL: "CLASSIFY",
   CLUSTER_UNCERTAINTY: "CLUSTER",
-  QUESTIONS_GENERATED: "CLUSTER",
+  // T012 — DAG_RUNNING replaces QUESTIONS_GENERATED; both map to the
+  // CLUSTER phase visually since they're the same "agent thinking" beat.
+  DAG_RUNNING: "CLUSTER",
   AWAITING_ANSWERS: "CLUSTER",
   APPLY_ANSWERS: "ESTIMATE",
   ESTIMATE_FINAL: "ESTIMATE",

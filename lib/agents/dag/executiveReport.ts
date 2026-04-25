@@ -16,6 +16,7 @@ import type {
   ResearchOutput,
 } from "./types";
 import { callAgent, isMock } from "./llm";
+import { recordAgentMessage } from "./persist";
 
 export const SYSTEM_PROMPT = `You are the Executive Report Agent for Carbon Autopilot for bunq Business.
 
@@ -60,7 +61,7 @@ const defaultSummary = (
   return `For ${baseline.analysis_period}, Carbo validated ${count} switch${count === 1 ? "" : "es"} worth €${net.toFixed(0)}/yr in net financial impact and ${emissions.toFixed(2)} tCO₂e/yr reduction. Review the top recommendations with the CFO before executing.`;
 };
 
-export async function run(input: ExecReportInput, _ctx: AgentContext): Promise<ExecReportOutput> {
+export async function run(input: ExecReportInput, ctx: AgentContext): Promise<ExecReportOutput> {
   const { baseline, creditStrategy, greenJudge, costJudge } = input;
   const matrix: ExecReportOutput["matrix"] = {
     low_cost_low_carbon: [],
@@ -110,9 +111,17 @@ export async function run(input: ExecReportInput, _ctx: AgentContext): Promise<E
   }
 
   let execSummary = defaultSummary(baseline, creditStrategy);
+  // R002 — track whether the executive_summary prose came from the live API
+  // (usedMock=false) or from the deterministic `defaultSummary` template
+  // (usedMock=true). The rest of the report payload is deterministic in both
+  // paths, so the mock_path flag is solely about the prose source.
+  let execUsedMock = isMock();
+  let execTokensIn: number | undefined;
+  let execTokensOut: number | undefined;
+  let execCached: boolean | undefined;
   if (!isMock()) {
     try {
-      const { jsonText } = await callAgent({
+      const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
         system: SYSTEM_PROMPT,
         user: [
           "Baseline + credit strategy payload:",
@@ -125,11 +134,26 @@ export async function run(input: ExecReportInput, _ctx: AgentContext): Promise<E
       if (jsonText) {
         const parsed = SUMMARY_SCHEMA.parse(JSON.parse(jsonText));
         execSummary = parsed.executive_summary;
+        execUsedMock = usedMock;
+        execTokensIn = tokensIn;
+        execTokensOut = tokensOut;
+        execCached = cached;
+      } else {
+        // Empty/malformed response — agent fell back to the deterministic template.
+        execUsedMock = true;
       }
     } catch {
-      // keep defaultSummary
+      // keep defaultSummary; fallback path counts as mock for observability.
+      execUsedMock = true;
     }
   }
+  recordAgentMessage(ctx, {
+    agentName: "executive_report_agent",
+    usedMock: execUsedMock,
+    tokensIn: execTokensIn,
+    tokensOut: execTokensOut,
+    cached: execCached,
+  });
 
   const netImpact = creditStrategy.summary.total_net_company_scale_financial_impact_eur;
   const directSavings = creditStrategy.summary.total_direct_procurement_saving_eur;

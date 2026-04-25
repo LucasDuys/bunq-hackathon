@@ -3,7 +3,10 @@
  *   baseline → research → [greenAlt || costSavings] → [greenJudge || costJudge] → creditStrategy → executiveReport
  * See docs/agents/00-overview.md, plans/matrix-dag.md, plans/matrix-research.md.
  */
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { eq, and } from "drizzle-orm";
+import { db, agentMessages } from "@/lib/db/client";
+import { env } from "@/lib/env";
 import * as spendBaseline from "./spendBaseline";
 import * as research from "./research";
 import * as greenAlternatives from "./greenAlternatives";
@@ -12,7 +15,13 @@ import * as greenJudge from "./greenJudge";
 import * as costJudge from "./costJudge";
 import * as creditStrategy from "./creditStrategy";
 import * as executiveReport from "./executiveReport";
-import type { AgentContext, AgentName, AgentRunMetrics, DagRunResult } from "./types";
+import type {
+  AgentContext,
+  AgentName,
+  AgentRunMetrics,
+  CreditAuditPayload,
+  DagRunResult,
+} from "./types";
 
 async function timed<T>(fn: () => Promise<T>): Promise<[T, AgentRunMetrics]> {
   const start = performance.now();
@@ -30,6 +39,12 @@ export async function runDag(
   const metrics = {} as Record<AgentName, AgentRunMetrics>;
   const totalStart = performance.now();
   const runId = `run_${randomUUID()}`;
+
+  // R002 / T002 — pin runId into the context so each LLM-using agent can
+  // record a row in `agent_messages` keyed to this run. Mutating the supplied
+  // ctx is intentional: callers (smoke scripts, /api/impacts/research) keep
+  // the same ctx instance across all agents and we must not silently swap it.
+  ctx.agentRunId = runId;
 
   const [baseline, mBaseline] = await timed(() =>
     spendBaseline.run({ orgId: input.orgId, month: input.month }, ctx),
@@ -86,13 +101,47 @@ export async function runDag(
     creditStrategy.run({ greenJudge: gJudge, costJudge: cJudge, baseline }, ctx),
   );
   metrics.carbon_credit_incentive_strategy_agent = mStrategy;
+
+  // R001 / T005 — signed audit event for the headline credit-strategy numbers.
+  // Hash the four inputs (judge approval counts + baseline totals) so two runs
+  // with identical inputs produce an identical digest; a sign-flip or formula
+  // change in `creditStrategy.compute()` can then be detected post-hoc by
+  // re-hashing the same four inputs and diffing against `input_digest_sha256`.
+  // Key order is fixed (greenJudgeApprovedCount, costJudgeApprovedCount,
+  // baselineTotalSpendEur, baselineTotalTco2e) so JSON.stringify is stable.
+  const greenJudgeApprovedCount = gJudge.judged_results.filter(
+    (r) => r.verdict === "approved" || r.verdict === "approved_with_caveats",
+  ).length;
+  const costJudgeApprovedCount = cJudge.judged_results.filter(
+    (r) => r.verdict === "approved" || r.verdict === "approved_with_caveats",
+  ).length;
+  const baselineTotalSpendEur = baseline.baseline.total_spend_eur;
+  const baselineTotalTco2e = baseline.baseline.estimated_total_tco2e;
+  const inputDigestSha256 = createHash("sha256")
+    .update(
+      JSON.stringify({
+        greenJudgeApprovedCount,
+        costJudgeApprovedCount,
+        baselineTotalSpendEur,
+        baselineTotalTco2e,
+      }),
+    )
+    .digest("hex");
+  const creditAuditPayload: CreditAuditPayload = {
+    orgId: input.orgId,
+    month: input.month,
+    runId,
+    total_net_company_scale_financial_impact_eur:
+      strategy.summary.total_net_company_scale_financial_impact_eur,
+    total_emissions_reduced_tco2e: strategy.summary.total_emissions_reduced_tco2e,
+    total_recommended_credit_purchase_cost_eur:
+      strategy.summary.total_recommended_credit_purchase_cost_eur,
+    tax_advisor_review_required: strategy.summary.tax_advisor_review_required,
+    input_digest_sha256: inputDigestSha256,
+  };
   await ctx.auditLog({
     type: "agent.credit_strategy.run",
-    payload: {
-      net_financial_impact_eur: strategy.summary.total_net_company_scale_financial_impact_eur,
-      emissions_reduced_tco2e: strategy.summary.total_emissions_reduced_tco2e,
-      tax_advisor_review_required: strategy.summary.tax_advisor_review_required,
-    },
+    payload: creditAuditPayload as unknown as Record<string, unknown>,
   });
 
   const [report, mReport] = await timed(() =>
@@ -110,6 +159,25 @@ export async function runDag(
     },
   });
 
+  // R002.AC2-AC5 — read per-agent mock_path rows back, count Sonnet-path
+  // fallbacks, and emit one `agent.<name>.fallback_to_mock` audit event per
+  // mocked agent. ANTHROPIC_MOCK=1 marks the flag as `intended`; otherwise
+  // it's `degradation` (real run silently fell back to mock).
+  const mockedRows = db
+    .select({ agentName: agentMessages.agentName })
+    .from(agentMessages)
+    .where(and(eq(agentMessages.agentRunId, runId), eq(agentMessages.mockPath, 1)))
+    .all();
+  const mockedAgents = Array.from(new Set(mockedRows.map((r) => r.agentName as AgentName)));
+  const intended = env.anthropicMock;
+  for (const name of mockedAgents) {
+    await ctx.auditLog({
+      type: `agent.${name}.fallback_to_mock`,
+      payload: { agent: name, runId, flag: intended ? "intended" : "degradation" },
+    });
+  }
+  const mock_agent_count = mockedAgents.length;
+
   return {
     runId,
     baseline,
@@ -121,6 +189,7 @@ export async function runDag(
     creditStrategy: strategy,
     executiveReport: report,
     metrics,
+    mock_agent_count,
     totalLatencyMs: performance.now() - totalStart,
   };
 }
