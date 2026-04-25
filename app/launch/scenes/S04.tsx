@@ -20,6 +20,7 @@ import type { SceneProps } from "../types";
 import { MacWindow } from "../components/MacWindow";
 import { CameraScript } from "../components/CameraScript";
 import { CursorActor } from "../components/CursorActor";
+import { PermissionPrompt } from "../components/PermissionPrompt";
 import { LaunchSidebar } from "../components/real/LaunchSidebar";
 import { TransactionTable } from "../components/TransactionTable";
 import { DRAG_DROP_CURSOR, TRANSACTIONS } from "../data";
@@ -50,7 +51,7 @@ export default function S04({ elapsedMs, durationMs }: SceneProps) {
         elapsedMs={elapsedMs}
         durationMs={durationMs}
       >
-        <MacWindow title="Carbo — Documents" width={1480} height={900}>
+        <MacWindow title="Carbo — Documents" width={1480} height={900} glass>
           <div style={{ display: "flex", height: "100%" }}>
             <LaunchSidebar activeKey="invoices" />
             <div style={{ flex: 1, minWidth: 0, overflow: "auto" }}>
@@ -129,6 +130,17 @@ export default function S04({ elapsedMs, durationMs }: SceneProps) {
         script={DRAG_DROP_CURSOR}
         elapsedMs={elapsedMs}
         carry={!dropped ? <CarryThumb /> : null}
+      />
+
+      {/* Permission sheet — slides in just after the drop, auto-approves before
+          the scene ends. Mirrors the ChatGPT-5.5 transparency motif. */}
+      <PermissionPrompt
+        elapsedMs={elapsedMs}
+        showAt={3700}
+        approveAt={5500}
+        question="Allow Carbo to read albert-heijn-2026-04-24.jpg?"
+        description="Vision will extract merchant, date, items, VAT and total. Audit-logged."
+        approveLabel="Allow once"
       />
     </div>
   );

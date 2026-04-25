@@ -32,7 +32,8 @@ export default function S07({ elapsedMs, durationMs, progress }: SceneProps) {
     []
   );
 
-  const showLinkedBadge = progress > 0.85;
+  const showLinkedBadge = progress > 0.65;
+  const showFactorPills = progress > 0.5;
 
   return (
     <div
@@ -52,11 +53,12 @@ export default function S07({ elapsedMs, durationMs, progress }: SceneProps) {
         durationMs={durationMs}
       >
         <MacWindow
-          title="Carbo — Ledger"
+          title="Carbo — Ledger · classifier + factor lookup"
           showSidebar
           showSearch
           width={1480}
           height={900}
+          glass
         >
           <div style={{ display: "flex", height: "100%" }}>
             <LaunchSidebar activeKey="ledger" />
@@ -68,6 +70,9 @@ export default function S07({ elapsedMs, durationMs, progress }: SceneProps) {
                   fillProgress={progress}
                 />
 
+                {/* Factor source pills — show the hardcoded EF provenance. */}
+                {showFactorPills ? <FactorPills /> : null}
+
                 {/* "Linked" badge — appears after the fill animation settles */}
                 {showLinkedBadge ? <LinkedBadge /> : null}
               </div>
@@ -75,6 +80,80 @@ export default function S07({ elapsedMs, durationMs, progress }: SceneProps) {
           </div>
         </MacWindow>
       </CameraScript>
+    </div>
+  );
+}
+
+function FactorPills() {
+  const PILLS: Array<{ src: string; tier: string }> = [
+    { src: "DEFRA 2024",  tier: "tier 1" },
+    { src: "ADEME",       tier: "tier 1" },
+    { src: "Exiobase v3", tier: "tier 2" },
+  ];
+  return (
+    <div
+      style={{
+        position: "absolute",
+        bottom: 24,
+        left: 24,
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        animation: "s07-pills-fade 320ms ease-out forwards",
+        opacity: 0,
+      }}
+    >
+      <span
+        style={{
+          fontFamily: "var(--font-source-code-pro), ui-monospace, monospace",
+          fontSize: 11,
+          letterSpacing: "1.2px",
+          textTransform: "uppercase",
+          color: "var(--fg-muted)",
+          marginRight: 4,
+        }}
+      >
+        Factor source ·
+      </span>
+      {PILLS.map((p) => (
+        <span
+          key={p.src}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "4px 10px",
+            borderRadius: 9999,
+            border: "1px solid var(--border-default)",
+            background: "var(--bg-canvas)",
+            color: "var(--fg-primary)",
+            fontFamily: "var(--font-source-code-pro), ui-monospace, monospace",
+            fontSize: 11,
+            letterSpacing: "0.4px",
+          }}
+        >
+          {p.src}
+          <span
+            style={{
+              color: "var(--fg-muted)",
+              letterSpacing: "1.2px",
+              textTransform: "uppercase",
+              fontSize: 9,
+            }}
+          >
+            {p.tier}
+          </span>
+        </span>
+      ))}
+      <style>{`
+        @keyframes s07-pills-fade {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          @keyframes s07-pills-fade { from, to { opacity: 1; transform: none; } }
+        }
+      `}</style>
     </div>
   );
 }

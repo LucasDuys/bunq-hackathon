@@ -39,11 +39,12 @@ export default function S13C({ elapsedMs, durationMs }: SceneProps) {
         durationMs={durationMs}
       >
         <MacWindow
-          title="Carbo — Reports"
+          title="Carbo — Reports · CSRD ESRS E1"
           showSidebar
           showSearch
           width={1480}
           height={900}
+          glass
         >
           <div style={{ display: "flex", height: "100%" }}>
             <LaunchSidebar activeKey="reports" />

@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
+import { AboveWindowCaption } from "./components/AboveWindowCaption";
 import { Leaf } from "./components/Leaf";
 import { TIMELINE, TOTAL_DURATION_MS } from "./data";
 import type { SceneSpec } from "./types";
@@ -24,20 +25,32 @@ import S04 from "./scenes/S04";
 import S05 from "./scenes/S05";
 import S06 from "./scenes/S06";
 import S07 from "./scenes/S07";
+import S07A from "./scenes/S07A";
 import S08 from "./scenes/S08";
+import S08C from "./scenes/S08C";
 import S09 from "./scenes/S09";
 import S10 from "./scenes/S10";
 import S11 from "./scenes/S11";
+import S11A from "./scenes/S11A";
+import S11R from "./scenes/S11R";
+import S11P from "./scenes/S11P";
 import S12 from "./scenes/S12";
 import S13 from "./scenes/S13";
 import S13C from "./scenes/S13C";
 import S14 from "./scenes/S14";
 import S15 from "./scenes/S15";
-import S15I from "./scenes/S15I";
 import S16 from "./scenes/S16";
 
+// Order MUST match TIMELINE in data.ts.
 const SCENES = [
-  S01, S01D, S02, S03, S04, S05, S06, S07, S08, S09, S10, S11, S12, S13, S13C, S14, S15, S15I, S16,
+  S01, S01D, S02,
+  S03, S04, S05, S06, S07,
+  S07A,
+  S08, S08C, S09, S10, S11, S11A,
+  S11R, S11P,
+  S12, S13, S13C,
+  S14, S15,
+  S16,
 ];
 
 /** Cumulative ms-offset at which each scene begins. Last entry = TOTAL_DURATION_MS. */
@@ -50,7 +63,7 @@ const OFFSETS: number[] = (() => {
 /** Find the scene index for a given total elapsed time (clamped). */
 function sceneIndexFor(totalMs: number): number {
   const t = Math.max(0, Math.min(totalMs, TOTAL_DURATION_MS - 1));
-  // Binary-light: TIMELINE has 19 entries, linear is fine.
+  // Binary-light: TIMELINE has 23 entries, linear is fine.
   for (let i = TIMELINE.length - 1; i >= 0; i--) {
     if (t >= OFFSETS[i]!) return i;
   }
@@ -150,6 +163,17 @@ export function LaunchTimeline() {
           progress={sceneProgress}
         />
       </div>
+
+      {/* Above-window narration caption (product scenes only).
+          ChatGPT-5.5-style "Using Github: searched channels …" header. */}
+      {currentScene.caption ? (
+        <AboveWindowCaption
+          key={`cap-${currentScene.id}`}
+          text={currentScene.caption}
+          elapsedMs={sceneElapsedMs}
+          durationMs={currentScene.durationMs}
+        />
+      ) : null}
 
       {/* Leaf — root-level so it drifts across scene boundaries. */}
       <Leaf

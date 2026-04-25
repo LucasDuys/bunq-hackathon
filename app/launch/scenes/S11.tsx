@@ -49,6 +49,7 @@ export default function S11({ elapsedMs, durationMs }: SceneProps) {
           showSidebar
           width={1480}
           height={900}
+          glass
         >
           <div style={{ display: "flex", height: "100%" }}>
             <LaunchSidebar activeKey="close" />

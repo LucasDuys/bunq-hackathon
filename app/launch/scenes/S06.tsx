@@ -42,6 +42,7 @@ export default function S06({ elapsedMs, durationMs }: SceneProps) {
           title="Carbo — Invoice ingestion · vision"
           width={1280}
           height={820}
+          glass
         >
           <div
             style={{

@@ -22,6 +22,12 @@ export type MacWindowProps = {
   height?: number;
   /** Optional vertical offset from the top of the viewport. If omitted, centered. */
   top?: number;
+  /**
+   * If true, the titlebar (and search row) renders with a translucent
+   * backdrop-blur over the page bg — used for the orbiting-cube and
+   * multi-app cuts where windows overlap.
+   */
+  glass?: boolean;
   children: ReactNode;
   className?: string;
 };
@@ -37,6 +43,7 @@ export function MacWindow({
   width = 1480,
   height = 900,
   top,
+  glass = false,
   children,
   className,
 }: MacWindowProps) {
@@ -60,7 +67,18 @@ export function MacWindow({
       role="group"
       aria-label={title ?? "Carbo window"}
     >
-      <div className={styles.macTitlebar}>
+      <div
+        className={styles.macTitlebar}
+        style={
+          glass
+            ? {
+                background: "rgba(246, 246, 246, 0.72)",
+                backdropFilter: "blur(14px)",
+                WebkitBackdropFilter: "blur(14px)",
+              }
+            : undefined
+        }
+      >
         <div className={styles.trafficDots} aria-hidden="true">
           <span className={`${styles.trafficDot} ${styles.red}`} />
           <span className={`${styles.trafficDot} ${styles.yellow}`} />

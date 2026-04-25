@@ -44,6 +44,7 @@ export default function S01D({ elapsedMs, durationMs }: SceneProps) {
           showSearch
           width={1480}
           height={900}
+          glass
         >
           <div style={{ display: "flex", height: "100%" }}>
             <LaunchSidebar activeKey="dashboard" />

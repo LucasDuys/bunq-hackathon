@@ -48,6 +48,7 @@ export default function S13({ elapsedMs, durationMs, progress }: SceneProps) {
           showSidebar
           width={1280}
           height={900}
+          glass
         >
           <div
             style={{

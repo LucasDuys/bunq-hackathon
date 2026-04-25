@@ -9,7 +9,7 @@ import type { SceneProps } from "../types";
 import { TIMELINE } from "../data";
 import { TitleCard } from "../components/TitleCard";
 
-const SPEC = TIMELINE[7]!;
+const SPEC = TIMELINE.find((t) => t.id === "S08")!;
 
 export default function S08(_props: SceneProps) {
   return (

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * TransactionTable — spreadsheet-style transaction grid with three modes:
+ * TransactionTable — spreadsheet-style transaction grid with four modes:
  *
  *  1. STATIC: render rows as-is. Gap rows render with amber tint, "?" chips,
  *     and AlertCircle markers.
@@ -15,6 +15,16 @@
  *     FLIP transform (recorded initial position → eased translateY toward sorted
  *     position). At progress=1 the grouping is visually complete and a coloured
  *     left-edge band marks each category group.
+ *  4. SCAN (S2): when `scanProgress` is set (0..1) the rows reveal progressively
+ *     as if the agent is reading them top-to-bottom. The active row gets a
+ *     brand-green left edge + faint tint and lingers for ~one row-step before
+ *     the scan moves on. Pending rows render as low-opacity skeletons; done rows
+ *     render full content. Each row, on the frame the scan crosses it, runs a
+ *     250ms staggered fade across its cells (date → confidence). Gap rows stay
+ *     un-classified after the scan passes — the amber `?` chip keeps pulsing.
+ *
+ * Modes are mutually exclusive in practice. SCAN is gated to fire only when
+ * neither fillRow nor clusterByCategory is active.
  *
  * No external animation libs — pure React state + CSS transforms + minimal RAF
  * for the count-up. Honours `prefers-reduced-motion`.
@@ -70,6 +80,13 @@ export type TransactionTableProps = {
   clusterByCategory?: boolean;
   /** 0..1 progress of the clustering animation. */
   clusterProgress?: number;
+  /**
+   * S02 scan-in: 0..1 progress of the row-by-row reveal. When set (and no
+   * other mode is active), rows render as pending / active / done depending
+   * on which side of the scan they sit. Ignored if `fillRow` or
+   * `clusterByCategory` is active.
+   */
+  scanProgress?: number;
   /** Scroll viewport offset (pixels). */
   scrollY?: number;
 };
@@ -80,8 +97,18 @@ export function TransactionTable({
   fillProgress = 0,
   clusterByCategory = false,
   clusterProgress = 0,
+  scanProgress,
   scrollY = 0,
 }: TransactionTableProps) {
+  // Scan mode is mutually exclusive with fill / cluster.
+  const scanActive =
+    scanProgress !== undefined && !fillRow && !clusterByCategory;
+  // Floating index: e.g. 6.4 means row 6 is "active" and row 7 is "pending".
+  // We extend the range slightly past N so the final row gets a full active beat.
+  const scanFloatIdx = scanActive
+    ? Math.max(0, Math.min(transactions.length, (scanProgress ?? 0) * transactions.length))
+    : -1;
+  const scanActiveIdx = scanActive ? Math.floor(scanFloatIdx) : -1;
   // ── FLIP positions ──
   // Compute the index each row would occupy after a stable category-grouped sort.
   const sortedIndexById = useMemo(() => {
@@ -145,6 +172,27 @@ export function TransactionTable({
               flipY = delta * easeSwift(clusterProgress);
             }
 
+            // Scan-mode per-row state.
+            // pending: row > activeIdx (skeleton, very low opacity)
+            // active : row === activeIdx (brand-green band, faint tint)
+            // done   : row < activeIdx (full content, no special tint)
+            // For cell-stagger reveal, capture how long the active row has been
+            // sitting on this position (0..1 within its slot).
+            let scanState: "pending" | "active" | "done" | "off" = "off";
+            let cellRevealProgress = 1;
+            if (scanActive) {
+              if (originalIdx > scanActiveIdx) scanState = "pending";
+              else if (originalIdx < scanActiveIdx) scanState = "done";
+              else {
+                scanState = "active";
+                // Local 0..1 within this row's slot; cell stagger uses this.
+                cellRevealProgress = Math.max(
+                  0,
+                  Math.min(1, scanFloatIdx - scanActiveIdx)
+                );
+              }
+            }
+
             return (
               <Row
                 key={row.id}
@@ -156,11 +204,32 @@ export function TransactionTable({
                 isGroupStart={!!groupBoundaries.get(row.id)}
                 fillRow={isFilling ? fillRow : undefined}
                 fillProgress={isFilling ? fillProgress : 0}
+                scanState={scanState}
+                cellRevealProgress={cellRevealProgress}
               />
             );
           })}
         </div>
       </div>
+
+      {/* Skeleton shimmer for scan-pending rows. Subtle, pauses under reduced motion. */}
+      <style jsx global>{`
+        @keyframes ca-launch-skel-shimmer {
+          0% {
+            background-position: 200% 0;
+          }
+          100% {
+            background-position: -200% 0;
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ca-launch-row,
+          .ca-launch-row * {
+            animation: none !important;
+            transition: none !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -232,6 +301,10 @@ type RowProps = {
   isGroupStart: boolean;
   fillRow?: { id: string; subCategory: string; tco2eKg: number; confidence: number };
   fillProgress: number;
+  /** S02 scan-in mode. "off" means no scan is active. */
+  scanState?: "pending" | "active" | "done" | "off";
+  /** 0..1 progress of the active row's cell-stagger reveal. */
+  cellRevealProgress?: number;
 };
 
 function Row({
@@ -242,15 +315,28 @@ function Row({
   isGroupStart,
   fillRow,
   fillProgress,
+  scanState = "off",
+  cellRevealProgress = 1,
 }: RowProps) {
   const isGap = !!row.isGap;
   // While fillProgress crosses 1.0 the row is no longer treated as a gap.
   const visiblyFilled = fillRow && fillProgress >= 1;
   const showAsGap = isGap && !visiblyFilled;
 
+  // Scan-mode shorthands.
+  const isScanPending = scanState === "pending";
+  const isScanActive = scanState === "active";
+  // Hide gap markers (amber tint, "?" chip, AlertCircle) until the scan has
+  // reached this row. After it has, gap rows look the same as in static mode.
+  const scanSuppressGap = isScanPending;
+  // For pending rows, classified cells render as "—" / faint skeleton.
+  const scanHideClassified = isScanPending;
+
   // Amber tint eases out toward the end of the fill animation.
+  // In scan mode, the amber tint only appears once the scan has crossed.
   const amberAlpha = (() => {
     if (!isGap) return 0;
+    if (scanSuppressGap) return 0;
     if (!fillRow) return 0.06;
     if (fillProgress >= 1) return 0;
     if (fillProgress < 0.7) return 0.06;
@@ -262,6 +348,24 @@ function Row({
   // Cluster band on the left edge once grouping has settled.
   const bandOpacity = clusterByCategory ? Math.max(0, clusterProgress - 0.4) / 0.6 : 0;
   const bandColor = dotForCategory(row.category);
+
+  // Per-cell stagger reveal during active scan. Cell idx 0..6, ~30ms apart
+  // over a ~250ms reveal. cellRevealProgress is 0..1 inside the active slot.
+  // Each cell's reveal target = clamp01((reveal * 7 - cellIdx) / 1).
+  const scanCellOpacity = (cellIdx: number): number => {
+    if (!isScanActive) return 1;
+    // Total cells animate in over the first ~70% of the slot.
+    const t = Math.max(0, Math.min(1, cellRevealProgress / 0.7));
+    const local = t * 7 - cellIdx;
+    return Math.max(0, Math.min(1, local));
+  };
+
+  // Whole-row opacity:
+  //   pending: 0.18 (skeleton)
+  //   active : 1 (cells stagger inside)
+  //   done   : 1
+  //   off    : 1
+  const rowOpacity = isScanPending ? 0.18 : 1;
 
   return (
     <div
@@ -275,11 +379,16 @@ function Row({
         padding: "0 16px",
         gap: 12,
         borderBottom: "1px solid var(--border-faint)",
-        background: amberAlpha > 0 ? `rgba(247,185,85,${amberAlpha})` : "transparent",
+        background: isScanActive
+          ? "rgba(62,207,142,0.06)"
+          : amberAlpha > 0
+            ? `rgba(247,185,85,${amberAlpha})`
+            : "transparent",
         transform: `translateY(${flipY}px)`,
-        transition: "background 320ms ease-out",
+        transition: "background 320ms ease-out, opacity 200ms ease-out",
         willChange: flipY !== 0 ? "transform" : undefined,
         position: "relative",
+        opacity: rowOpacity,
       }}
     >
       {/* Cluster group band (left edge) */}
@@ -299,11 +408,44 @@ function Row({
         />
       )}
 
-      <div role="cell" style={{ color: "var(--fg-muted)", fontSize: 12, fontFamily: "var(--font-source-code-pro), ui-monospace, monospace" }}>
+      {/* Scan-mode active-row left edge (brand green) */}
+      {isScanActive && (
+        <span
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 2,
+            background: "var(--brand-green)",
+            opacity: 1,
+          }}
+        />
+      )}
+
+      <div
+        role="cell"
+        style={{
+          color: "var(--fg-muted)",
+          fontSize: 12,
+          fontFamily: "var(--font-source-code-pro), ui-monospace, monospace",
+          opacity: scanCellOpacity(0),
+          transition: "opacity 150ms ease-out",
+        }}
+      >
         {row.date}
       </div>
 
-      <div role="cell" style={{ color: "var(--fg-primary)", fontSize: 13 }}>
+      <div
+        role="cell"
+        style={{
+          color: "var(--fg-primary)",
+          fontSize: 13,
+          opacity: scanCellOpacity(1),
+          transition: "opacity 150ms ease-out",
+        }}
+      >
         {row.merchant}
       </div>
 
@@ -314,12 +456,23 @@ function Row({
           fontSize: 13,
           textAlign: "right",
           fontVariantNumeric: "tabular-nums",
+          opacity: scanCellOpacity(2),
+          transition: "opacity 150ms ease-out",
         }}
       >
         {fmtEur(row.amountEur, 2)}
       </div>
 
-      <div role="cell" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div
+        role="cell"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          opacity: scanCellOpacity(3),
+          transition: "opacity 150ms ease-out",
+        }}
+      >
         <span
           aria-hidden="true"
           style={{
@@ -336,9 +489,19 @@ function Row({
         </span>
       </div>
 
-      {/* Sub-category — animated typewriter when filling */}
-      <div role="cell" style={{ color: showAsGap ? "var(--fg-faint)" : "var(--fg-primary)", fontSize: 13 }}>
-        {fillRow ? (
+      {/* Sub-category — animated typewriter when filling, skeleton when scan-pending */}
+      <div
+        role="cell"
+        style={{
+          color: showAsGap ? "var(--fg-faint)" : "var(--fg-primary)",
+          fontSize: 13,
+          opacity: scanCellOpacity(4),
+          transition: "opacity 150ms ease-out",
+        }}
+      >
+        {scanHideClassified ? (
+          <SkeletonStripe width={120} />
+        ) : fillRow ? (
           <SubCategoryFill text={fillRow.subCategory} progress={fillProgress} />
         ) : showAsGap ? (
           <span style={{ color: "var(--fg-faint)" }}>—</span>
@@ -347,7 +510,7 @@ function Row({
         )}
       </div>
 
-      {/* CO₂e — animated count-up when filling */}
+      {/* CO₂e — animated count-up when filling, skeleton when scan-pending */}
       <div
         role="cell"
         style={{
@@ -355,9 +518,13 @@ function Row({
           fontSize: 13,
           textAlign: "right",
           fontVariantNumeric: "tabular-nums",
+          opacity: scanCellOpacity(5),
+          transition: "opacity 150ms ease-out",
         }}
       >
-        {fillRow ? (
+        {scanHideClassified ? (
+          <SkeletonStripe width={56} align="right" />
+        ) : fillRow ? (
           <Co2eFill target={fillRow.tco2eKg} progress={fillProgress} />
         ) : row.tco2eKg !== null ? (
           fmtKg(row.tco2eKg)
@@ -367,8 +534,21 @@ function Row({
       </div>
 
       {/* Confidence cell — "?" chip while gap, mini ConfidenceBar otherwise */}
-      <div role="cell" style={{ display: "flex", alignItems: "center", gap: 8, position: "relative", justifyContent: "flex-start" }}>
-        {fillRow ? (
+      <div
+        role="cell"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+          position: "relative",
+          justifyContent: "flex-start",
+          opacity: scanCellOpacity(6),
+          transition: "opacity 150ms ease-out",
+        }}
+      >
+        {scanHideClassified ? (
+          <SkeletonStripe width={80} />
+        ) : fillRow ? (
           <ConfidenceFill target={fillRow.confidence} progress={fillProgress} />
         ) : showAsGap ? (
           <UnknownChip />
@@ -380,8 +560,8 @@ function Row({
           <span style={{ color: "var(--fg-faint)" }}>—</span>
         )}
 
-        {/* Right-edge AlertCircle — pulses while still a gap */}
-        {isGap && !visiblyFilled && (
+        {/* Right-edge AlertCircle — pulses while still a gap, suppressed pre-scan */}
+        {isGap && !visiblyFilled && !scanSuppressGap && (
           <AlertCircle
             size={14}
             color="var(--status-warning)"
@@ -411,6 +591,37 @@ function Row({
         }
       `}</style>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Skeleton stripe — used for scan-pending classified cells.
+// Very subtle; pauses under prefers-reduced-motion via CSS media query.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SkeletonStripe({
+  width,
+  align = "left",
+}: {
+  width: number;
+  align?: "left" | "right";
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: "inline-block",
+        width,
+        height: 6,
+        borderRadius: 9999,
+        background:
+          "linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.04) 100%)",
+        backgroundSize: "200% 100%",
+        animation: "ca-launch-skel-shimmer 1500ms linear infinite",
+        verticalAlign: "middle",
+        marginLeft: align === "right" ? "auto" : 0,
+      }}
+    />
   );
 }
 

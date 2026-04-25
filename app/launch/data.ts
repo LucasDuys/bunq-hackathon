@@ -370,29 +370,67 @@ export const SCALE_TIERS: ScaleTier[] = [
 ];
 
 // ── Master timeline ──────────────────────────────────────────────────────────
-// 16 scenes, ≈2:20 total. Adjust durationMs here to retime without touching scene code.
-// Leaf only appears on title cards. Product scenes (and the final lockup) get leafOpacity 0
-// so the 400ms CSS opacity transition on Leaf fades it out cleanly at scene boundaries.
+// 21 scenes, ≈2:05 total. Removed S07 (row-fill), S08 (title), S09 (priority
+// clusters). Added S13B (savings/impact workspace). New flow:
+//   problem → multimodal → close rail → DAG → audit → refine → transfer →
+//   alternatives matrix → savings → compliance briefing → scale → lockup.
+//
+// Many product scenes use a HeaderOverlay (big header text above the MacWindow
+// that the camera zooms past) instead of, or alongside, a title card.
+// Source-code-pro narrator captions stay for in-action narration.
+//
+// Adjust durationMs here to retime without touching scene code.
 export const TIMELINE: SceneSpec[] = [
-  { id: "S01", durationMs: 4000, title: "Your books already know your carbon.", leafOpacity: 0.4 },
-  { id: "S01D", durationMs: 9000, leafOpacity: 0 },
-  { id: "S02", durationMs: 10000, leafOpacity: 0 },
-  { id: "S03", durationMs: 4000, title: "Some spend doesn’t explain itself.", leafOpacity: 0.4 },
-  { id: "S04", durationMs: 14000, leafOpacity: 0 },
-  { id: "S05", durationMs: 3000, title: "Vision reads what bank text won’t.", leafOpacity: 0.4 },
-  { id: "S06", durationMs: 16000, leafOpacity: 0 },
-  { id: "S07", durationMs: 10000, leafOpacity: 0 },
-  { id: "S08", durationMs: 4000, title: "Now the agents have something to reason over.", leafOpacity: 0.4 },
-  { id: "S09", durationMs: 12000, leafOpacity: 0 },
-  { id: "S10", durationMs: 4000, title: "Eight agents. Five tiers. Two parallel fan-outs.", leafOpacity: 0.4 },
-  { id: "S11", durationMs: 20000, leafOpacity: 0 },
-  { id: "S12", durationMs: 4000, title: "Cheaper. Lower carbon. Validated.", leafOpacity: 0.4 },
-  { id: "S13", durationMs: 12000, leafOpacity: 0 },
-  { id: "S13C", durationMs: 10000, leafOpacity: 0 },
-  { id: "S14", durationMs: 4000, title: "At scale, this is millions.", leafOpacity: 0.4 },
-  { id: "S15", durationMs: 12000, leafOpacity: 0 },
-  { id: "S15I", durationMs: 10000, leafOpacity: 0 },
-  { id: "S16", durationMs: 6000, leafOpacity: 0 },
+  // Beat 1 — problem
+  { id: "S01",  durationMs: 3800,  title: "Your books already know your carbon footprint.",  leafOpacity: 0.4 },
+  { id: "S01D", durationMs: 6500,  header: "We calculate and save taxes and emissions.",
+                                   caption: "Carbo · live carbon view of your bunq books",   leafOpacity: 0 },
+  { id: "S02",  durationMs: 7000,  header: "Reading every transaction.",
+                                   caption: "Reading transactions · Vodafone · KLM · Albert Heijn …", leafOpacity: 0 },
+
+  // Beat 2 — multimodal
+  { id: "S03",  durationMs: 3000,  title: "Some spend doesn’t explain itself.",         leafOpacity: 0.4 },
+  { id: "S04",  durationMs: 7000,  header: "Drop the receipt · vision takes over.",
+                                   caption: "Drag receipt · vision · Albert Heijn",     leafOpacity: 0 },
+  { id: "S05",  durationMs: 2500,  title: "Vision reads what bank text won’t.",         leafOpacity: 0.4 },
+  { id: "S06",  durationMs: 9000,  header: "Five fields, one glance.",
+                                   caption: "Extracting · merchant · date · items · VAT · total", leafOpacity: 0 },
+
+  // Beat 3 — close machine engages
+  { id: "S07A", durationMs: 5000,  header: "The close engages.",
+                                   caption: "Close · INGEST → CLASSIFY → ESTIMATE → CLUSTER", leafOpacity: 0 },
+
+  // Beat 4 — DAG
+  { id: "S08C", durationMs: 4000,  header: "Eight agents. One brief.",
+                                   caption: "Eight agents · six tiers · two parallel fan-outs", leafOpacity: 0 },
+  { id: "S10",  durationMs: 2500,  title: "Eight agents. Five tiers. Two parallel fan-outs.", leafOpacity: 0.4 },
+  { id: "S11",  durationMs: 11000, header: "Reasoning over your books.",
+                                   caption: "Running DAG · Sonnet 4.6 · prompt cache hit",   leafOpacity: 0 },
+  { id: "S11A", durationMs: 5000,  header: "Every step, hash-signed.",
+                                   caption: "Audit ledger · SHA-256 hash chain · verified",  leafOpacity: 0 },
+
+  // Beat 5 — refine + propose
+  { id: "S11R", durationMs: 6000,  header: "Three questions to be sure.",
+                                   caption: "Three questions for you · Sonnet · refine cluster", leafOpacity: 0 },
+  { id: "S11P", durationMs: 6000,  header: "We move the money. You approve it.",
+                                   caption: "Propose: €412 → Carbon Reserve · Puro.earth credit", leafOpacity: 0 },
+
+  // Beat 6 — alternatives → savings → compliance briefing
+  { id: "S12",  durationMs: 2500,  title: "Cheaper. Lower carbon. Validated.",          leafOpacity: 0.4 },
+  { id: "S13",  durationMs: 7000,  header: "Swap this · save that.",
+                                   caption: "Alternatives → savings · win-win quadrant",  leafOpacity: 0 },
+  { id: "S13B", durationMs: 7500,  header: "We calculate and save taxes and emissions.",
+                                   caption: "Impact workspace · 18.49 tCO₂e avoidable / yr", leafOpacity: 0 },
+  { id: "S13C", durationMs: 8000,  header: "The compliance report writes itself.",
+                                   caption: "Monthly briefing · CSRD ESRS E1 · auto-generated", leafOpacity: 0 },
+
+  // Beat 7 — scale
+  { id: "S14",  durationMs: 2500,  title: "At scale, this is millions.",                leafOpacity: 0.4 },
+  { id: "S15",  durationMs: 7000,  header: "1.87% per €1M annual spend.",
+                                   caption: "1.87% net annual financial impact · 49 tCO₂e per €1M", leafOpacity: 0 },
+
+  // Beat 8 — lockup
+  { id: "S16",  durationMs: 4000,  leafOpacity: 0 },
 ];
 
 export const TOTAL_DURATION_MS = TIMELINE.reduce((s, t) => s + t.durationMs, 0);

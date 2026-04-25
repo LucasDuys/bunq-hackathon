@@ -46,10 +46,11 @@ export default function S09({ elapsedMs, durationMs, progress }: SceneProps) {
         durationMs={durationMs}
       >
         <MacWindow
-          title="Carbo — Spend baseline"
+          title="Carbo — Priority clusters · post-DAG tier 1"
           showSidebar
           width={1480}
           height={900}
+          glass
         >
           <div style={{ display: "flex", height: "100%" }}>
             <LaunchSidebar activeKey="ledger" />

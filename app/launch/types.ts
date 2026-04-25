@@ -130,17 +130,19 @@ export type SceneId =
   | "S04"
   | "S05"
   | "S06"
-  | "S07"
-  | "S08"
-  | "S09"
+  | "S07A"
+  | "S08C"
   | "S10"
   | "S11"
+  | "S11A"
+  | "S11R"
+  | "S11P"
   | "S12"
   | "S13"
+  | "S13B"
   | "S13C"
   | "S14"
   | "S15"
-  | "S15I"
   | "S16";
 
 export type SceneSpec = {
@@ -149,6 +151,12 @@ export type SceneSpec = {
   durationMs: number;
   /** Optional title-card text (applies to title scenes only). */
   title?: string;
+  /**
+   * Optional caption rendered above the MacWindow during product scenes.
+   * Mirrors the "Using Github: searched channels …" narration in the
+   * ChatGPT-5.5 launch reference video.
+   */
+  caption?: string;
   /** Per-scene leaf opacity override (default 0.35). */
   leafOpacity?: number;
 };
