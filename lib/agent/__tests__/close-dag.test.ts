@@ -179,6 +179,73 @@ before(async () => {
       mock_path INTEGER,
       created_at INTEGER NOT NULL DEFAULT (unixepoch())
     );
+    -- spendBaseline reads invoices.linked_tx_id for invoice-confidence boost.
+    CREATE TABLE IF NOT EXISTS invoices (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL,
+      linked_tx_id TEXT,
+      status TEXT NOT NULL DEFAULT 'processed'
+    );
+    -- close.approveAndExecute reads orgs for bunq context. Test never inserts;
+    -- close.ts handles missing org gracefully (uses ctx defaults).
+    CREATE TABLE IF NOT EXISTS orgs (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      bunq_user_id TEXT,
+      reserve_account_id TEXT,
+      credits_account_id TEXT,
+      tax_reserve_account_id TEXT,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS bunq_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      org_id TEXT NOT NULL,
+      installation_token TEXT NOT NULL,
+      session_token TEXT NOT NULL,
+      server_public_key TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    -- close.ts now calls persistDagRun, which writes here. Without these
+    -- tables persistDagRun fails silently (try/catch in close.ts) and the
+    -- close page can't surface the DAG panel.
+    CREATE TABLE IF NOT EXISTS agent_runs (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL,
+      month TEXT NOT NULL,
+      research_run_id TEXT,
+      dag_payload TEXT NOT NULL,
+      total_latency_ms INTEGER NOT NULL,
+      mock INTEGER NOT NULL DEFAULT 1,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+    CREATE TABLE IF NOT EXISTS impact_recommendations (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL,
+      research_run_id TEXT NOT NULL,
+      month TEXT NOT NULL,
+      baseline_key TEXT NOT NULL,
+      baseline_merchant_norm TEXT NOT NULL,
+      baseline_merchant_label TEXT NOT NULL,
+      baseline_category TEXT NOT NULL,
+      baseline_sub_category TEXT,
+      baseline_annual_spend_eur REAL NOT NULL,
+      baseline_annual_co2e_kg REAL NOT NULL,
+      baseline_confidence REAL NOT NULL,
+      alt_name TEXT NOT NULL,
+      alt_type TEXT NOT NULL,
+      alt_description TEXT NOT NULL,
+      alt_cost_delta_pct REAL NOT NULL,
+      alt_co2e_delta_pct REAL NOT NULL,
+      alt_cost_delta_eur_year REAL NOT NULL,
+      alt_co2e_delta_kg_year REAL NOT NULL,
+      alt_confidence REAL NOT NULL,
+      alt_feasibility TEXT NOT NULL,
+      alt_rationale TEXT NOT NULL,
+      alt_sources TEXT NOT NULL,
+      quadrant TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
   `);
   sqlite.close();
 
@@ -284,11 +351,14 @@ describe("R008.AC3 — null required_context_question skips AWAITING_ANSWERS, ad
       .prepare("SELECT state, status, proposed_actions FROM close_runs WHERE id = ?")
       .get(result.id) as Pick<CloseRunRow, "state" | "status" | "proposed_actions">;
 
-    // finalizeEstimates ends in PROPOSED or AWAITING_APPROVAL depending on
-    // policy.requiresApproval; either is "advanced past AWAITING_ANSWERS".
+    // finalizeEstimates ends in PROPOSED, AWAITING_APPROVAL, or COMPLETED
+    // (auto-executed) depending on policy.requiresApproval. Any of those is
+    // "advanced past AWAITING_ANSWERS".
     assert.ok(
-      row.state === "PROPOSED" || row.state === "AWAITING_APPROVAL",
-      `expected PROPOSED or AWAITING_APPROVAL, got ${row.state}`,
+      row.state === "PROPOSED" ||
+        row.state === "AWAITING_APPROVAL" ||
+        row.state === "COMPLETED",
+      `expected PROPOSED/AWAITING_APPROVAL/COMPLETED, got ${row.state}`,
     );
     assert.ok(row.proposed_actions, "proposed_actions must be populated by finalizeEstimates");
 
@@ -327,8 +397,10 @@ describe("R008.AC4 — POST /api/close/run still returns 200 end-to-end on seede
       .prepare("SELECT state, status, dag_run_id FROM close_runs WHERE id = ?")
       .get(json.id) as Pick<CloseRunRow, "state" | "status" | "dag_run_id">;
     assert.ok(
-      row.state === "PROPOSED" || row.state === "AWAITING_APPROVAL",
-      `route end state must be PROPOSED or AWAITING_APPROVAL, got ${row.state}`,
+      row.state === "PROPOSED" ||
+        row.state === "AWAITING_APPROVAL" ||
+        row.state === "COMPLETED",
+      `route end state must be PROPOSED/AWAITING_APPROVAL/COMPLETED, got ${row.state}`,
     );
     assert.equal(row.dag_run_id, json.dagRunId, "persisted dag_run_id matches the response");
   });

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq } from "drizzle-orm";
-import { agentRuns, db, impactRecommendations } from "@/lib/db/client";
-import type { AgentRun, ImpactRecommendation } from "@/lib/db/schema";
+import { and, asc, desc, eq } from "drizzle-orm";
+import { agentMessages, agentRuns, db, impactRecommendations } from "@/lib/db/client";
+import type { AgentMessage, AgentRun, ImpactRecommendation } from "@/lib/db/schema";
 import type { BaselineItem } from "@/lib/impacts/aggregate";
 import type { ResolvedAlternative } from "@/lib/agent/impacts";
 import type { DagRunResult, ResearchedAlternative } from "@/lib/agents/dag/types";
@@ -201,12 +201,55 @@ export const getLatestAgentRun = (orgId: string): AgentRun | null => {
   return row ?? null;
 };
 
-export const getLatestDagResult = (orgId: string): DagRunResult | null => {
-  const row = getLatestAgentRun(orgId);
-  if (!row) return null;
+const isUsableDagPayload = (raw: string): DagRunResult | null => {
   try {
-    return JSON.parse(row.dagPayload) as DagRunResult;
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed !== "object" ||
+      !parsed.runId ||
+      !parsed.executiveReport ||
+      !parsed.greenJudge ||
+      !parsed.metrics
+    ) {
+      return null;
+    }
+    return parsed as DagRunResult;
   } catch {
     return null;
   }
 };
+
+export const getLatestDagResult = (orgId: string): DagRunResult | null => {
+  const row = getLatestAgentRun(orgId);
+  if (!row) return null;
+  return isUsableDagPayload(row.dagPayload);
+};
+
+export const getAgentRunById = (runId: string): AgentRun | null => {
+  const row = db.select().from(agentRuns).where(eq(agentRuns.id, runId)).limit(1).all()[0];
+  return row ?? null;
+};
+
+export const getDagResultByRunId = (runId: string): DagRunResult | null => {
+  const row = getAgentRunById(runId);
+  if (!row) return null;
+  return isUsableDagPayload(row.dagPayload);
+};
+
+export const getAgentMessagesForRun = (runId: string): AgentMessage[] =>
+  db
+    .select()
+    .from(agentMessages)
+    .where(eq(agentMessages.agentRunId, runId))
+    .orderBy(asc(agentMessages.createdAt), asc(agentMessages.id))
+    .all();
+
+export const listAgentRuns = (orgId: string, limit = 20): AgentRun[] =>
+  db
+    .select()
+    .from(agentRuns)
+    .where(eq(agentRuns.orgId, orgId))
+    .orderBy(desc(agentRuns.createdAt))
+    .limit(limit)
+    .all();

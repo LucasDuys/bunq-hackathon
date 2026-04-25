@@ -125,6 +125,14 @@ before(async () => {
       hash TEXT NOT NULL,
       created_at INTEGER NOT NULL DEFAULT (unixepoch())
     );
+    -- spendBaseline reads invoices.linked_tx_id to give invoice-linked txs a
+    -- confidence boost. Test never inserts; minimal columns for SELECT.
+    CREATE TABLE IF NOT EXISTS invoices (
+      id TEXT PRIMARY KEY,
+      org_id TEXT NOT NULL,
+      linked_tx_id TEXT,
+      status TEXT NOT NULL DEFAULT 'processed'
+    );
   `);
 
   // Seed enough transactions to give spendBaseline at least one priority

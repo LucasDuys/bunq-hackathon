@@ -24,6 +24,8 @@ import {
 } from "@/components/ui";
 import { ApproveButton, QuestionCard } from "@/components/CloseActions";
 import { CloseChatStream } from "@/components/CloseChatStream";
+import { CloseDagFlow } from "@/components/CloseDagFlow";
+import { CloseDagPanel } from "@/components/CloseDagPanel";
 import { RerunCloseButton } from "@/components/RerunCloseButton";
 import { ExplainButton } from "@/components/ExplainButton";
 import { fmtEur, fmtKg } from "@/lib/utils";
@@ -34,6 +36,10 @@ import {
   getQuestionsForRun,
 } from "@/lib/queries";
 import { verifyChain } from "@/lib/audit/append";
+import {
+  getAgentMessagesForRun,
+  getDagResultByRunId,
+} from "@/lib/impacts/store";
 import type { ProposedAction } from "@/lib/agent/close";
 
 type CreditMixRow = {
@@ -99,6 +105,7 @@ const phaseHeadline = (
   approved: boolean,
 ): string => {
   if (approved) return "Reserve transferred.";
+  if (state === "DAG_RUNNING") return "Running the 8-agent DAG…";
   switch (phase) {
     case "INGEST":
       return "Ingesting transactions…";
@@ -128,6 +135,8 @@ const phaseSub = (
   approved: boolean,
 ): string => {
   if (approved) return "Loop closed for this month.";
+  if (state === "DAG_RUNNING")
+    return "Baseline → research → green/cost proposals → judges → credit strategy → executive report.";
   switch (phase) {
     case "INGEST":
       return "Pulling this month's bunq transactions into the run.";
@@ -176,6 +185,13 @@ export default async function CloseRunPage({
   const proposed = run.proposedActions
     ? (JSON.parse(run.proposedActions) as ProposedAction[])
     : null;
+
+  // R008 / T012 — load the DAG payload + per-agent messages keyed off the run's
+  // `dagRunId`. Both reads are cheap (one row + ~7-8 rows). Renders nothing when
+  // the close hasn't reached DAG_RUNNING yet, or when the row is missing
+  // (degraded mid-run state).
+  const dagPayload = run.dagRunId ? getDagResultByRunId(run.dagRunId) : null;
+  const dagMessages = run.dagRunId ? getAgentMessagesForRun(run.dagRunId) : [];
 
   const creditMix: CreditMixRow[] = run.creditRecommendation
     ? (JSON.parse(run.creditRecommendation) as CreditMixRow[])
@@ -435,6 +451,25 @@ export default async function CloseRunPage({
         </div>
       </section>
 
+      {/* ─── 8-agent DAG flow — animated visual ─── */}
+      {(run.state === "DAG_RUNNING" || dagPayload) && (
+        <section className="flex flex-col gap-6">
+          <SectionDivider label="DAG · agents" />
+          <p
+            className="text-[14px] leading-[1.5] m-0 max-w-[640px] -mt-2"
+            style={{ color: "var(--fg-secondary)" }}
+          >
+            Six tiers run baseline → research → green/cost proposals (parallel) → green/cost
+            judges (parallel) → credit strategy → executive report. Each box lights as its
+            agent completes.
+          </p>
+          <CloseDagFlow
+            startedAtUnix={run.startedAt}
+            isRunning={run.state === "DAG_RUNNING"}
+          />
+        </section>
+      )}
+
       {/* ─── Live agent transcript — Claude-Code style ─── */}
       <section className="flex flex-col gap-6">
         <SectionDivider label="Agent · live" />
@@ -448,6 +483,14 @@ export default async function CloseRunPage({
         </p>
         <CloseChatStream runId={id} initial={initialStream} />
       </section>
+
+      {/* ─── 8-agent DAG panel — structured output of the LLM panel ─── */}
+      {dagPayload && (
+        <section className="flex flex-col gap-6">
+          <SectionDivider label={`DAG · ${dagPayload.runId.slice(0, 12)}…`} />
+          <CloseDagPanel dag={dagPayload} messages={dagMessages} />
+        </section>
+      )}
 
       {/* ─── Questions (pending) ─── */}
       {questions.length > 0 && unansweredCount > 0 && (

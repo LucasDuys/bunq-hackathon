@@ -247,6 +247,13 @@ describe("R002.AC4-AC5 — DagRunResult.mock_agent_count + intended-vs-degradati
         first_url TEXT,
         created_at INTEGER NOT NULL DEFAULT (unixepoch())
       );
+      -- spendBaseline reads invoices.linked_tx_id for invoice-confidence boost.
+      CREATE TABLE IF NOT EXISTS invoices (
+        id TEXT PRIMARY KEY,
+        org_id TEXT NOT NULL,
+        linked_tx_id TEXT,
+        status TEXT NOT NULL DEFAULT 'processed'
+      );
     `);
     const nowSec = Math.floor(Date.now() / 1000);
     const insert = dbModule.sqlite.prepare(

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   Activity,
   BookOpen,
+  Cpu,
   FileText,
   LayoutDashboard,
   Leaf,
@@ -33,6 +34,7 @@ const GROUPS: Group[] = [
     items: [
       { href: "/briefing", label: "Briefing", icon: Activity },
       { href: "/report/annual/2026", label: "Annual", icon: Sparkles },
+      { href: "/agents", label: "Agent runs", icon: Cpu },
     ],
   },
   {

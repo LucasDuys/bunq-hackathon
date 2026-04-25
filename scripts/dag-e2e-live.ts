@@ -165,6 +165,17 @@ const main = async () => {
   const totalMs = performance.now() - t0;
   log(`[5/8] runDag completed in ${fmtMs(totalMs)}. runId=${result.runId}`);
 
+  // Persist into agent_runs + impact_recommendations so the run is browsable
+  // at /agents/[runId] and seeds the /impacts workspace. Same path as
+  // POST /api/impacts/research; mock=false because we're actually live here.
+  try {
+    const { persistDagRun } = await import("@/lib/impacts/store");
+    persistDagRun({ orgId: ORG_ID, month: MONTH, dag: result, mock: false });
+    log(`[5a] persisted to agent_runs as ${result.runId}`);
+  } catch (err) {
+    log(`[5a] persistDagRun failed (non-fatal): ${err instanceof Error ? err.message : String(err)}`);
+  }
+
   log("[6/8] querying agent_messages for per-agent tokens + mock_path...");
   const msgRows = db
     .select({

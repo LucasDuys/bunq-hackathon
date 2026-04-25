@@ -425,8 +425,8 @@ export const TIMELINE: SceneSpec[] = [
   { id: "S15",  durationMs: 7000,  header: "1.87% per €1M annual spend.",
                                    caption: "1.87% net annual financial impact · 49 tCO₂e per €1M", leafOpacity: 0 },
 
-  // Beat 8 — lockup
-  { id: "S16",  durationMs: 4000,  leafOpacity: 0 },
+  // Beat 8 — lockup (dramatic dark-canvas finale)
+  { id: "S16",  durationMs: 7000,  leafOpacity: 0 },
 ];
 
 export const TOTAL_DURATION_MS = TIMELINE.reduce((s, t) => s + t.durationMs, 0);

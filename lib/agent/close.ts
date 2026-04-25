@@ -23,6 +23,7 @@ import { DEFAULT_POLICY, policySchema, type Policy } from "@/lib/policy/schema";
 import { env } from "@/lib/env";
 import { runDag } from "@/lib/agents/dag";
 import type { AgentContext } from "@/lib/agents/dag/types";
+import { persistDagRun } from "@/lib/impacts/store";
 import { computeClusters, type Cluster } from "./clusters";
 import { getTaxSavingsForMonth } from "@/lib/queries";
 
@@ -235,6 +236,23 @@ export const startCloseRun = async (orgId: string, month: string) => {
     },
   };
   const dag = await runDag({ orgId, month }, dagCtx);
+  // Persist the full DagRunResult into `agent_runs` (and flatten approved
+  // alternatives into `impact_recommendations`) so the close page's
+  // `CloseDagPanel`, the `/agents/[runId]` inspector, and the `/impacts`
+  // workspace can all read the run by `runId`. Mirrors what
+  // `POST /api/impacts/research` does on its own DAG path; without this the
+  // close-machine-driven DAG runs leave no persisted payload.
+  try {
+    persistDagRun({ orgId, month, dag, mock: dagCtx.mock });
+  } catch (err) {
+    appendAudit({
+      orgId,
+      actor: "agent",
+      type: "close.dag_persist_failed",
+      payload: { error: String(err), dagRunId: dag.runId },
+      closeRunId: id,
+    });
+  }
   db.update(closeRuns).set({ dagRunId: dag.runId }).where(eq(closeRuns.id, id)).run();
   appendAudit({
     orgId,

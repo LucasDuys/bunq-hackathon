@@ -112,7 +112,12 @@ export default async function ImpactsPage() {
   const rows = getLatestRecommendations(DEFAULT_ORG_ID);
   const dag = getLatestDagResult(DEFAULT_ORG_ID);
   const baselines = groupByBaseline(rows);
-  const hasData = baselines.length > 0;
+  const hasRecommendations = baselines.length > 0;
+  // The DAG payload alone is enough to show the workspace — research, cost
+  // savings, credit strategy, executive report all render off `dag`. Recs only
+  // exist when greenJudge approves a cluster, so a real run with all-rejected
+  // verdicts would otherwise hide the entire workspace.
+  const hasData = hasRecommendations || !!dag;
   const headline = computeHeadline(baselines);
 
   // Surfaces "Research my last 90 days" with a merchant count when no data yet.
@@ -185,7 +190,7 @@ export default async function ImpactsPage() {
         </div>
         <div className="flex items-center gap-2">
           <ExplainButton metric="impact-summary" />
-          <RunImpactResearch hasData={hasData} />
+          <RunImpactResearch hasData={hasRecommendations} />
         </div>
       </div>
 
@@ -226,7 +231,7 @@ export default async function ImpactsPage() {
           plannableAlts={plannableAlts}
           dag={dag}
           researchKpis={researchKpis}
-          action={<RunImpactResearch hasData={hasData} />}
+          action={<RunImpactResearch hasData={hasRecommendations} />}
         />
       )}
     </div>

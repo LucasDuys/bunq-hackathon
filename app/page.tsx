@@ -109,7 +109,7 @@ const stateToMiniPhaseIdx = (state: string | undefined): number => {
     case "ESTIMATE_FINAL":
       return 1;
     case "CLUSTER_UNCERTAINTY":
-    case "QUESTIONS_GENERATED":
+    case "DAG_RUNNING":
     case "AWAITING_ANSWERS":
       return 2;
     case "APPLY_POLICY":

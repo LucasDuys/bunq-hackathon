@@ -35,12 +35,14 @@ const LEAF_HEIGHT = 140;
 export function Leaf({ elapsedMs, opacity = 0.25 }: LeafProps) {
   const isExternal = elapsedMs !== undefined;
   const [internal, setInternal] = useState(0);
-  const [size, setSize] = useState<{ w: number; h: number }>(() => ({
-    w: typeof window !== "undefined" ? window.innerWidth : 1920,
-    h: typeof window !== "undefined" ? window.innerHeight : 1080,
-  }));
+  const [mounted, setMounted] = useState(false);
+  // Initial size matches SSR default so first client render hydrates cleanly;
+  // real viewport size is read in the mount effect below.
+  const [size, setSize] = useState<{ w: number; h: number }>({ w: 1920, h: 1080 });
 
   useEffect(() => {
+    setMounted(true);
+    setSize({ w: window.innerWidth, h: window.innerHeight });
     const onResize = () =>
       setSize({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener("resize", onResize);
@@ -100,6 +102,11 @@ export function Leaf({ elapsedMs, opacity = 0.25 }: LeafProps) {
     const k = clamp(fadeElapsed / FADE_OUT_MS, 0, 1);
     envelope = 1 - easeOutCubic(k);
   }
+  // Skip hydration mismatch: don't render until the client has measured the
+  // viewport. The leaf is purely decorative (aria-hidden), so server-skipping
+  // it has no semantic cost.
+  if (!mounted) return null;
+
   const effectiveOpacity = clamp(opacity * envelope, 0, 1);
 
   return (
