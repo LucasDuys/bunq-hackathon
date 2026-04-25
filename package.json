@@ -21,6 +21,8 @@
     "dev:live": "bash scripts/dev-live.sh",
     "dev:fire": "tsx scripts/fire-test-event.ts",
     "reports:coverage": "tsx scripts/reports-coverage.ts",
+    "invoice:test": "tsx scripts/test-invoice-extraction.ts",
+    "invoice:test:live": "tsx scripts/test-invoice-extraction.ts --live",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -31,6 +33,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "drizzle-orm": "^0.45.2",
+    "googleapis": "^171.4.0",
     "lucide-react": "^1.11.0",
     "next": "16.2.4",
     "react": "19.2.4",

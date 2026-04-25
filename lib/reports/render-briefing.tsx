@@ -1,37 +1,72 @@
-import { Document, Page, Text, View, StyleSheet, type DocumentProps } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Font, type DocumentProps } from "@react-pdf/renderer";
 import type { ReactElement } from "react";
+import path from "node:path";
 import type { CarbonBriefing } from "./briefing-schema";
 
 /**
- * Visual style mirrors bunq's actual published ESG reports:
+ * PDF visual style follows the team's DESIGN.md (bunq Easy Green spec):
  *
- *   - black + hot magenta pink (NOT the Easy Green forest/mint palette,
- *     which bunq ignores in their public PDFs)
- *   - Helvetica-Bold for display, Helvetica for body (no font registration —
- *     react-pdf's built-in fonts are reliable; live registration via Google
- *     Fonts CDN failed at runtime)
- *   - black full-bleed section dividers with pink pill labels
- *   - 3-column tables with pink header row
- *   - hero number triple ("kg = t = EUR equivalent") on the cover
+ *   - palette: forest-950/-800/-600 + mint-500/-200/-100 + ink + paper
+ *   - typography: Montserrat (display, 700-800) + Inter (body, 500/600)
+ *     loaded from public/fonts/ as variable TTFs
+ *   - sentence case headings, tabular numbers, ring borders only (no shadows)
+ *   - mint-500 = "high confidence" / improvement; amber/red for medium/low
  *
- * Sources: bunq 2024 ESG Report (https://static.bunq.com/website/documents/
- * bunq-report-esg-2024-en.pdf), bunq Documents index.
+ * The fonts are committed as variable TTFs so renderToBuffer never hits
+ * the network; if registration fails for any reason, react-pdf falls
+ * back to Helvetica.
  */
 
-// bunq actual report palette
+const FONT_DIR = path.join(process.cwd(), "public", "fonts");
+try {
+  Font.register({
+    family: "Inter",
+    fonts: [
+      { src: path.join(FONT_DIR, "Inter-Variable.ttf"), fontWeight: 400 },
+      { src: path.join(FONT_DIR, "Inter-Variable.ttf"), fontWeight: 500 },
+      { src: path.join(FONT_DIR, "Inter-Variable.ttf"), fontWeight: 600 },
+      { src: path.join(FONT_DIR, "Inter-Variable.ttf"), fontWeight: 700 },
+    ],
+  });
+  Font.register({
+    family: "Montserrat",
+    fonts: [
+      { src: path.join(FONT_DIR, "Montserrat-Variable.ttf"), fontWeight: 600 },
+      { src: path.join(FONT_DIR, "Montserrat-Variable.ttf"), fontWeight: 700 },
+      { src: path.join(FONT_DIR, "Montserrat-Variable.ttf"), fontWeight: 800 },
+    ],
+  });
+  Font.registerHyphenationCallback((word) => [word]);
+} catch {
+  // Helvetica fallback; render still works.
+}
+
+// DESIGN.md §2.1 + §2.2 + §2.3 — Easy Green palette in light-mode tokens.
 const COLOR = {
-  black: "#000000",
-  ink: "#0a0a0a",
-  paper: "#ffffff",
-  cream: "#fafaf7",
-  pink: "#e32f94",
-  pinkSoft: "#f9d4e8",
-  pinkInk: "#5a0e3a",
-  muted: "#4b4b4b",
-  faint: "#9a9a9a",
-  line: "#e5e5e5",
-  warn: "#955705",
-  good: "#2e7d32",
+  forest950: "#002E1B",
+  forest800: "#005d36",
+  forest600: "#0e6b40",
+  mint500: "#00ff95",
+  mint200: "#cdffad",
+  mint100: "#e2f6d5",
+  ink: "#0e0f0c",
+  fgPrimary: "#0e0f0c",
+  fgSecondary: "#454745",
+  fgMuted: "#737373",
+  fgOnAccent: "#002E1B",
+  paper: "#fafaf9",
+  surface: "#ffffff",
+  surfaceMuted: "#f6f6f6",
+  borderDefault: "rgba(14,15,12,0.12)",
+  borderStrong: "rgba(14,15,12,0.24)",
+  // §2.4 confidence tiers
+  confHigh: "#00ff95",
+  confMed: "#f79009",
+  confLow: "#f04438",
+  // §2.6 status
+  good: "#17b26a",
+  warn: "#f79009",
+  danger: "#f04438",
 };
 
 const styles = StyleSheet.create({
@@ -39,7 +74,7 @@ const styles = StyleSheet.create({
     padding: 0,
     fontSize: 10,
     color: COLOR.ink,
-    fontFamily: "Helvetica",
+    fontFamily: "Inter",
     backgroundColor: COLOR.paper,
   },
   pageBody: {
@@ -48,310 +83,350 @@ const styles = StyleSheet.create({
     paddingBottom: 50,
   },
 
-  // top header bar (carries forward on every page)
+  // Top header — forest-950 canvas, mint accent on brand mark.
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 40,
-    paddingVertical: 12,
-    backgroundColor: COLOR.black,
+    paddingVertical: 14,
+    backgroundColor: COLOR.forest950,
   },
   headerBrand: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Montserrat",
+    fontWeight: 800,
     fontSize: 14,
-    color: COLOR.paper,
-    letterSpacing: 1.5,
+    color: COLOR.mint500,
+    letterSpacing: -0.3,
   },
-  headerPill: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 7,
-    color: COLOR.paper,
-    backgroundColor: COLOR.pink,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-    letterSpacing: 1,
-    textTransform: "uppercase",
-  },
-  headerMeta: {
-    fontFamily: "Helvetica",
-    fontSize: 8,
-    color: COLOR.faint,
+  headerOrg: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 9,
+    color: COLOR.mint200,
   },
 
-  // hero
+  // Hero
   hero: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 32,
-    color: COLOR.black,
-    letterSpacing: -1,
+    fontFamily: "Montserrat",
+    fontWeight: 800,
+    fontSize: 30,
+    color: COLOR.forest950,
+    letterSpacing: -0.6,
+    marginTop: 4,
     marginBottom: 6,
   },
   heroSub: {
-    fontFamily: "Helvetica",
+    fontFamily: "Inter",
+    fontWeight: 500,
     fontSize: 9,
-    color: COLOR.muted,
-    marginBottom: 8,
+    color: COLOR.fgSecondary,
+    marginBottom: 14,
   },
 
-  // headline equivalency triple ("X kg = Y t = Z EUR offset")
+  pillRow: { flexDirection: "row", gap: 6, marginBottom: 18, flexWrap: "wrap" },
+  pill: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: 8,
+    color: COLOR.forest800,
+    backgroundColor: COLOR.mint100,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    letterSpacing: 0.4,
+  },
+
+  // Hero equivalency (kg = t = EUR triple)
   triple: {
     flexDirection: "row",
-    alignItems: "baseline",
-    gap: 10,
-    paddingVertical: 14,
-    borderTopWidth: 2,
-    borderTopColor: COLOR.black,
-    borderBottomWidth: 2,
-    borderBottomColor: COLOR.black,
+    alignItems: "center",
+    gap: 12,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: COLOR.borderDefault,
+    borderBottomWidth: 1,
+    borderBottomColor: COLOR.borderDefault,
     marginBottom: 22,
   },
   tripleNumber: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Montserrat",
+    fontWeight: 800,
     fontSize: 18,
-    color: COLOR.black,
+    color: COLOR.forest950,
     letterSpacing: -0.5,
   },
   tripleEquals: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 18,
-    color: COLOR.pink,
+    fontFamily: "Montserrat",
+    fontWeight: 700,
+    fontSize: 16,
+    color: COLOR.forest600,
   },
   tripleLabel: {
-    fontFamily: "Helvetica",
-    fontSize: 8,
-    color: COLOR.muted,
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: 7,
+    color: COLOR.fgMuted,
     textTransform: "uppercase",
     letterSpacing: 0.6,
+    marginTop: 2,
   },
 
-  // KPIs
-  kpiRow: { flexDirection: "row", gap: 8, marginBottom: 18 },
+  // KPIs (Stat tiles per DESIGN.md §4.3)
+  kpiRow: { flexDirection: "row", gap: 10, marginBottom: 18 },
   kpiBox: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    backgroundColor: COLOR.cream,
-    borderWidth: 0.5,
-    borderColor: COLOR.line,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: COLOR.surface,
+    borderWidth: 0.6,
+    borderColor: COLOR.borderDefault,
+    borderRadius: 12,
   },
   kpiBoxAccent: {
     flex: 1,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    backgroundColor: COLOR.pinkSoft,
-    borderWidth: 0.5,
-    borderColor: COLOR.pink,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: COLOR.mint100,
+    borderWidth: 0.6,
+    borderColor: COLOR.mint200,
+    borderRadius: 12,
   },
   kpiLabel: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter",
+    fontWeight: 600,
     fontSize: 7,
-    color: COLOR.muted,
+    color: COLOR.fgMuted,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   kpiValue: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 16,
-    color: COLOR.black,
+    fontFamily: "Montserrat",
+    fontWeight: 700,
+    fontSize: 18,
+    color: COLOR.forest950,
     marginTop: 4,
     letterSpacing: -0.4,
   },
   kpiSub: {
-    fontFamily: "Helvetica",
+    fontFamily: "Inter",
+    fontWeight: 500,
     fontSize: 8,
-    color: COLOR.faint,
-    marginTop: 2,
+    color: COLOR.fgSecondary,
+    marginTop: 3,
   },
   kpiSubGood: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter",
+    fontWeight: 600,
     fontSize: 8,
-    color: COLOR.good,
-    marginTop: 2,
+    color: COLOR.forest600,
+    marginTop: 3,
   },
   kpiSubBad: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter",
+    fontWeight: 600,
     fontSize: 8,
     color: COLOR.warn,
-    marginTop: 2,
+    marginTop: 3,
   },
 
-  // sections
   section: { marginBottom: 18 },
   sectionTitle: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 11,
-    color: COLOR.black,
+    fontFamily: "Montserrat",
+    fontWeight: 700,
+    fontSize: 12,
+    color: COLOR.forest950,
     marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: -0.2,
   },
 
-  // narrative box (replaces the bunq "letter from CEO" / intro tone)
+  // Narrative (mint-100 surface w/ forest left border)
   narrativeBox: {
     padding: 14,
-    backgroundColor: COLOR.cream,
+    backgroundColor: COLOR.mint100,
+    borderRadius: 12,
     marginBottom: 22,
     borderLeftWidth: 3,
-    borderLeftColor: COLOR.pink,
+    borderLeftColor: COLOR.forest600,
   },
   narrativeText: {
-    fontFamily: "Helvetica",
+    fontFamily: "Inter",
+    fontWeight: 500,
     fontSize: 10,
     lineHeight: 1.55,
-    color: COLOR.ink,
+    color: COLOR.forest950,
   },
 
-  // tables
+  // Tables (DESIGN.md §4.7)
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: COLOR.pink,
-    paddingVertical: 5,
-    paddingHorizontal: 4,
-    marginBottom: 0,
+    borderBottomWidth: 1.5,
+    borderBottomColor: COLOR.forest600,
+    paddingVertical: 6,
   },
   tableRow: {
     flexDirection: "row",
     borderBottomWidth: 0.5,
-    borderBottomColor: COLOR.line,
-    paddingVertical: 5,
-    paddingHorizontal: 4,
+    borderBottomColor: COLOR.borderDefault,
+    paddingVertical: 6,
   },
   th: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter",
+    fontWeight: 600,
     fontSize: 7,
     textTransform: "uppercase",
-    color: COLOR.paper,
-    letterSpacing: 0.6,
+    color: COLOR.forest600,
+    letterSpacing: 0.7,
   },
-  td: { fontFamily: "Helvetica", fontSize: 9, color: COLOR.ink },
-  tdNumeric: { fontFamily: "Helvetica-Bold", fontSize: 9, color: COLOR.ink },
-  tdMuted: { fontFamily: "Helvetica", fontSize: 8, color: COLOR.muted },
+  td: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 9,
+    color: COLOR.fgPrimary,
+  },
+  tdNumeric: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: 9,
+    color: COLOR.fgPrimary,
+  },
+  tdMuted: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 8,
+    color: COLOR.fgSecondary,
+  },
 
-  // bullets / anomalies
+  // Anomalies / bullets
   bullet: { flexDirection: "row", marginBottom: 8, alignItems: "flex-start" },
   bulletDot: {
     width: 14,
     fontSize: 11,
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Montserrat",
+    fontWeight: 700,
   },
   bulletBody: { flex: 1 },
-  bulletPrimary: { fontFamily: "Helvetica-Bold", fontSize: 10, color: COLOR.black },
-  bulletSecondary: { fontFamily: "Helvetica", fontSize: 9, color: COLOR.muted, marginTop: 2 },
+  bulletPrimary: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: 10,
+    color: COLOR.fgPrimary,
+  },
+  bulletSecondary: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 9,
+    color: COLOR.fgSecondary,
+    marginTop: 2,
+  },
 
-  // swap blocks
+  // Swap blocks
   swap: { marginBottom: 14 },
   swapHead: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline" },
   saveBadge: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Inter",
+    fontWeight: 700,
     fontSize: 8,
-    color: COLOR.paper,
-    backgroundColor: COLOR.black,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 2,
-  },
-
-  // project case-study sidebar (mirrors bunq's Kilifi-style call-out)
-  caseStudy: {
-    padding: 12,
-    backgroundColor: COLOR.cream,
-    borderLeftWidth: 3,
-    borderLeftColor: COLOR.pink,
-    marginBottom: 8,
-  },
-  caseStudyTitle: { fontFamily: "Helvetica-Bold", fontSize: 10, color: COLOR.black, marginBottom: 4 },
-  caseStudyMeta: { fontFamily: "Helvetica", fontSize: 8, color: COLOR.muted },
-
-  // pills row
-  pillRow: {
-    flexDirection: "row",
-    gap: 6,
-    marginBottom: 18,
-    flexWrap: "wrap",
-  },
-  pill: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 8,
-    color: COLOR.pinkInk,
-    backgroundColor: COLOR.pinkSoft,
+    color: COLOR.fgOnAccent,
+    backgroundColor: COLOR.mint500,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
   },
 
-  // footer / page nav
+  // Per-project case-study sidebar
+  caseStudy: {
+    padding: 12,
+    backgroundColor: COLOR.surfaceMuted,
+    borderLeftWidth: 3,
+    borderLeftColor: COLOR.mint500,
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  caseStudyTitle: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: 10,
+    color: COLOR.fgPrimary,
+    marginBottom: 4,
+  },
+  caseStudyMeta: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 8,
+    color: COLOR.fgSecondary,
+  },
+
   meta: {
-    fontFamily: "Helvetica",
+    fontFamily: "Inter",
+    fontWeight: 400,
     fontSize: 7,
-    color: COLOR.faint,
+    color: COLOR.fgMuted,
     marginTop: 28,
     paddingTop: 8,
     borderTopWidth: 0.5,
-    borderTopColor: COLOR.line,
+    borderTopColor: COLOR.borderDefault,
     lineHeight: 1.4,
   },
   pageNumber: {
     position: "absolute",
     bottom: 18,
     right: 40,
-    fontFamily: "Helvetica",
+    fontFamily: "Inter",
     fontSize: 7,
-    color: COLOR.faint,
+    color: COLOR.fgMuted,
   },
 
-  // section divider (full-bleed black with pink pill — mirrors bunq's
-  // ENVIRONMENTAL / SOCIAL / GOVERNANCE chapter pages)
+  // Section divider — forest canvas with mint pill (DESIGN.md "rainbow"
+  // accent translated to forest/mint).
   divider: {
-    backgroundColor: COLOR.black,
+    backgroundColor: COLOR.forest950,
     paddingHorizontal: 40,
     paddingVertical: 30,
     marginHorizontal: -40,
     marginVertical: 6,
+    borderRadius: 0,
   },
   dividerPill: {
     alignSelf: "flex-start",
-    fontFamily: "Helvetica-Bold",
-    fontSize: 9,
-    color: COLOR.paper,
-    backgroundColor: COLOR.pink,
+    fontFamily: "Inter",
+    fontWeight: 700,
+    fontSize: 8,
+    color: COLOR.fgOnAccent,
+    backgroundColor: COLOR.mint500,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
-    letterSpacing: 1.2,
+    letterSpacing: 0.8,
     textTransform: "uppercase",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   dividerTitle: {
-    fontFamily: "Helvetica-Bold",
+    fontFamily: "Montserrat",
+    fontWeight: 700,
     fontSize: 22,
     color: COLOR.paper,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
   },
   dividerSub: {
-    fontFamily: "Helvetica",
+    fontFamily: "Inter",
+    fontWeight: 500,
     fontSize: 9,
-    color: COLOR.faint,
+    color: COLOR.mint200,
     marginTop: 4,
   },
 });
 
 const fmtKg = (kg: number) => (kg >= 1000 ? `${(kg / 1000).toFixed(2)} t` : `${Math.round(kg)} kg`);
-const fmtKgPlain = (kg: number) => Math.round(kg).toString();
+const fmtKgPlain = (kg: number) => Math.round(kg).toLocaleString("en-NL");
 const fmtTon = (kg: number) => (kg / 1000).toFixed(2);
 const fmtEur = (n: number) => `EUR ${n.toLocaleString("en-NL", { maximumFractionDigits: 0 })}`;
 const fmtPct = (n: number, withSign = false) => `${withSign && n >= 0 ? "+" : ""}${n.toFixed(0)}%`;
 
 const Header = ({ orgName, period }: { orgName: string; period: CarbonBriefing["period"] }) => (
   <View style={styles.header} fixed>
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
-      <Text style={styles.headerBrand}>CARBO</Text>
-      <Text style={styles.headerPill}>BUNQ BUSINESS</Text>
-    </View>
-    <Text style={styles.headerMeta}>
+    <Text style={styles.headerBrand}>Carbo</Text>
+    <Text style={styles.headerOrg}>
       {orgName} · {period.label}
     </Text>
   </View>
@@ -384,11 +459,10 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
             <Text style={styles.pill}>Confidence {(b.summary.confidence * 100).toFixed(0)}%</Text>
           </View>
 
-          {/* Hero equivalency triple — mirrors bunq's "13M mangroves = 314,000 tCO2" treatment */}
           <View style={styles.triple}>
             <View>
               <Text style={styles.tripleNumber}>{fmtKgPlain(b.summary.totalCo2eKg)} kg</Text>
-              <Text style={styles.tripleLabel}>CO2e this period</Text>
+              <Text style={styles.tripleLabel}>CO₂e this period</Text>
             </View>
             <Text style={styles.tripleEquals}>=</Text>
             <View>
@@ -404,7 +478,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
 
           <View style={styles.kpiRow}>
             <View style={co2eDeltaImproved ? styles.kpiBoxAccent : styles.kpiBox}>
-              <Text style={styles.kpiLabel}>Total CO2e</Text>
+              <Text style={styles.kpiLabel}>Total CO₂e</Text>
               <Text style={styles.kpiValue}>{fmtKg(b.summary.totalCo2eKg)}</Text>
               <Text
                 style={
@@ -415,14 +489,18 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
                       : styles.kpiSubBad
                 }
               >
-                {b.summary.deltaCo2ePct === null ? "no prior baseline" : `${fmtPct(b.summary.deltaCo2ePct, true)} vs ${b.period.priorLabel}`}
+                {b.summary.deltaCo2ePct === null
+                  ? "no prior baseline"
+                  : `${fmtPct(b.summary.deltaCo2ePct, true)} vs ${b.period.priorLabel}`}
               </Text>
             </View>
             <View style={styles.kpiBox}>
               <Text style={styles.kpiLabel}>Spend</Text>
               <Text style={styles.kpiValue}>{fmtEur(b.summary.totalSpendEur)}</Text>
               <Text style={styles.kpiSub}>
-                {b.summary.deltaSpendPct === null ? `${b.summary.txCount} tx` : `${fmtPct(b.summary.deltaSpendPct, true)} vs ${b.period.priorLabel}`}
+                {b.summary.deltaSpendPct === null
+                  ? `${b.summary.txCount} tx`
+                  : `${fmtPct(b.summary.deltaSpendPct, true)} vs ${b.period.priorLabel}`}
               </Text>
             </View>
             <View style={styles.kpiBox}>
@@ -448,7 +526,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
             <View style={styles.tableHeader}>
               <Text style={[styles.th, { flex: 3 }]}>Category</Text>
               <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>Spend</Text>
-              <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>CO2e</Text>
+              <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>CO₂e</Text>
               <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Share</Text>
             </View>
             {b.topCategories.map((c) => (
@@ -467,7 +545,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
               <Text style={[styles.th, { flex: 4 }]}>Merchant</Text>
               <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Tx</Text>
               <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>Spend</Text>
-              <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>CO2e</Text>
+              <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>CO₂e</Text>
               <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Share</Text>
             </View>
             {b.topMerchants.map((m) => (
@@ -490,9 +568,8 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
       <Page size="A4" style={styles.page}>
         <Header orgName={b.orgName} period={b.period} />
         <View style={styles.pageBody}>
-          {/* full-bleed black divider with pink pill — bunq motif */}
           <View style={styles.divider}>
-            <Text style={styles.dividerPill}>ACTION</Text>
+            <Text style={styles.dividerPill}>Action</Text>
             <Text style={styles.dividerTitle}>What changed and what to do next</Text>
             <Text style={styles.dividerSub}>Anomalies, swap recommendations, and the recommended carbon-credit purchase.</Text>
           </View>
@@ -502,7 +579,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
               <Text style={styles.sectionTitle}>What changed</Text>
               {b.anomalies.map((a, i) => (
                 <View key={i} style={styles.bullet}>
-                  <Text style={[styles.bulletDot, { color: a.deltaPct !== null && a.deltaPct >= 0 ? COLOR.warn : COLOR.good }]}>
+                  <Text style={[styles.bulletDot, { color: a.deltaPct !== null && a.deltaPct >= 0 ? COLOR.warn : COLOR.forest600 }]}>
                     {a.deltaPct !== null && a.deltaPct >= 0 ? "↑" : a.deltaPct !== null ? "↓" : "•"}
                   </Text>
                   <View style={styles.bulletBody}>
@@ -527,7 +604,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
                   </View>
                   <Text style={styles.bulletSecondary}>{s.rationale}</Text>
                   {s.generatedBy && (
-                    <Text style={[styles.tdMuted, { fontSize: 7, marginTop: 2, color: COLOR.faint }]}>
+                    <Text style={[styles.tdMuted, { fontSize: 7, marginTop: 2, color: COLOR.fgMuted }]}>
                       source: {s.generatedBy.replace("_", " ")}
                     </Text>
                   )}
@@ -543,9 +620,9 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
         <Header orgName={b.orgName} period={b.period} />
         <View style={styles.pageBody}>
           <View style={styles.divider}>
-            <Text style={styles.dividerPill}>RESERVE</Text>
+            <Text style={styles.dividerPill}>Reserve</Text>
             <Text style={styles.dividerTitle}>Recommended carbon-credit mix</Text>
-            <Text style={styles.dividerSub}>EU-registered, removal-weighted, simulated marketplace for the hackathon.</Text>
+            <Text style={styles.dividerSub}>EU-registered, removal-weighted; simulated marketplace for the hackathon.</Text>
           </View>
 
           <View style={styles.section}>
@@ -564,7 +641,6 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
               </View>
             </View>
 
-            {/* per-project case-study sidebar — bunq Kilifi pattern */}
             {b.reserve.projectMix.map((p) => (
               <View key={p.projectId} style={styles.caseStudy}>
                 <Text style={styles.caseStudyTitle}>{p.projectName}</Text>
@@ -576,7 +652,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
           </View>
 
           <Text style={styles.meta}>
-            Generated by Carbo from bunq Business transaction data. Methodology: spend-based GHG Protocol Scope 3 with category-level emission factors (DEFRA 2024, ADEME Base Carbone, Exiobase v3.8.2). Confidence reflects factor uncertainty x classifier confidence x tier weight. Recommended-credit project mix favours EU-registered removal credits per Oxford Principles 2024 / VCMI guidance. This briefing is an internal advisory artefact, not an audited disclosure under CSRD ESRS E1. Visual style is inspired by bunq's published ESG reports — Carbo and bunq are not affiliated.
+            Generated by Carbo from bunq Business transaction data. Methodology: spend-based GHG Protocol Scope 3 with category-level emission factors (DEFRA 2024, ADEME Base Carbone, Exiobase v3.8.2). Confidence reflects factor uncertainty x classifier confidence x tier weight. Recommended-credit project mix favours EU-registered removal credits per Oxford Principles 2024 / VCMI guidance. Visual style follows the team DESIGN.md (bunq Easy Green palette, Montserrat + Inter typography). This briefing is an internal advisory artefact, not an audited disclosure under CSRD ESRS E1.
           </Text>
         </View>
         <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} fixed />

@@ -83,6 +83,12 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `app/tax-savings/page.tsx` — Converted from light Tailwind classes to dark-theme CSS variables (2026-04-24)
 - [x] `app/impact/page.tsx` — Section dividers between all content blocks (2026-04-24)
 
+## Impact Page Overhaul (Ben)
+
+- [x] `app/impact/page.tsx` — Full visual overhaul: hero KPI card with serif € number + radial glow, 4 KpiChip cards (intensity, benchmark, CO₂e avoidable, monthly footprint), pullquote-style AI narrative, 2×2 matrix + benchmark chart side-by-side, switch cards grid, simulator, methodology footer (2026-04-24)
+- [x] `components/ImpactMatrix.tsx` — 2×2 cost-vs-carbon quadrant matrix: Quick wins / Green investments / Cost savers / Avoid, median-based classification, category-colored items (2026-04-24)
+- [x] `components/SwitchCard.tsx` — Before/after visual comparison cards: ranked switches with "Now" (red) → "After" (green) bars, CO₂e reduction %, annual savings stats (2026-04-24)
+
 ## Backend — Baseline Agent (Lucas)
 
 - [x] `lib/agents/dag/spendBaseline.ts` — Spend & emissions baseline agent with structured output via Anthropic tool_use (2026-04-24)
@@ -141,6 +147,38 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Home page keeps the polished dark hero and adds matrix's onboarding banner (themed to the dark palette) when `hasPolicy=false` or an onboarding run is active (2026-04-25)
 - [x] `spendBaseline.run` ctx parameter relaxed to optional so `/api/baseline/run` + dag smoke callers keep working alongside the DAG entry (2026-04-25)
 - [x] `npx tsc --noEmit` green end-to-end after merge (2026-04-25)
+
+## Invoice Ingestion (Ben)
+
+- [x] `lib/db/schema.ts` — `invoices` + `invoice_line_items` tables with indexes, type exports (2026-04-25)
+- [x] `scripts/migrate.ts` — DDL for both tables + 4 indexes (2026-04-25)
+- [x] `lib/env.ts` — Gmail env vars: `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_POLL_ADDRESS`, `GMAIL_MOCK` (2026-04-25)
+- [x] `lib/invoices/storage.ts` — File storage layer: save/read/base64, MIME validation, max 10MB (2026-04-25)
+- [x] `lib/invoices/extract.ts` — Claude Sonnet multimodal extraction with Zod schema, mock mode, PDF + image support (2026-04-25)
+- [x] `lib/invoices/process.ts` — Shared processing pipeline: extract → classify → link → store → audit (2026-04-25)
+- [x] `lib/invoices/gmail.ts` — Gmail API polling client with OAuth2, attachment download, dedup via `gmail_message_id` (2026-04-25)
+- [x] `app/api/invoices/upload/route.ts` — Upload endpoint with FormData, MIME + size validation (2026-04-25)
+- [x] `app/api/invoices/route.ts` — List invoices GET endpoint (2026-04-25)
+- [x] `app/api/invoices/[id]/route.ts` — Invoice detail GET endpoint with line items (2026-04-25)
+- [x] `app/api/invoices/[id]/link/route.ts` — Manual transaction linking POST endpoint (2026-04-25)
+- [x] `app/api/invoices/gmail/poll/route.ts` — Gmail poll trigger endpoint (2026-04-25)
+- [x] `lib/queries.ts` — Invoice query functions: `getInvoicesForOrg`, `getInvoice`, `getInvoiceLineItems`, `getInvoiceWithItems`, `getInvoiceStats` (2026-04-25)
+- [x] `components/InvoiceUpload.tsx` — Drag-and-drop upload component with progress states (2026-04-25)
+- [x] `app/invoices/page.tsx` — Invoice list page: stats row, upload card, invoice table (2026-04-25)
+- [x] `app/invoices/[id]/page.tsx` — Invoice detail page: stats, metadata, line items table (2026-04-25)
+- [x] `components/Nav.tsx` — Added "Invoices" nav link (2026-04-25)
+- [x] `fixtures/invoices/` — 3 demo fixtures: KLM, AWS, Albert Heijn with line items (2026-04-25)
+- [x] `scripts/seed.ts` — `seedInvoices()` seeds demo invoices with classification + transaction linking (2026-04-25)
+- [x] `npm install googleapis` — Gmail API dependency added (2026-04-25)
+- [x] `app/api/invoices/[id]/file/route.ts` — File serving endpoint: view/download stored invoice files (2026-04-25)
+- [x] `app/api/invoices/[id]/reprocess/route.ts` — Reprocess endpoint: re-run Claude extraction on failed/stale invoices (2026-04-25)
+- [x] `components/InvoiceActions.tsx` — Client component: view file, download, reprocess buttons with loading states (2026-04-25)
+- [x] `scripts/test-invoice-extraction.ts` — Test script for mock + live extraction pipeline (`npm run invoice:test`) (2026-04-25)
+- [x] DAG integration: baseline agent queries linked invoices, boosts confidence +0.15, sets `data_basis: "invoice"` for downstream agents (2026-04-25)
+- [x] `lib/agents/dag/types.ts` — Added `baseline_has_invoice`, `baseline_invoice_count`, `baseline_data_basis` to PriorityTarget (2026-04-25)
+- [x] Green alternatives agent uses `data_basis: "item_level"` for invoice-backed clusters (2026-04-25)
+- [x] Cost savings agent uses `data_basis: "invoice"` for invoice-backed clusters (2026-04-25)
+- [x] `docs/invoices.md` — Full teammate documentation: architecture, API routes, testing, DB schema, DAG integration (2026-04-25)
 
 ## bunq Sandbox / Live Integration (2026-04-25)
 

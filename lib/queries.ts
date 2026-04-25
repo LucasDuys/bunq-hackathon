@@ -5,6 +5,8 @@ import {
   creditProjects,
   db,
   emissionEstimates,
+  invoiceLineItems,
+  invoices,
   orgs,
   policies,
   refinementQa,
@@ -185,3 +187,28 @@ export const getLatestEstimatesForMonth = (orgId: string, month: string) => {
     .where(and(eq(transactions.orgId, orgId), gte(transactions.timestamp, start), lt(transactions.timestamp, end)))
     .all();
 };
+
+// ── Invoice queries ──
+
+export const getInvoicesForOrg = (orgId: string, limit = 100) =>
+  db.select().from(invoices).where(eq(invoices.orgId, orgId)).orderBy(desc(invoices.createdAt)).limit(limit).all();
+
+export const getInvoice = (id: string) =>
+  db.select().from(invoices).where(eq(invoices.id, id)).all()[0];
+
+export const getInvoiceLineItems = (invoiceId: string) =>
+  db.select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoiceId)).all();
+
+export const getInvoiceWithItems = (id: string) => {
+  const inv = getInvoice(id);
+  if (!inv) return null;
+  const items = getInvoiceLineItems(id);
+  return { ...inv, lineItems: items };
+};
+
+export const getInvoiceStats = (orgId: string) =>
+  db.select({
+    total: sql<number>`count(*)`,
+    linked: sql<number>`coalesce(sum(case when linked_tx_id is not null then 1 else 0 end), 0)`,
+    totalAmountCents: sql<number>`coalesce(sum(total_cents), 0)`,
+  }).from(invoices).where(eq(invoices.orgId, orgId)).all()[0];

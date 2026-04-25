@@ -44,13 +44,14 @@ See `ARCHITECTURE.md` (DAG layout), `DESIGN.md` (UI), `AGENTS.md` (Next 16 + des
 
 Pages (`app/`):
 - `page.tsx` dashboard · `close/[id]/` close detail+approve · `onboarding/`, `onboarding/[runId]/` agentic onboarding.
-- Feature pages: `categories/`, `impacts/`, `ledger/`, `reserve/`, `tax-savings/`, `report/[month]/`, `presentation/`.
+- Feature pages: `categories/`, `impacts/`, `invoices/`, `invoices/[id]/`, `ledger/`, `reserve/`, `tax-savings/`, `report/[month]/`, `presentation/`.
 
 API (`app/api/`):
 - `webhook/bunq/` receiver.
 - `close/run/`, `close/[id]/{answer,approve}/`.
 - `onboarding/start/`, `onboarding/[runId]/{answer,approve,revise,upload,cancel}/`.
 - `baseline/run/` (spend+emissions baseline), `impacts/research/` (what-if).
+- `invoices/upload/`, `invoices/`, `invoices/[id]/`, `invoices/[id]/link/`, `invoices/[id]/file/`, `invoices/[id]/reprocess/`, `invoices/gmail/poll/`.
 
 Agents (`lib/agent/`):
 - `close.ts` (close SM), `onboarding.ts` + `onboarding-{interviewer,drafter,parser}.ts`.
@@ -66,6 +67,7 @@ Domain libs:
 - `policy/{evaluate,schema}.ts` · `credits/projects.ts`.
 - `onboarding/{profile,calibration,markdown,types}.ts` · `impacts/{aggregate,store}.ts`.
 - `tax/{index,incentives,alternatives,savings}.ts` · `benchmarks.ts`.
+- `invoices/{storage,extract,process,gmail}.ts` (invoice ingestion pipeline).
 - `bunq/{client,payments,webhook,accounts,signing}.ts` · `anthropic/client.ts`.
 - `db/{schema,client}.ts` · `audit/append.ts` · `queries.ts` · `env.ts` · `utils.ts`.
 
@@ -81,6 +83,9 @@ npm run migrate    # apply schema
 npm run seed       # 61-tx deterministic seed
 npm run reset      # wipe + migrate + seed (restart dev after!)
 npm run typecheck  # tsc --noEmit
+npm run invoice:test       # mock extraction test
+npm run invoice:test:live  # live Claude extraction test
+# Or with a file: npx tsx scripts/test-invoice-extraction.ts --live path/to/invoice.pdf
 ```
 
 ## Env vars
@@ -93,6 +98,11 @@ npm run typecheck  # tsc --noEmit
 | `BUNQ_PRIVATE_KEY_B64` | — | base64 RSA priv key for signing |
 | `DATABASE_URL` | `file:./data/carbon.db` | SQLite path |
 | `DRY_RUN` | `true` | blocks real transfers |
+| `GMAIL_CLIENT_ID` | — | Google OAuth client ID for invoice polling |
+| `GMAIL_CLIENT_SECRET` | — | Google OAuth client secret |
+| `GMAIL_REFRESH_TOKEN` | — | Google OAuth refresh token (one-time setup) |
+| `GMAIL_POLL_ADDRESS` | — | Gmail inbox to poll (e.g. carbo.invoices@gmail.com) |
+| `GMAIL_MOCK` | `true` | `false` → real Gmail API |
 
 ## Gotchas
 - After `npm run reset`, **restart `npm run dev`** — old process holds stale SQLite handle, writes to deleted inode.
