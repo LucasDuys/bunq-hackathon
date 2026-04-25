@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS orgs (
   bunq_user_id TEXT,
   reserve_account_id TEXT,
   credits_account_id TEXT,
+  tax_reserve_account_id TEXT,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 CREATE TABLE IF NOT EXISTS bunq_sessions (
@@ -356,6 +357,9 @@ ensureColumn("agent_messages", "mock_path", "INTEGER");
 // 12-state close machine to the 8-agent DAG run it triggers. Nullable so
 // rows from before the QUESTIONS_GENERATED → DAG_RUNNING refactor still load.
 ensureColumn("close_runs", "dag_run_id", "TEXT");
+// Tax Reserve — second bunq sub-account that captures computed tax savings
+// alongside the existing carbon reserve. Nullable so older seeds still load.
+ensureColumn("orgs", "tax_reserve_account_id", "TEXT");
 
 console.log(`Migrated: ${dbPath}`);
 sqlite.close();

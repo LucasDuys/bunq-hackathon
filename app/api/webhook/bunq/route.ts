@@ -5,8 +5,11 @@ import { appendAudit } from "@/lib/audit/append";
 import { classifyMerchant } from "@/lib/classify/merchant";
 import { normalizeMerchant } from "@/lib/classify/rules";
 import { db, transactions } from "@/lib/db/client";
+import { estimateEmission } from "@/lib/emissions/estimate";
+import { factorById } from "@/lib/factors";
 import { env } from "@/lib/env";
 import { loadContext } from "@/lib/bunq/context";
+import { writeCarbonNote, formatCarbonNote } from "@/lib/bunq/notes";
 import { BUNQ_SIG_HEADER, verifyWebhook, type BunqWebhookEvent } from "@/lib/bunq/webhook";
 
 const ORG_ID = "org_acme_bv";
@@ -71,5 +74,41 @@ export const POST = async (req: Request) => {
     type: "tx.ingested",
     payload: { id, bunqTxId, merchantRaw, amountEur, category: cls.category, confidence: cls.confidence },
   });
+
+  // Best-effort: write a Carbo carbon estimate as a NoteText on the bunq Payment.
+  // This is what makes the bunq export PDF double as the CSRD evidence trail —
+  // every payment carries its own kg CO2e + factor citation on the bank's side.
+  try {
+    const est = estimateEmission({
+      category: cls.category,
+      subCategory: cls.subCategory,
+      amountEur,
+      classifierConfidence: cls.confidence,
+    });
+    const factor = factorById(est.factorId);
+    const note = {
+      co2eKgPoint: est.co2eKgPoint,
+      co2eKgLow: est.co2eKgLow,
+      co2eKgHigh: est.co2eKgHigh,
+      factorSource: factor?.source ?? "estimated",
+      factorId: est.factorId,
+    };
+    const r = await writeCarbonNote({ paymentId: bunqTxId, note });
+    const noteId = r?.Response?.[0]?.Id?.id;
+    appendAudit({
+      orgId: ORG_ID,
+      actor: "system",
+      type: "bunq.note.written",
+      payload: { txId: id, paymentId: bunqTxId, noteId, content: formatCarbonNote(note) },
+    });
+  } catch (e) {
+    appendAudit({
+      orgId: ORG_ID,
+      actor: "system",
+      type: "bunq.note.failed",
+      payload: { txId: id, paymentId: bunqTxId, error: e instanceof Error ? e.message : String(e) },
+    });
+  }
+
   return NextResponse.json({ ok: true, id });
 };

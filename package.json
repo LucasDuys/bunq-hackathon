@@ -18,6 +18,7 @@
     "bunq:bootstrap": "tsx scripts/bunq-bootstrap.ts",
     "bunq:create-reserve": "tsx scripts/bunq-create-reserve.ts",
     "bunq:sugardaddy": "tsx scripts/bunq-sugardaddy.ts",
+    "bunq:backfill-notes": "tsx scripts/bunq-backfill-notes.ts",
     "bunq:register": "tsx scripts/register-webhook.ts",
     "dev:live": "bash scripts/dev-live.sh",
     "dev:fire": "tsx scripts/fire-test-event.ts",
