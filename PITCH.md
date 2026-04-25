@@ -4,9 +4,16 @@
 
 ## The problem
 
-Around **800,000 EU SMBs** now fall under VSME / CSRD-lite reporting from financial-year 2026. They have to disclose carbon emissions but cannot afford the response: hiring a carbon accountant runs **€30k+/year**, and existing software requires **6-week onboarding** plus invoice plumbing the SMB doesn't have. Most will fail to comply, fudge the numbers, or buy worthless offsets to look busy.
+The EU **Omnibus Directive** (Council, Feb 2026) cut mandatory CSRD scope by ~85% — only companies with **>1,000 employees** and **>€450M turnover** must report, applicable for financial years starting **Jan 2027**.[^1] But the work didn't disappear; it shifted onto the supply chain. SMEs now face an avalanche of carbon-data requests from large customers and banks, capped at the **VSME** (Voluntary SME Standard, EFRAG → European Commission, July 2025).[^2]
+
+The current options are bad. Light-tier SaaS is **€1k–€5k/year**, in-depth consulting **starts at €10k+**, enterprise platforms run **€2k–€25k+/year**.[^3] Manual VSME drafts take weeks; purpose-built tools advertise "hours instead of weeks."[^4]
 
 bunq Business is uniquely placed to fix this. Its customers' transactions already carry the only signal a credible carbon estimate needs: **what was bought, from whom, for how much**.
+
+[^1]: [Council of the EU — Omnibus simplification press release](https://www.consilium.europa.eu/en/press/press-releases/2026/02/24/council-signs-off-simplification-of-sustainability-reporting-and-due-diligence-requirements-to-boost-eu-competitiveness/) · [BDO — CSRD post-Omnibus revised scope](https://www.bdo.com/insights/sustainability-and-esg/csrd-post-omnibus-revised-scope-and-requirements)
+[^2]: [European Commission — VSME recommendation](https://finance.ec.europa.eu/publications/commission-presents-voluntary-sustainability-reporting-standard-ease-burden-smes_en) · [EFRAG — SMEs and Sustainability Reporting](https://www.efrag.org/en/smes-and-sustainability-reporting)
+[^3]: [D-Carbonize — Carbon accounting cost breakdown](https://d-carbonize.eu/blog/carbon-accounting-cost/) · [EcoHedge — Cost of carbon accounting for SMEs](https://www.ecohedge.com/blog/how-much-does-carbon-accounting-cost-for-smes/)
+[^4]: [GoClimate — Comparing the Top 5 VSME Tools](https://www.goclimate.com/knowledge/articles/comparing-the-top-5-vsme-tools)
 
 ## The solution
 
