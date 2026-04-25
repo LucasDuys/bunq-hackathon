@@ -360,6 +360,9 @@ const buildUserMessage = (baseline: BaselineOutput, candidates: CandidateBundle[
     "",
     "Return strict JSON: { results: [...] } where each result matches the schema in the system prompt.",
     "Keep every alternative grounded in either the researched or the library-fallback list. Do not invent new vendors.",
+    "",
+    "Each result MUST include EVERY field below, even when null. Do not omit fields.",
+    'Skeleton: {"cluster_id":"string","transaction_id":null,"merchant":"string","current_purchase":{"raw_description":"string","normalized_item_or_category":"string","amount_eur":number,"estimated_kg_co2e":number|null,"confidence":number,"data_basis":"item_level|category_level|merchant_level|spend_based|unknown"},"alternatives":[{"alternative_name":"string","alternative_type":"product|supplier|behavior|travel_mode|procurement_policy","estimated_kg_co2e":number|null,"carbon_saving_kg":number|null,"carbon_saving_percent":number|null,"estimated_price_eur":number|null,"price_delta_eur":number|null,"source":"api|emission_factor_library|historical_data|simulated|assumption","confidence":number,"comparability_notes":"string"}],"recommendation_status":"recommend_switch|recommend_if_policy_allows|needs_context|no_viable_alternative_found|no_action_needed|reserve_or_offset_after_reduction_review","recommended_action":"string","reasoning_summary":"string"}',
   );
   return lines.join("\n");
 };
@@ -374,7 +377,7 @@ export async function run(input: GreenAltInput, ctx: AgentContext): Promise<Gree
     const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: buildUserMessage(input.baseline, candidates),
-      maxTokens: 4000,
+      maxTokens: 20000,
     });
     if (!jsonText) {
       recordAgentMessage(ctx, { agentName: "green_alternatives_agent", usedMock: true });
@@ -426,7 +429,8 @@ export async function run(input: GreenAltInput, ctx: AgentContext): Promise<Gree
         average_confidence: Number(avgConf.toFixed(3)),
       },
     };
-  } catch {
+  } catch (err) {
+    console.error("[green_alternatives_agent] live call failed, falling back to mock:", err);
     recordAgentMessage(ctx, { agentName: "green_alternatives_agent", usedMock: true });
     return mockOutput(input.baseline, input.researchedPool);
   }

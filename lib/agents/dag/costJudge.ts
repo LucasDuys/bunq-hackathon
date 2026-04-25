@@ -232,8 +232,11 @@ export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<Cos
         JSON.stringify(input.costSavings, null, 2),
         "",
         "Return strict JSON: { judged_results: [...] }. One judged_results entry per agent result, in the same order.",
+        "",
+        "Each judged_results entry MUST include EVERY field below, even when null. Do not omit fields.",
+        'Skeleton: {"cluster_id":"string","transaction_id":null,"verdict":"approved|approved_with_caveats|needs_context|rejected","approved_recommendation":"string|null","confidence":number,"issues_found":["string"],"audit_summary":"string","cost_score":number,"corrected_monthly_saving_eur":number|null,"corrected_annual_saving_eur":number|null,"business_risk":"low|medium|high","carbon_effect":"lower|neutral|higher|unknown"}',
       ].join("\n"),
-      maxTokens: 3000,
+      maxTokens: 20000,
     });
     if (!jsonText) {
       recordAgentMessage(ctx, { agentName: "cost_judge_agent", usedMock: true });
@@ -288,7 +291,8 @@ export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<Cos
           .map((j) => j.approved_recommendation ?? j.cluster_id ?? "unknown"),
       },
     };
-  } catch {
+  } catch (err) {
+    console.error("[cost_judge_agent] live call failed, falling back to mock:", err);
     recordAgentMessage(ctx, { agentName: "cost_judge_agent", usedMock: true });
     return buildMock(input.costSavings, input.researchedPool);
   }

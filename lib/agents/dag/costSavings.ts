@@ -406,6 +406,9 @@ const buildUserMessage = (baseline: BaselineOutput, bundles: Bundle[]): string =
   lines.push(
     "",
     "Return strict JSON: { results: [...] }. Keep every option grounded in the researched or library list — no invented vendors.",
+    "",
+    "Each result MUST include EVERY field below, even when null. Do not omit fields.",
+    'Skeleton: {"cluster_id":"string","transaction_id":null,"merchant":"string","current_spend":{"amount_eur":number,"monthly_spend_eur":number|null,"annualized_spend_eur":number|null,"category":"string","data_basis":"single_transaction|recurring_pattern|category_cluster|invoice|assumption"},"cost_saving_options":[{"option_name":"string","option_type":"vendor_switch|supplier_consolidation|bulk_purchase|cancellation|usage_reduction|renegotiation|policy_change","estimated_monthly_saving_eur":number|null,"estimated_annual_saving_eur":number|null,"one_time_saving_eur":number|null,"confidence":number,"source":"historical_data|pricing_api|benchmark|assumption|simulated","business_risk":"low|medium|high","carbon_effect":"lower|neutral|higher|unknown","notes":"string"}],"recommendation_status":"recommend_switch|review_recurring_spend|consolidate_supplier|bulk_purchase_opportunity|needs_validation|no_action_needed","recommended_action":"string","approval_required":boolean,"reasoning_summary":"string"}',
   );
   return lines.join("\n");
 };
@@ -421,7 +424,7 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
     const { jsonText, tokensIn, tokensOut, cached, usedMock } = await callAgent({
       system: SYSTEM_PROMPT,
       user: buildUserMessage(input.baseline, bundles),
-      maxTokens: 4000,
+      maxTokens: 20000,
     });
     if (!jsonText) {
       recordAgentMessage(ctx, { agentName: "cost_savings_agent", usedMock: true });
@@ -481,7 +484,8 @@ export async function run(input: CostSavingsInput, ctx: AgentContext): Promise<C
         average_confidence: Number(avgConf.toFixed(3)),
       },
     };
-  } catch {
+  } catch (err) {
+    console.error("[cost_savings_agent] live call failed, falling back to mock:", err);
     recordAgentMessage(ctx, { agentName: "cost_savings_agent", usedMock: true });
     return mockOutput(input.baseline, recurring, input.researchedPool);
   }

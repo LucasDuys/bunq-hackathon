@@ -337,8 +337,9 @@ export async function run(input: CreditStrategyInput, ctx: AgentContext): Promis
         "",
         "Return strict JSON: { results: [{ cluster_id, credit_type, tax_treatment, cfo_summary, verification_needed, recommendation_status }] }.",
         "Keep credit_type consistent with the supplied `credit.type` unless you have strong evidence otherwise.",
+        "recommendation_status MUST be EXACTLY one of: strong_financial_case | positive_with_tax_incentive | positive_only_if_policy_required | not_financially_positive | requires_tax_verification | insufficient_data. Do not paraphrase or invent values.",
       ].join("\n"),
-      maxTokens: 2500,
+      maxTokens: 20000,
     });
     if (!jsonText) {
       recordAgentMessage(ctx, { agentName: "carbon_credit_incentive_strategy_agent", usedMock: true });
@@ -355,7 +356,8 @@ export async function run(input: CreditStrategyInput, ctx: AgentContext): Promis
     const proseMap = new Map<string, ProseDecision>();
     for (const p of parsed.results) if (p.cluster_id) proseMap.set(p.cluster_id, p);
     return assemble(input.baseline, input.greenJudge, input.costJudge, computeds, proseMap, tax, credit);
-  } catch {
+  } catch (err) {
+    console.error("[carbon_credit_incentive_strategy_agent] live call failed, falling back to mock:", err);
     recordAgentMessage(ctx, { agentName: "carbon_credit_incentive_strategy_agent", usedMock: true });
     return assemble(input.baseline, input.greenJudge, input.costJudge, computeds, new Map(), tax, credit);
   }
