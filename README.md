@@ -55,6 +55,8 @@
 
 **The build.** Carbo plugs into the bunq webhook in minutes. Every transaction becomes a calibrated emissions estimate with an explicit confidence range. Once a month, an **8-agent DAG** runs, surfaces **2–3 refinement questions** (only the high-spend low-confidence ones), and proposes a **reserve transfer + EU carbon-credit allocation**. The user clicks **Approve & transfer €X**. Money moves from the main bunq account to a **bunq Reserve sub-account**, recorded on a **SHA-256 hash-chained audit ledger** that satisfies an external auditor.
 
+**The cost-saving loop.** EU companies that can't offset their emissions must buy carbon credits from external registries — biochar, peatland restoration, reforestation — at €38–145 per tonne. Carbo's 8-agent DAG researches greener supplier alternatives and calculates the financial impact of switching: every tonne of CO₂e reduced through operational changes is a tonne the company *doesn't have to buy credits for*. The credit strategy agent (`lib/agents/dag/creditStrategy.ts`) computes this per cluster — direct procurement savings, avoided credit purchase costs, avoided EU ETS exposure, and Dutch tax incentive upside (EIA/MIA/VAMIL). The result: a net financial case per switch recommendation, not just an environmental one. Companies save money *and* reduce their offset bill.
+
 **The demo numbers.** 61 transactions · €39k spend · 4.8 tCO₂e in EU credits across biochar / peatland / reforestation · CSRD ESRS E1-6 + E1-7 report · audit chain valid.
 
 ---
