@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import sampleRun from "@/fixtures/demo-runs/sample-run.json";
 import styles from "./presentation.module.css";
 import { Badge } from "@/components/ui";
+import { displayConfidence } from "@/lib/utils";
 import type { DagRunResult, AgentName } from "@/lib/agents/dag/types";
 
 const DEMO_ENABLED = process.env.NEXT_PUBLIC_DEMO === "1";
@@ -50,13 +51,14 @@ function useActiveSection(): string {
 }
 
 function ConfidenceBar({ value }: { value: number }) {
+  const calibrated = displayConfidence(value);
   const tier =
-    value >= 0.85
+    calibrated >= 0.85
       ? "var(--confidence-high)"
-      : value >= 0.6
+      : calibrated >= 0.6
       ? "var(--confidence-medium)"
       : "var(--confidence-low)";
-  const pct = Math.round(value * 100);
+  const pct = Math.round(calibrated * 100);
   return (
     <div>
       <div
