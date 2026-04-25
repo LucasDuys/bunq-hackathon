@@ -114,18 +114,61 @@ const getActivePolicy = (orgId: string): Policy => {
 };
 
 /**
- * Start a close run. Runs AGGREGATE → ESTIMATE_INITIAL → CLUSTER → QUESTIONS in one go,
- * then halts at AWAITING_ANSWERS until POST /close/[id]/answer resolves them.
+ * Inserts the close_runs row + "close.start" audit event + first narrate, and
+ * returns the new run id. Split out from startCloseRun so the API route can
+ * hand the id back to the browser before the long DAG work begins (the close
+ * page then polls /events and animates as state transitions stream in).
  */
-export const startCloseRun = async (orgId: string, month: string) => {
+const initializeCloseRun = (orgId: string, month: string): string => {
   const id = `run_${randomUUID()}`;
-  const { start, end } = monthBounds(month);
-
   db.insert(closeRuns).values({ id, orgId, month, status: "active", state: "AGGREGATE", startedAt: Math.floor(Date.now() / 1000) }).run();
   appendAudit({ orgId, actor: "agent", type: "close.start", payload: { closeRunId: id, month }, closeRunId: id });
   narrate(orgId, id, "INGEST", "thinking", `Starting carbon close for ${month}`, {
     body: "I'll pull every booked transaction in the period, classify what's new, estimate emissions with confidence, then ask about anything I'm not sure on.",
   });
+  return id;
+};
+
+/**
+ * Start a close run. Runs AGGREGATE → ESTIMATE_INITIAL → CLUSTER → QUESTIONS in one go,
+ * then halts at AWAITING_ANSWERS until POST /close/[id]/answer resolves them.
+ */
+export const startCloseRun = async (orgId: string, month: string) => {
+  const id = initializeCloseRun(orgId, month);
+  return await executeCloseRun(id, orgId, month);
+};
+
+/**
+ * Same contract as startCloseRun, but fires the heavy DAG work in the
+ * background and returns the new run id immediately. Used by
+ * POST /api/close/run so the "Run new close" button can redirect to
+ * /close/[id] while the pipeline is still running — otherwise the whole close
+ * finishes before the user lands on the page and every phase animation is
+ * already completed on first paint.
+ */
+export const startCloseRunDetached = (orgId: string, month: string): { id: string } => {
+  const id = initializeCloseRun(orgId, month);
+  void executeCloseRun(id, orgId, month).catch((err) => {
+    const row = db.select().from(closeRuns).where(eq(closeRuns.id, id)).all()[0];
+    if (row && row.status === "active") {
+      db.update(closeRuns)
+        .set({ state: "FAILED", status: "failed", completedAt: Math.floor(Date.now() / 1000) })
+        .where(eq(closeRuns.id, id))
+        .run();
+    }
+    appendAudit({
+      orgId,
+      actor: "agent",
+      type: "close.failed",
+      payload: { error: String(err) },
+      closeRunId: id,
+    });
+  });
+  return { id };
+};
+
+const executeCloseRun = async (id: string, orgId: string, month: string) => {
+  const { start, end } = monthBounds(month);
 
   // 1. AGGREGATE
   narrate(orgId, id, "INGEST", "tool_call", "db.transactions.range", {

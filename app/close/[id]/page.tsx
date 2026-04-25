@@ -464,6 +464,7 @@ export default async function CloseRunPage({
             agent completes.
           </p>
           <CloseDagFlow
+            key={id}
             startedAtUnix={run.startedAt}
             isRunning={run.state === "DAG_RUNNING"}
           />
@@ -481,7 +482,7 @@ export default async function CloseRunPage({
           every reserve transfer. Each line is hashed into the same audit chain
           your CSRD report cites.
         </p>
-        <CloseChatStream runId={id} initial={initialStream} />
+        <CloseChatStream key={id} runId={id} initial={initialStream} />
       </section>
 
       {/* ─── 8-agent DAG panel — structured output of the LLM panel ─── */}
