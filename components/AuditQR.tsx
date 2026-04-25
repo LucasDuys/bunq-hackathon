@@ -5,14 +5,17 @@ import { QRCodeSVG } from "qrcode.react";
 export function AuditQR({
   runId,
   digest,
+  size = 160,
 }: {
   runId: string;
   digest: string;
+  size?: number;
 }) {
+  const path = `/verify/${runId}?digest=${digest}`;
   const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/verify/${runId}?digest=${digest}`
-      : `/verify/${runId}?digest=${digest}`;
+      ? `${window.location.origin}${path}`
+      : path;
 
   return (
     <div className="flex flex-col items-center gap-4">
@@ -25,7 +28,7 @@ export function AuditQR({
       >
         <QRCodeSVG
           value={url}
-          size={160}
+          size={size}
           level="M"
           bgColor="#ffffff"
           fgColor="#0f0f0f"
@@ -41,15 +44,16 @@ export function AuditQR({
         >
           Scan to verify
         </span>
-        <span
-          className="text-[11px] tabular-nums"
+        <a
+          href={path}
+          className="text-[11px] tabular-nums no-underline hover:underline"
           style={{
-            color: "var(--fg-faint)",
+            color: "var(--brand-green-link)",
             fontFamily: "var(--font-source-code-pro, monospace)",
           }}
         >
           {digest.slice(0, 16)}…
-        </span>
+        </a>
       </div>
     </div>
   );

@@ -225,6 +225,50 @@ export default async function VerifyPage({
             )}
           </div>
 
+          {/* Credit projects */}
+          {result.payload.creditMix.length > 0 && (
+            <div
+              className="px-5 py-4 flex flex-col gap-3"
+              style={{ borderTop: "1px solid var(--border-faint)" }}
+            >
+              <span
+                className="text-[12px] uppercase tracking-[1.2px]"
+                style={{
+                  color: "var(--fg-muted)",
+                  fontFamily: "var(--font-source-code-pro, monospace)",
+                }}
+              >
+                Carbon credits
+              </span>
+              {result.payload.creditMix.map((m) => (
+                <div
+                  key={m.project.id}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      aria-hidden="true"
+                      className="w-[6px] h-[6px] rounded-full shrink-0"
+                      style={{ background: "var(--brand-green)" }}
+                    />
+                    <span
+                      className="text-[13px]"
+                      style={{ color: "var(--fg-secondary)" }}
+                    >
+                      {m.project.name}
+                    </span>
+                  </div>
+                  <span
+                    className="text-[13px] tabular-nums"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
+                    {m.tonnes.toFixed(2)} t · {fmtEur(m.eur, 0)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
           {/* Chain integrity */}
           <div
             className="px-5 py-4 flex flex-col gap-3"

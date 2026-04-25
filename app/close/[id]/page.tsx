@@ -350,6 +350,44 @@ export default async function CloseRunPage({
         </div>
       </div>
 
+      {/* ─── Verified banner — only when approved ─── */}
+      {isApproved && closeDigest && (
+        <Link
+          href={`/verify/${id}?digest=${closeDigest.digest}`}
+          className="flex items-center gap-3 px-5 py-3.5 rounded-[12px] no-underline group"
+          style={{
+            border: "1px solid var(--brand-green-border)",
+            background: "rgba(62,207,142,0.06)",
+          }}
+        >
+          <ShieldCheck
+            className="h-5 w-5 shrink-0"
+            style={{ color: "var(--brand-green)" }}
+            aria-hidden="true"
+          />
+          <div className="flex-1 min-w-0">
+            <span
+              className="text-[14px]"
+              style={{ color: "var(--fg-primary)" }}
+            >
+              Audit chain verified
+            </span>
+            <span
+              className="text-[13px] ml-2"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              · {closeDigest.payload.auditEventCount} events · SHA-256 intact
+            </span>
+          </div>
+          <span
+            className="text-[12px] shrink-0 group-hover:underline"
+            style={{ color: "var(--brand-green-link)" }}
+          >
+            View proof
+          </span>
+        </Link>
+      )}
+
       {/* ─── Hero status ─── */}
       <section className="flex flex-col gap-6">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
@@ -802,9 +840,9 @@ export default async function CloseRunPage({
                     className="text-[13px] leading-[1.5] m-0 max-w-[280px]"
                     style={{ color: "var(--fg-secondary)" }}
                   >
-                    Scan the QR code to verify this close run's audit chain.
-                    Every event is SHA-256 chained — altering any record breaks
-                    the chain.
+                    Scan the QR code to verify this close run's audit chain,
+                    or open the link on your laptop. Every event is SHA-256
+                    chained — altering any record breaks the chain.
                   </p>
                   <span
                     className="text-[12px] tabular-nums"
@@ -816,6 +854,14 @@ export default async function CloseRunPage({
                     {closeDigest.payload.auditEventCount} events · chain{" "}
                     {chain?.valid ? "intact" : "broken"}
                   </span>
+                  <Link
+                    href={`/verify/${id}?digest=${closeDigest.digest}`}
+                    className="inline-flex items-center gap-1.5 text-[13px] no-underline mt-1"
+                    style={{ color: "var(--brand-green-link)" }}
+                  >
+                    <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                    Open verification page
+                  </Link>
                 </div>
               </CardBody>
             </Card>
