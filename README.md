@@ -87,6 +87,37 @@
 | **DB-persisted state machines** | 12-state close, 10-state onboarding. No LangGraph, no Temporal. Every transition is `WHERE state = ...` — idempotent, replayable, restart-safe. |
 | **SHA-256 hash-chained ledger** | `lib/audit/append.ts`. Append-only via SQL trigger. Tampering breaks `verifyChain` on the next read. `/ledger` renders a live "Chain valid" badge. |
 | **Quadrature confidence rollup** | `lib/emissions/estimate.ts`. Variance-correct, spend-weighted; refine-Q clustering on `spend × (1 − confidence)` so we only ask about transactions that matter. |
+| **bunq generates the report** | Every `close.completed` auto-renders a bunq-branded CSRD ESRS E1-7 source PDF (`lib/agent/report-agent.ts`). The sustainability team downloads the file from the dashboard — no spreadsheets, no consultant assembly. See [Auto-generated CSRD report](#auto-generated-csrd-report) below. |
+
+---
+
+## Auto-generated CSRD report
+
+> *bunq generates the company's CSRD ESRS E1-7 source artefact automatically. The sustainability team downloads the PDF — no spreadsheets, no consultants assembling it.*
+
+Every `close.completed` event fires the **report agent** (`lib/agent/report-agent.ts`), which:
+
+1. Reuses the team's `briefingDocument` renderer (`lib/reports/render-briefing.tsx`) — bunq Easy Green palette, Montserrat + Inter, dedicated cover page with the period as a headline ("March 2026"), three hero KPI cards, share bars on every table, signature line for the sustainability lead.
+2. Writes the PDF to `data/exports/carbo-{orgId}-{YYYY}-{MM}.pdf` and SHA-256-hashes it.
+3. Appends a `bunq.report.generated` audit row carrying file path, byte size, hash, and period.
+4. December closes additionally fire the **annual** report (`lib/reports/annual.ts` → `enrichWithNarrative` → `annualReportDocument`) — once per year, guarded by an audit-chain scan.
+
+The dashboard's **Reports** panel lists the latest six PDFs with one-tap download links served by `app/api/reports/download/route.ts` (path-traversal-guarded, `data/exports/` only).
+
+### What this saves
+
+A 50-person EU mid-cap currently spends **6–12 weeks of Q1 staff time** plus **€15–40k/year in external consultant fees** assembling the CSRD ESRS E1 disclosure manually — Excel-stitching invoices to emission factors, writing the methodology narrative, attaching evidence. Sources: Cushman & Wakefield + Carbo `research/14-realistic-seed-data.md`.
+
+Carbo automates the **assembly work**: factor lookup, scope routing, confidence rollup, narrative draft, audit chain. The company still owns limited-assurance review (auditor sign-off can't be automated), but the heavy lifting drops to a download + read. Conservative estimate for a 50-person SME: **~80% reduction in CSRD assembly hours and €10–30k/yr saved on consultant fees**, while raising audit quality (deterministic factor citation per row vs hand-keyed spreadsheets).
+
+Try it now (no DB required):
+
+```bash
+npm run reports:mock
+open data/exports/mock-bunq-carbo-monthly.pdf
+```
+
+The mock PDF in `data/exports/mock-bunq-carbo-monthly.pdf` is the demo artefact — same renderer the auto-flow uses, hardcoded fixture for Acme BV's March 2026 close.
 
 ---
 

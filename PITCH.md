@@ -27,10 +27,22 @@ The user opens the dashboard, answers **2–3 refinement questions** (only the h
 - **DB-persisted state machines.** No LangGraph, no Temporal, no external orchestrator. Every transition is an idempotent SQL update guarded by `WHERE state = ...`. Restarts and replays are free.
 - **Append-only hash chain.** Every agent step, refinement answer, and bunq call writes to `audit_events` with a SHA-256 link to the previous row. SQL triggers block UPDATE/DELETE. The `/ledger` page renders a live "Chain valid" badge.
 
+## bunq generates the report
+
+> **The big behavioural shift: bunq generates the CSRD report; the company just downloads it.**
+
+Every monthly close auto-renders a CSRD ESRS E1-7 source PDF, bunq-branded, with a cover page (period as headline, hero KPIs, signature line for the sustainability lead), share-bar tables, anomaly pills, and the recommended carbon-credit mix. Files land at `data/exports/carbo-{orgId}-{YYYY}-{MM}.pdf`; the dashboard's **Reports** panel lists them as one-click downloads. December closes also auto-fire the annual report once per year (idempotent via audit-chain scan). Entry point: `lib/agent/report-agent.ts`. Renderer: `lib/reports/render-briefing.tsx`. Mock without a DB: `npm run reports:mock`.
+
+### What this saves
+
+A 50-person EU mid-cap currently spends **6–12 weeks of Q1 staff time** plus **€15–40k/year in external consultant fees** assembling the CSRD ESRS E1 disclosure by hand — Excel-stitching invoices to emission factors, writing the methodology narrative, attaching evidence (sources: Cushman & Wakefield Amsterdam offices, Carbo `research/14-realistic-seed-data.md`).
+
+Carbo automates the **assembly**; the company still owns limited-assurance review (auditor sign-off can't be automated), but the heavy lifting drops to a download. Conservative estimate for a 50-person SME: **~80% reduction in CSRD assembly hours and €10–30k/yr saved on consultant fees**, while raising audit quality (deterministic factor citation per row vs hand-keyed spreadsheets).
+
 ## bunq fit
 
-- Native bunq Business primitives end-to-end: **signed API client (RSA-SHA256), 3-leg auth (installation → device → session), sub-accounts, webhook with signature verification, intra-user transfer**.
-- 7 bunq automation scripts (`scripts/bunq-*.ts`): keygen, sandbox bootstrap, reserve creation, sugardaddy seeding, webhook registration, live-mode tunnel.
+- Native bunq Business primitives end-to-end: **signed API client (RSA-SHA256), 3-leg auth (installation → device → session), sub-accounts, webhook with signature verification, intra-user transfer, NoteText carbon stamps on every Payment, DraftPayment for over-threshold CFO approvals, ExportAnnualOverview for the year-end pair**.
+- 8+ bunq automation scripts (`scripts/bunq-*.ts`): keygen, sandbox bootstrap, reserve creation, sugardaddy seeding, NoteText backfill, annual-export pair, webhook registration, live-mode tunnel.
 - Defaults are safe (`BUNQ_MOCK=1`, `DRY_RUN=1`); flip one flag for live sandbox, no code changes.
 
 ## Demo
