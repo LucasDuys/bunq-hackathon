@@ -93,6 +93,7 @@ Tax incentive data layer is shipped (`lib/tax/`). Next steps to make it demo-rea
 - [ ] **Annual rollup page** — `/report/[year]` that aggregates 12 monthly closes. Straightforward DB query.
 - [ ] **PDF print stylesheet** — right now the report is browser-print-styleable but we haven't made the A4 layout precise. Add `@media print` CSS.
 - [ ] **External assurance flow** — auditor review UI, with comments on individual factor choices, sign-off on a close.
+- [x] **Audit QR verification** — scannable QR code on completed close runs, links to `/verify/[id]` page showing chain integrity + close summary. Replaces the need for OpenTimestamps for demo purposes. (2026-04-25)
 - [ ] **OpenTimestamps / chain anchoring** — periodic SHA-256 commit of latest audit hash to a public chain for third-party tamper evidence.
 
 ## Ops & resilience

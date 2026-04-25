@@ -227,3 +227,11 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `components/ExplainModal.tsx` — Added Escape key handler to focus-trap effect; pressing ESC now closes the modal as the tooltip "Close (ESC)" promised (2026-04-25)
 - [x] `app/invoices/page.tsx` — Migrated all legacy design tokens (`--text`, `--text-mute`, `--text-dim`, `--text-faint`, `--border`, `--green`) to canonical tokens (`--fg-primary`, `--fg-muted`, `--fg-secondary`, `--fg-faint`, `--border-faint`, `--brand-green`); replaced `font-semibold` headers with `CodeLabel` components for design-system consistency; removed unused `fmtPct` import (2026-04-25)
 - [x] `app/ledger/page.tsx` — Added `min-width: 780px` to audit table so columns maintain readable widths before horizontal scroll activates on narrow viewports (2026-04-25)
+
+## Audit QR Verification (Ben)
+
+- [x] `lib/audit/digest.ts` — Canonical SHA-256 digest for close runs: bundles `{runId, month, co2eKg, confidence, reserveEur, approvedAt, auditEventCount, lastHash}` into a deterministic hash (2026-04-25)
+- [x] `components/AuditQR.tsx` — Client component rendering scannable QR code via `qrcode.react`; URL uses `window.location.origin` so it works behind cloudflare tunnel during demo (2026-04-25)
+- [x] `app/verify/[id]/page.tsx` — Public verification landing page: runs `verifyChain()`, checks digest match, shows close summary (emissions, confidence, reserve, approval date), chain integrity status, mobile-first dark theme (2026-04-25)
+- [x] `app/close/[id]/page.tsx` — Added "Proof of carbon offset" QR card in the Loop Closed section; only renders when close run is approved (2026-04-25)
+- [x] `npm install qrcode.react` — QR rendering dependency (2026-04-25)

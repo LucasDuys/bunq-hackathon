@@ -23,6 +23,7 @@ import {
   Stat,
 } from "@/components/ui";
 import { ApproveButton, QuestionCard } from "@/components/CloseActions";
+import { AuditQR } from "@/components/AuditQR";
 import { CloseChatStream } from "@/components/CloseChatStream";
 import { CloseDagFlow } from "@/components/CloseDagFlow";
 import { CloseDagPanel } from "@/components/CloseDagPanel";
@@ -36,6 +37,7 @@ import {
   getQuestionsForRun,
 } from "@/lib/queries";
 import { verifyChain } from "@/lib/audit/append";
+import { computeCloseDigest } from "@/lib/audit/digest";
 import {
   getAgentMessagesForRun,
   getDagResultByRunId,
@@ -201,6 +203,7 @@ export default async function CloseRunPage({
   const isReady =
     currentPhaseIdx >= PHASES.findIndex((p) => p.key === "READY");
   const chain = isReady ? verifyChain(DEFAULT_ORG_ID) : null;
+  const closeDigest = isApproved ? computeCloseDigest(id) : null;
 
   const confidenceInitial = run.initialConfidence ?? 0;
   const confidenceFinal = run.finalConfidence ?? confidenceInitial;
@@ -275,7 +278,7 @@ export default async function CloseRunPage({
     <div className="relative z-[1] flex flex-col gap-12">
       {/* ─── Sticky 6-dot progress rail ─── */}
       <div
-        className="close-rail-sticky -mx-6 px-6 py-4 backdrop-blur"
+        className="close-rail-sticky px-6 py-4 backdrop-blur"
         style={{
           background: "var(--bg-translucent)",
           borderBottom: "1px solid var(--border-faint)",
@@ -782,6 +785,41 @@ export default async function CloseRunPage({
               )}
             </CardBody>
           </Card>
+
+          {/* ─── Audit QR — scannable proof of offset ─── */}
+          {closeDigest && (
+            <Card>
+              <CardBody className="flex flex-col sm:flex-row items-center gap-6 py-6">
+                <AuditQR runId={id} digest={closeDigest.digest} />
+                <div className="flex flex-col gap-2 text-center sm:text-left">
+                  <span
+                    className="text-[14px]"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
+                    Proof of carbon offset
+                  </span>
+                  <p
+                    className="text-[13px] leading-[1.5] m-0 max-w-[280px]"
+                    style={{ color: "var(--fg-secondary)" }}
+                  >
+                    Scan the QR code to verify this close run's audit chain.
+                    Every event is SHA-256 chained — altering any record breaks
+                    the chain.
+                  </p>
+                  <span
+                    className="text-[12px] tabular-nums"
+                    style={{
+                      color: "var(--fg-muted)",
+                      fontFamily: "var(--font-source-code-pro, monospace)",
+                    }}
+                  >
+                    {closeDigest.payload.auditEventCount} events · chain{" "}
+                    {chain?.valid ? "intact" : "broken"}
+                  </span>
+                </div>
+              </CardBody>
+            </Card>
+          )}
         </section>
       )}
 
