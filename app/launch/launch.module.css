@@ -1,0 +1,129 @@
+/* ──────────────────────────────────────────────────────────────────────────────
+   /launch — scoped styles for the Carbo launch video.
+
+   Light/white SHELL wraps the dark Carbo product UI shown inside MacWindow.
+   This module overrides the root layout's dark theme ONLY within /launch.
+   ────────────────────────────────────────────────────────────────────────── */
+
+.shell {
+  /* Full-bleed overlay above the rest of the app (sidebar etc) */
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #ffffff;
+  color: #0a0a0a;
+  overflow: hidden;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  font-feature-settings: "calt", "tnum";
+  /* Force tabular numerals so count-ups never jitter */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scene stage: 16:9 frame with reference dims 1920x1080. Children animate inside. */
+.stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.frame {
+  /* Reference frame; everything inside lays out relative to this */
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+/* ── Title text (used by TitleCard) ─────────────────────────────────────── */
+
+.titleText {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(40px, 5.5vw, 72px);
+  line-height: 1;
+  letter-spacing: -0.018em;
+  color: #0a0a0a;
+  text-align: center;
+  /* Sentence-case enforced by content; this is just rendering */
+}
+
+/* ── Mono / code label ─────────────────────────────────────────────────── */
+
+.codeLabel {
+  font-family: var(--font-source-code-pro), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #6e6e6e;
+}
+
+/* ── MacWindow chrome (light) ─────────────────────────────────────────── */
+
+.macWindow {
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e6e6e6;
+  box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.12), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  /* Keep the dark Carbo interior visually distinct from the white shell */
+}
+
+.macTitlebar {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  gap: 12px;
+  background: #f6f6f6;
+  border-bottom: 1px solid #ececec;
+  user-select: none;
+}
+
+.trafficDots {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.trafficDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.trafficDot.red { background: #ff5f57; border: 0.5px solid rgba(0, 0, 0, 0.06); }
+.trafficDot.yellow { background: #febc2e; border: 0.5px solid rgba(0, 0, 0, 0.06); }
+.trafficDot.green { background: #28c840; border: 0.5px solid rgba(0, 0, 0, 0.06); }
+
+.macTitle {
+  flex: 1;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4d4d4d;
+  letter-spacing: -0.01em;
+}
+
+/* The "monitor" area — Carbo dark UI lives in here */
+.macInterior {
+  background: #171717;
+  color: #fafafa;
+  height: calc(100% - 36px);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .shell *,
+  .shell *::before,
+  .shell *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
