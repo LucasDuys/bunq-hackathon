@@ -11,6 +11,7 @@
     "start": "next start",
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
+    "seed:realistic": "tsx scripts/seed-realistic.ts",
     "reset": "tsx scripts/reset-demo.ts",
     "bunq:keygen": "tsx scripts/bunq-keygen.ts",
     "bunq:sandbox-user": "tsx scripts/bunq-make-sandbox-user.ts",
