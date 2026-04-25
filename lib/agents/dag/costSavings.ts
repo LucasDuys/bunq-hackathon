@@ -304,7 +304,9 @@ const mockOutput = (
         monthly_spend_eur: Number(monthlySpend.toFixed(0)),
         annualized_spend_eur: annualSpend,
         category: `${b.target.category}${b.target.baseline_sub_category ? "/" + b.target.baseline_sub_category : ""}`,
-        data_basis: (b.recurring ? "recurring_pattern" : "category_cluster") as "recurring_pattern" | "category_cluster",
+        data_basis: (b.target.baseline_has_invoice
+          ? "invoice"
+          : b.recurring ? "recurring_pattern" : "category_cluster") as "invoice" | "recurring_pattern" | "category_cluster",
       },
       cost_saving_options: options,
       recommendation_status: (topSaving > 500

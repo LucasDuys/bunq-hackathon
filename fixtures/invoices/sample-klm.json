@@ -1,0 +1,32 @@
+{
+  "merchant": "KLM Royal Dutch Airlines",
+  "invoiceNumber": "KLM-2026-04-1847",
+  "invoiceDate": "2026-04-07",
+  "dueDate": null,
+  "lineItems": [
+    {
+      "description": "AMS-LHR return economy — booking ref XKWP92",
+      "quantity": 1,
+      "unitPriceCents": 34048,
+      "amountCents": 34048,
+      "vatRatePct": 21,
+      "vatCents": 7150,
+      "category": "travel"
+    },
+    {
+      "description": "Extra legroom seat 14A + 23kg luggage",
+      "quantity": 1,
+      "unitPriceCents": 7152,
+      "amountCents": 7152,
+      "vatRatePct": 21,
+      "vatCents": 1502,
+      "category": "travel"
+    }
+  ],
+  "subtotalCents": 41200,
+  "vatCents": 8652,
+  "totalCents": 41200,
+  "currency": "EUR",
+  "confidence": 0.92,
+  "notes": "Business travel — London client meeting"
+}

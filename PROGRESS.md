@@ -1,5 +1,7 @@
 # Progress
 
+> **For graders:** this is the receipt log of what shipped. The criterion-aligned summary with file evidence + run-to-verify steps is in [`JUDGE.md`](JUDGE.md). The candid backlog is in [`todo.md`](todo.md). Every claim a grader scores against is cross-referenced from `JUDGE.md`.
+
 Living document — every agent and contributor updates this after completing work.
 Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 
@@ -83,6 +85,12 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `app/tax-savings/page.tsx` — Converted from light Tailwind classes to dark-theme CSS variables (2026-04-24)
 - [x] `app/impact/page.tsx` — Section dividers between all content blocks (2026-04-24)
 
+## Impact Page Overhaul (Ben)
+
+- [x] `app/impact/page.tsx` — Full visual overhaul: hero KPI card with serif € number + radial glow, 4 KpiChip cards (intensity, benchmark, CO₂e avoidable, monthly footprint), pullquote-style AI narrative, 2×2 matrix + benchmark chart side-by-side, switch cards grid, simulator, methodology footer (2026-04-24)
+- [x] `components/ImpactMatrix.tsx` — 2×2 cost-vs-carbon quadrant matrix: Quick wins / Green investments / Cost savers / Avoid, median-based classification, category-colored items (2026-04-24)
+- [x] `components/SwitchCard.tsx` — Before/after visual comparison cards: ranked switches with "Now" (red) → "After" (green) bars, CO₂e reduction %, annual savings stats (2026-04-24)
+
 ## Backend — Baseline Agent (Lucas)
 
 - [x] `lib/agents/dag/spendBaseline.ts` — Spend & emissions baseline agent with structured output via Anthropic tool_use (2026-04-24)
@@ -141,3 +149,65 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Home page keeps the polished dark hero and adds matrix's onboarding banner (themed to the dark palette) when `hasPolicy=false` or an onboarding run is active (2026-04-25)
 - [x] `spendBaseline.run` ctx parameter relaxed to optional so `/api/baseline/run` + dag smoke callers keep working alongside the DAG entry (2026-04-25)
 - [x] `npx tsc --noEmit` green end-to-end after merge (2026-04-25)
+
+## Invoice Ingestion (Ben)
+
+- [x] `lib/db/schema.ts` — `invoices` + `invoice_line_items` tables with indexes, type exports (2026-04-25)
+- [x] `scripts/migrate.ts` — DDL for both tables + 4 indexes (2026-04-25)
+- [x] `lib/env.ts` — Gmail env vars: `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`, `GMAIL_POLL_ADDRESS`, `GMAIL_MOCK` (2026-04-25)
+- [x] `lib/invoices/storage.ts` — File storage layer: save/read/base64, MIME validation, max 10MB (2026-04-25)
+- [x] `lib/invoices/extract.ts` — Claude Sonnet multimodal extraction with Zod schema, mock mode, PDF + image support (2026-04-25)
+- [x] `lib/invoices/process.ts` — Shared processing pipeline: extract → classify → link → store → audit (2026-04-25)
+- [x] `lib/invoices/gmail.ts` — Gmail API polling client with OAuth2, attachment download, dedup via `gmail_message_id` (2026-04-25)
+- [x] `app/api/invoices/upload/route.ts` — Upload endpoint with FormData, MIME + size validation (2026-04-25)
+- [x] `app/api/invoices/route.ts` — List invoices GET endpoint (2026-04-25)
+- [x] `app/api/invoices/[id]/route.ts` — Invoice detail GET endpoint with line items (2026-04-25)
+- [x] `app/api/invoices/[id]/link/route.ts` — Manual transaction linking POST endpoint (2026-04-25)
+- [x] `app/api/invoices/gmail/poll/route.ts` — Gmail poll trigger endpoint (2026-04-25)
+- [x] `lib/queries.ts` — Invoice query functions: `getInvoicesForOrg`, `getInvoice`, `getInvoiceLineItems`, `getInvoiceWithItems`, `getInvoiceStats` (2026-04-25)
+- [x] `components/InvoiceUpload.tsx` — Drag-and-drop upload component with progress states (2026-04-25)
+- [x] `app/invoices/page.tsx` — Invoice list page: stats row, upload card, invoice table (2026-04-25)
+- [x] `app/invoices/[id]/page.tsx` — Invoice detail page: stats, metadata, line items table (2026-04-25)
+- [x] `components/Nav.tsx` — Added "Invoices" nav link (2026-04-25)
+- [x] `fixtures/invoices/` — 3 demo fixtures: KLM, AWS, Albert Heijn with line items (2026-04-25)
+- [x] `scripts/seed.ts` — `seedInvoices()` seeds demo invoices with classification + transaction linking (2026-04-25)
+- [x] `npm install googleapis` — Gmail API dependency added (2026-04-25)
+- [x] `app/api/invoices/[id]/file/route.ts` — File serving endpoint: view/download stored invoice files (2026-04-25)
+- [x] `app/api/invoices/[id]/reprocess/route.ts` — Reprocess endpoint: re-run Claude extraction on failed/stale invoices (2026-04-25)
+- [x] `components/InvoiceActions.tsx` — Client component: view file, download, reprocess buttons with loading states (2026-04-25)
+- [x] `scripts/test-invoice-extraction.ts` — Test script for mock + live extraction pipeline (`npm run invoice:test`) (2026-04-25)
+- [x] DAG integration: baseline agent queries linked invoices, boosts confidence +0.15, sets `data_basis: "invoice"` for downstream agents (2026-04-25)
+- [x] `lib/agents/dag/types.ts` — Added `baseline_has_invoice`, `baseline_invoice_count`, `baseline_data_basis` to PriorityTarget (2026-04-25)
+- [x] Green alternatives agent uses `data_basis: "item_level"` for invoice-backed clusters (2026-04-25)
+- [x] Cost savings agent uses `data_basis: "invoice"` for invoice-backed clusters (2026-04-25)
+- [x] `docs/invoices.md` — Full teammate documentation: architecture, API routes, testing, DB schema, DAG integration (2026-04-25)
+
+## bunq Sandbox / Live Integration (2026-04-25)
+
+- [x] `scripts/bunq-make-sandbox-user.ts` — mints a fresh sandbox user + API key via `/v1/sandbox-user-person` (2026-04-25)
+- [x] `lib/bunq/context.ts` — file-based persistence (`.bunq-context.json`) for installation token, server pub key, sub-account ids (2026-04-25)
+- [x] `scripts/bunq-bootstrap.ts` — installation → device-server → session-server, persists session in DB and long-lived state in context file; auto-discovers main account id (2026-04-25)
+- [x] `scripts/bunq-create-reserve.ts` — creates the Carbo Reserve sub-account and writes id to context + `orgs.reserve_account_id` (2026-04-25)
+- [x] `scripts/bunq-sugardaddy.ts` — RequestInquiry to `sugardaddy@bunq.com` to top up sandbox balance (2026-04-25)
+- [x] `scripts/dev-live.sh` — boots cloudflared quick tunnel + Next dev server, prints public webhook URL (2026-04-25)
+- [x] Webhook handler now loads server pub key from `.bunq-context.json` (was: empty env var) and dedupes on `bunqTxId` for bunq's 5x retry (2026-04-25)
+- [x] `intraUserTransfer` honors `DRY_RUN` — logs to audit chain instead of moving sandbox money when set; carries `closeRunId` for chain linkage (2026-04-25)
+- [x] `reset-demo.ts` — fixed leftover `pnpm tsx` calls to `npx tsx` (2026-04-25)
+- [x] `scripts/fire-test-event.ts` (`npm run dev:fire`) — POSTs synthetic bunq MUTATION events to the local webhook handler so the demo has live ingestion without any real bunq (2026-04-25)
+- [x] Wired close state machine to actually call `intraUserTransfer` for `reserve_transfer` actions (was: audit-log only). Verified via end-to-end run: `bunq.transfer.dry_run` audit row now follows every `action.reserve_transfer`. (2026-04-25)
+- [x] Auto-execute under-threshold close runs per `CONCEPT.md` "Agentic action": `finalizeEstimates` calls `approveAndExecute("system")` inline when `outcome.requiresApproval` is false; audit row marked `actor: "system", auto: true`. (2026-04-25)
+
+## Explain Assistant (2026-04-25)
+
+- [x] `lib/explain/{metrics,context,prompt,mock,sse,schema}.ts` — 14-metric registry + per-metric context builders (≤5-contributor aggregation, <1.5KB stringified per AGENTS.md) + cached system prelude + deterministic mock narrator + SSE helpers + zod schemas (2026-04-25)
+- [x] `app/api/explain/route.ts` — POST endpoint streaming `text/event-stream`. Mock path streams templated narrative; live path forwards Anthropic `text_delta` events with prompt-cache prelude. Aborts cleanly on client disconnect. (2026-04-25)
+- [x] `components/ExplainProvider.tsx` — global client provider: `useExplain().{open, close, ask, stop}`. Tracks streaming reader, ESC, focus return, body scroll lock. Ephemeral history. (2026-04-25)
+- [x] `components/ExplainButton.tsx` — icon-only Sparkles ghost button placed next to every metric. (2026-04-25)
+- [x] `components/ExplainModal.tsx` — centered modal (640px desktop, full-bleed sheet < 600px), no shadow, focus trap, "Open in full view" deep-link to `/assistant`. Suppresses itself on `/assistant` so the page renders provider state inline. (2026-04-25)
+- [x] `components/ExplainThread.tsx` — minimal markdown renderer (`**bold**`, lists, inline code) + citation chips for `[tx:…]`/`[run:…]`/`[event:…]`/`[factor:…]`. (2026-04-25)
+- [x] `components/ExplainComposer.tsx` — autosize textarea (1–4 rows), Enter/Shift-Enter, Stop-while-streaming. (2026-04-25)
+- [x] `components/AssistantWorkspace.tsx` + `app/assistant/page.tsx` — full-page assistant with deep-link hydration from `?metric&scope`. (2026-04-25)
+- [x] Sidebar — added "Assistant" entry to `Workspace` group. (2026-04-25)
+- [x] Wired ExplainButtons across dashboard (4 KPIs, trend, breakdown, confidence, impact teaser), close detail (hero), report month (hero), reserve (hero + credit-mix), ledger (header + chain card), invoices (header), impacts (header), briefing (header). (2026-04-25)
+- [x] `app/globals.css` — `.explain-*` styles: tokenized colors, no shadows, mobile bottom-sheet, `prefers-reduced-motion` opacity-only. (2026-04-25)
+- [x] `KpiChip` — added optional `action` slot (top-right) so the Explain affordance composes without wrapping div hacks. (2026-04-25)

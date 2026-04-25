@@ -1,14 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { and, eq } from "drizzle-orm";
 import { appendAudit } from "@/lib/audit/append";
 import { CREDIT_PROJECTS } from "@/lib/credits/projects";
-import { db, creditProjects, emissionFactors, orgs, policies, transactions } from "@/lib/db/client";
+import { db, creditProjects, emissionFactors, invoiceLineItems, invoices, orgs, policies, transactions } from "@/lib/db/client";
 import { FACTORS } from "@/lib/factors";
 import { DEFAULT_POLICY } from "@/lib/policy/schema";
 import { classifyMerchant } from "@/lib/classify/merchant";
 import { normalizeMerchant } from "@/lib/classify/rules";
 import { env } from "@/lib/env";
+import type { InvoiceExtraction } from "@/lib/invoices/extract";
 
 type SeedTx = { merchant: string; desc: string; amountEur: number; daysAgo: number };
 
@@ -225,6 +227,80 @@ const run = async () => {
   appendAudit({ orgId, actor: "system", type: "transactions.fixture.seeded", payload: { count: fxCount, source: "fixtures/bunq-transactions.json" } });
   console.log(`Seeded ${fxCount} bunq fixture transactions.`);
   console.log(`Total transactions: ${count + fxCount}.`);
+
+  // Invoices
+  await seedInvoices(orgId);
+};
+
+const INVOICE_FIXTURES = ["sample-klm.json", "sample-aws.json", "sample-albert-heijn.json"];
+
+const seedInvoices = async (orgId: string) => {
+  let count = 0;
+  for (const file of INVOICE_FIXTURES) {
+    const fixturePath = path.resolve(process.cwd(), "fixtures", "invoices", file);
+    let data: InvoiceExtraction;
+    try {
+      data = JSON.parse(readFileSync(fixturePath, "utf-8")) as InvoiceExtraction;
+    } catch {
+      console.warn(`[seed] could not read ${fixturePath}`);
+      continue;
+    }
+    const invId = `inv_${randomUUID()}`;
+    const merchantNorm = normalizeMerchant(data.merchant);
+    const cls = await classifyMerchant(data.merchant);
+    const invoiceDate = data.invoiceDate ? Math.floor(new Date(data.invoiceDate + "T00:00:00Z").getTime() / 1000) : null;
+
+    // Try to link to a seeded transaction by matching merchant + approximate amount
+    const candidates = db.select().from(transactions).where(
+      and(eq(transactions.orgId, orgId), eq(transactions.merchantNorm, merchantNorm)),
+    ).all();
+    const linkedTxId = candidates.length > 0 ? candidates[0].id : null;
+
+    db.insert(invoices).values({
+      id: invId,
+      orgId,
+      filePath: `fixtures/invoices/${file}`,
+      fileName: file,
+      fileMime: "application/json",
+      fileSizeBytes: readFileSync(fixturePath).length,
+      source: count % 2 === 0 ? "upload" : "gmail",
+      merchantRaw: data.merchant,
+      merchantNorm,
+      invoiceNumber: data.invoiceNumber ?? null,
+      invoiceDate,
+      dueDate: data.dueDate ? Math.floor(new Date(data.dueDate + "T00:00:00Z").getTime() / 1000) : null,
+      subtotalCents: data.subtotalCents ?? null,
+      vatCents: data.vatCents ?? null,
+      totalCents: data.totalCents,
+      currency: data.currency ?? "EUR",
+      category: cls.category,
+      subCategory: cls.subCategory,
+      categoryConfidence: cls.confidence,
+      classifierSource: cls.source,
+      linkedTxId,
+      extractionModel: "seed-fixture",
+      extractionRaw: JSON.stringify(data),
+      status: "processed",
+    }).onConflictDoNothing().run();
+
+    for (const item of data.lineItems ?? []) {
+      db.insert(invoiceLineItems).values({
+        invoiceId: invId,
+        description: item.description,
+        quantity: item.quantity,
+        unitPriceCents: item.unitPriceCents,
+        amountCents: item.amountCents,
+        vatRatePct: item.vatRatePct,
+        vatCents: item.vatCents,
+        category: item.category,
+      }).run();
+    }
+
+    count++;
+  }
+
+  appendAudit({ orgId, actor: "system", type: "invoices.seeded", payload: { count } });
+  console.log(`Seeded ${count} demo invoices.`);
 };
 
 run().catch((e) => {

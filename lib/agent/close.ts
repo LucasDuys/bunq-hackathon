@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, lt } from "drizzle-orm";
 import {
+  bunqSessions,
   closeRuns,
   db,
   emissionEstimates,
@@ -10,6 +11,8 @@ import {
   transactions,
 } from "@/lib/db/client";
 import { appendAudit } from "@/lib/audit/append";
+import { loadContext } from "@/lib/bunq/context";
+import { intraUserTransfer } from "@/lib/bunq/payments";
 import { reclassifyMerchant } from "@/lib/classify/merchant";
 import { normalizeMerchant } from "@/lib/classify/rules";
 import { CREDIT_PROJECTS, totalBudgetMix } from "@/lib/credits/projects";
@@ -20,6 +23,9 @@ import { DEFAULT_POLICY, policySchema, type Policy } from "@/lib/policy/schema";
 import { env } from "@/lib/env";
 import { runDag } from "@/lib/agents/dag";
 import type { AgentContext } from "@/lib/agents/dag/types";
+import { computeClusters, type Cluster } from "./clusters";
+
+export type { Cluster };
 
 export type CloseState =
   | "AGGREGATE"
@@ -35,18 +41,6 @@ export type CloseState =
   | "EXECUTING"
   | "COMPLETED"
   | "FAILED";
-
-export type Cluster = {
-  id: string;
-  merchantLabel: string;
-  merchantNorms: string[];
-  txIds: string[];
-  totalSpendEur: number;
-  likelyCategory: string | null;
-  likelySubCategory: string | null;
-  avgClassifierConfidence: number;
-  impactScore: number;
-};
 
 export type ProposedAction =
   | { kind: "reserve_transfer"; amountEur: number; description: string }
@@ -67,6 +61,49 @@ const parsePolicy = (raw: string): Policy => {
   }
 };
 
+/**
+ * Narration events power the live close transcript at /close/[id].
+ * Each call appends to the same audit chain (so the SHA-256 ledger covers the
+ * agent's reasoning, not just its side effects). The UI keys off `payload.role`
+ * to render thinking / tool_call / tool_result / summary differently.
+ */
+type NarratePhase =
+  | "INGEST"
+  | "CLASSIFY"
+  | "ESTIMATE"
+  | "CLUSTER"
+  | "REFINE"
+  | "POLICY"
+  | "PROPOSE"
+  | "EXECUTE"
+  | "COMPLETE";
+
+type NarrateRole = "thinking" | "tool_call" | "tool_result" | "summary" | "error";
+
+const narrate = (
+  orgId: string,
+  closeRunId: string,
+  phase: NarratePhase,
+  role: NarrateRole,
+  title: string,
+  detail?: { body?: string; meta?: Record<string, unknown>; tool?: string },
+) => {
+  appendAudit({
+    orgId,
+    actor: "agent",
+    type: "agent.narrate",
+    closeRunId,
+    payload: {
+      phase,
+      role,
+      title,
+      body: detail?.body,
+      meta: detail?.meta,
+      tool: detail?.tool,
+    },
+  });
+};
+
 const getActivePolicy = (orgId: string): Policy => {
   const rows = db.select().from(policies).where(and(eq(policies.orgId, orgId), eq(policies.active, true))).all();
   if (rows.length === 0) return DEFAULT_POLICY;
@@ -83,16 +120,40 @@ export const startCloseRun = async (orgId: string, month: string) => {
 
   db.insert(closeRuns).values({ id, orgId, month, status: "active", state: "AGGREGATE", startedAt: Math.floor(Date.now() / 1000) }).run();
   appendAudit({ orgId, actor: "agent", type: "close.start", payload: { closeRunId: id, month }, closeRunId: id });
+  narrate(orgId, id, "INGEST", "thinking", `Starting carbon close for ${month}`, {
+    body: "I'll pull every booked transaction in the period, classify what's new, estimate emissions with confidence, then ask about anything I'm not sure on.",
+  });
 
   // 1. AGGREGATE
+  narrate(orgId, id, "INGEST", "tool_call", "db.transactions.range", {
+    tool: "sqlite",
+    meta: { orgId, month, startUnix: start, endUnix: end },
+  });
   const txs = db.select().from(transactions).where(and(eq(transactions.orgId, orgId), gte(transactions.timestamp, start), lt(transactions.timestamp, end))).all();
   if (txs.length === 0) {
     db.update(closeRuns).set({ state: "FAILED", status: "failed", completedAt: Math.floor(Date.now() / 1000) }).where(eq(closeRuns.id, id)).run();
+    narrate(orgId, id, "INGEST", "error", "No transactions for this month", {
+      body: `Aborting close — the bunq journal returned 0 rows in ${month}. Run a webhook re-sync or pick another month.`,
+    });
     appendAudit({ orgId, actor: "agent", type: "close.no_transactions", payload: { month }, closeRunId: id });
     throw new Error(`No transactions for ${month}`);
   }
 
+  const totalSpend = txs.reduce((s, t) => s + t.amountCents / 100, 0);
+  const classified = txs.filter((t) => t.category && t.category !== "other").length;
+  narrate(orgId, id, "INGEST", "tool_result", `${txs.length} transactions · €${totalSpend.toFixed(0)} total spend`, {
+    meta: {
+      txCount: txs.length,
+      totalSpendEur: totalSpend,
+      preClassified: classified,
+      pendingClassify: txs.length - classified,
+    },
+  });
+
   // 2. ESTIMATE_INITIAL
+  narrate(orgId, id, "ESTIMATE", "thinking", "Estimating per-transaction CO₂e", {
+    body: "Pairing each merchant category with its DEFRA / ADEME / Exiobase emission factor (tier + uncertainty embedded). Confidence rolls up via quadrature, spend-weighted.",
+  });
   db.update(closeRuns).set({ state: "ESTIMATE_INITIAL" }).where(eq(closeRuns.id, id)).run();
   const estimates = txs.map((t) => {
     const est = estimateEmission({
@@ -118,44 +179,49 @@ export const startCloseRun = async (orgId: string, month: string) => {
     initialCo2eKg: initial.co2eKgPoint,
     initialConfidence: initial.confidence,
   }).where(eq(closeRuns.id, id)).run();
+  narrate(orgId, id, "ESTIMATE", "summary", `First estimate · ${initial.co2eKgPoint.toFixed(0)} kgCO₂e`, {
+    body: `Confidence ${(initial.confidence * 100).toFixed(0)}%. Range ± ${(initial.co2eKgPoint * (1 - initial.confidence)).toFixed(1)} kg.`,
+    meta: {
+      initialCo2eKg: initial.co2eKgPoint,
+      initialConfidence: initial.confidence,
+      sampleEstimates: estimates.slice(0, 3).map(({ tx, est }) => ({
+        merchant: tx.merchantRaw,
+        category: tx.category,
+        co2eKg: est.co2eKgPoint,
+        method: est.method,
+      })),
+    },
+  });
 
   // 3. CLUSTER_UNCERTAINTY: group tx by merchantNorm, pick top-N by (spend × (1-confidence)).
+  narrate(orgId, id, "CLUSTER", "thinking", "Looking for the merchants that move the total most", {
+    body: "Grouping by normalized merchant, scoring impact = spend × (1 - confidence). Anything above €300 with confidence below 0.85 is a refinement candidate.",
+  });
   db.update(closeRuns).set({ state: "CLUSTER_UNCERTAINTY" }).where(eq(closeRuns.id, id)).run();
-  const byMerchant = new Map<string, typeof estimates>();
-  for (const e of estimates) {
-    const key = e.tx.merchantNorm;
-    if (!byMerchant.has(key)) byMerchant.set(key, []);
-    byMerchant.get(key)!.push(e);
-  }
-  const clusters: Cluster[] = [];
-  for (const [merchantNorm, group] of byMerchant) {
-    const totalSpendEur = group.reduce((s, g) => s + g.tx.amountCents / 100, 0);
-    const avgConf = group.reduce((s, g) => s + (g.tx.categoryConfidence ?? 0.5), 0) / group.length;
-    const pointCo2 = group.reduce((s, g) => s + g.est.co2eKgPoint, 0);
-    const rangeHalf = group.reduce((s, g) => s + (g.est.co2eKgHigh - g.est.co2eKgLow) / 2, 0);
-    const impactScore = rangeHalf * (1 - avgConf);
-    // Only worth asking about if there's real uncertainty and material spend
-    if (totalSpendEur < 300 || avgConf > 0.85) continue;
-    clusters.push({
-      id: `cl_${merchantNorm.replace(/\s+/g, "_").slice(0, 32)}`,
-      merchantLabel: group[0].tx.merchantRaw,
-      merchantNorms: [merchantNorm],
-      txIds: group.map((g) => g.tx.id),
-      totalSpendEur,
-      likelyCategory: group[0].tx.category,
-      likelySubCategory: group[0].tx.subCategory,
-      avgClassifierConfidence: avgConf,
-      impactScore,
-    });
-  }
-  clusters.sort((a, b) => b.impactScore - a.impactScore);
-  const topClusters = clusters.slice(0, 3);
+  const clusters = computeClusters(estimates);
+  const topClusters = clusters.filter((c) => c.flagged);
+  narrate(orgId, id, "CLUSTER", "tool_result", `${topClusters.length} cluster${topClusters.length === 1 ? "" : "s"} flagged for refinement`, {
+    meta: {
+      flagged: topClusters.map((c) => ({
+        id: c.id,
+        merchant: c.merchantLabel,
+        spendEur: c.totalSpendEur,
+        rangeKg: c.rangeHalfKg,
+        currentCategory: c.likelyCategory,
+        classifierConfidence: c.avgClassifierConfidence,
+      })),
+      totalClusters: clusters.length,
+    },
+  });
 
   // 4. DAG_RUNNING — R008.AC1 / T012.
   // Replaces the old QUESTIONS_GENERATED state. The 8-agent DAG produces the
   // single `required_context_question` (or null) and is the only LLM touchpoint
   // the close machine has. The DAG's `runId` is persisted on `close_runs.dagRunId`
   // so reviewers can pull the full agent trace from `agent_messages`.
+  narrate(orgId, id, "REFINE", "thinking", "Running the 8-agent DAG", {
+    body: "Baseline → research (web search) → green + cost proposals → judges → credit strategy → executive report. The DAG is the single LLM touchpoint for the close machine; its runId lands on close_runs.dag_run_id for full agent-trace replay.",
+  });
   db.update(closeRuns).set({ state: "DAG_RUNNING" }).where(eq(closeRuns.id, id)).run();
   const dagCtx: AgentContext = {
     orgId,
@@ -179,6 +245,14 @@ export const startCloseRun = async (orgId: string, month: string) => {
       totalLatencyMs: Math.round(dag.totalLatencyMs),
     },
     closeRunId: id,
+  });
+  narrate(orgId, id, "REFINE", "summary", `DAG complete · runId ${dag.runId.slice(0, 12)}…`, {
+    body: `${Math.round(dag.totalLatencyMs / 1000)}s wall, ${dag.mock_agent_count}/7 mock-fallback agents.`,
+    meta: {
+      dagRunId: dag.runId,
+      mockAgentCount: dag.mock_agent_count,
+      requiredContextQuestion: dag.baseline.required_context_question,
+    },
   });
 
   // R008.AC3 — only park in AWAITING_ANSWERS if the DAG returned a context
@@ -224,6 +298,10 @@ export const answerQuestion = async (closeRunId: string, qaId: number, answerLab
 
   db.update(refinementQa).set({ answer: answerLabel, answeredAt: Math.floor(Date.now() / 1000) }).where(eq(refinementQa.id, qaId)).run();
   appendAudit({ orgId: run.orgId, actor: "user", type: "refinement.answered", payload: { qaId, answerLabel, category: chosen.category, subCategory: chosen.subCategory }, closeRunId });
+  narrate(run.orgId, closeRunId, "REFINE", "summary", `Got it — "${answerLabel}"`, {
+    body: `Reclassifying ${qa.clusterId.replace(/^cl_/, "")} as ${chosen.category}${chosen.subCategory ? ` · ${chosen.subCategory}` : ""}, then updating the merchant cache so future months don't ask again.`,
+    meta: { qaId, answerLabel, category: chosen.category, subCategory: chosen.subCategory },
+  });
 
   // Reclassify the affected txs
   const affectedIds = JSON.parse(qa.affectedTxIds) as string[];
@@ -253,6 +331,9 @@ const finalizeEstimates = async (closeRunId: string) => {
   const { start, end } = monthBounds(run.month);
 
   db.update(closeRuns).set({ state: "APPLY_ANSWERS" }).where(eq(closeRuns.id, closeRunId)).run();
+  narrate(run.orgId, closeRunId, "ESTIMATE", "thinking", "Re-rolling emissions with the refined categories", {
+    body: "Discarding the initial estimates for this run and re-estimating every transaction; refined merchants now use higher-tier factors.",
+  });
 
   // Re-estimate every tx with refined categories
   const txs = db.select().from(transactions).where(and(eq(transactions.orgId, run.orgId), gte(transactions.timestamp, start), lt(transactions.timestamp, end))).all();
@@ -281,8 +362,19 @@ const finalizeEstimates = async (closeRunId: string) => {
 
   db.update(closeRuns).set({ state: "ESTIMATE_FINAL" }).where(eq(closeRuns.id, closeRunId)).run();
   const finalRollup = rollup(newEstimates.map((e) => e.est));
+  narrate(run.orgId, closeRunId, "ESTIMATE", "summary", `Final estimate · ${finalRollup.co2eKgPoint.toFixed(0)} kgCO₂e`, {
+    body: `Confidence ${(finalRollup.confidence * 100).toFixed(0)}%. Range ± ${(finalRollup.co2eKgPoint * (1 - finalRollup.confidence)).toFixed(1)} kg.`,
+    meta: {
+      finalCo2eKg: finalRollup.co2eKgPoint,
+      finalConfidence: finalRollup.confidence,
+      deltaVsInitial: run.initialCo2eKg != null ? finalRollup.co2eKgPoint - run.initialCo2eKg : null,
+    },
+  });
 
   // 5. APPLY_POLICY
+  narrate(run.orgId, closeRunId, "POLICY", "thinking", "Applying your reserve policy", {
+    body: "Pricing this month's emissions against your policy's per-category €/kgCO₂e schedule, then summing into a reserve transfer.",
+  });
   db.update(closeRuns).set({ state: "APPLY_POLICY" }).where(eq(closeRuns.id, closeRunId)).run();
   const policy = getActivePolicy(run.orgId);
   const byCategory = new Map<string, CategoryAggregate>();
@@ -294,8 +386,21 @@ const finalizeEstimates = async (closeRunId: string) => {
     byCategory.set(cat, a);
   }
   const outcome = evaluatePolicy(policy, Array.from(byCategory.values()));
+  narrate(run.orgId, closeRunId, "POLICY", "tool_result", `Reserve due · €${outcome.reserveTotalEur.toFixed(2)}`, {
+    body: outcome.requiresApproval
+      ? "Above your auto-approval threshold — this one needs you to sign off."
+      : "Under your auto-approval threshold — I'll execute the transfer once the proposal is logged.",
+    meta: {
+      reserveTotalEur: outcome.reserveTotalEur,
+      requiresApproval: outcome.requiresApproval,
+      perCategory: Array.from(byCategory.values()).map((a) => ({ category: a.category, spendEur: a.spendEur, co2eKg: a.co2eKg })),
+    },
+  });
 
   // 6. PROPOSE_ACTIONS
+  narrate(run.orgId, closeRunId, "PROPOSE", "thinking", "Picking an EU-registered credit mix", {
+    body: "Diversifying across nature-based and engineered removals to spread registry risk; only EU-registered projects from the static catalogue.",
+  });
   db.update(closeRuns).set({ state: "PROPOSED" }).where(eq(closeRuns.id, closeRunId)).run();
   const creditMix = totalBudgetMix(finalRollup.co2eKgPoint / 1000);
   const actions: ProposedAction[] = [
@@ -314,25 +419,100 @@ const finalizeEstimates = async (closeRunId: string) => {
   }).where(eq(closeRuns.id, closeRunId)).run();
 
   appendAudit({ orgId: run.orgId, actor: "agent", type: "close.proposed", payload: { actions, outcome, finalCo2eKg: finalRollup.co2eKgPoint, finalConfidence: finalRollup.confidence }, closeRunId });
+  narrate(run.orgId, closeRunId, "PROPOSE", "summary", `Proposal ready · ${actions.length} action${actions.length === 1 ? "" : "s"}`, {
+    body: outcome.requiresApproval ? "Awaiting your approval to execute." : "Auto-executing now.",
+    meta: {
+      reserveEur: outcome.reserveTotalEur,
+      tonnesCovered: creditMix.reduce((s, m) => s + m.tonnes, 0),
+      creditProjects: creditMix.map((m) => ({ id: m.project.id, name: m.project.name, tonnes: m.tonnes, eur: m.eur })),
+    },
+  });
+
+  // Per spec (CONCEPT.md "Agentic action"): low-risk reserves under the policy
+  // threshold auto-execute; only over-threshold runs wait for human approval.
+  if (!outcome.requiresApproval) {
+    const exec = await approveAndExecute(closeRunId, "system");
+    return {
+      state: exec.state,
+      finalCo2eKg: finalRollup.co2eKgPoint,
+      finalConfidence: finalRollup.confidence,
+      reserveEur: outcome.reserveTotalEur,
+      actions,
+      requiresApproval: false,
+      autoExecuted: true,
+      executed: exec.executed,
+    };
+  }
+
   return { state: nextState, finalCo2eKg: finalRollup.co2eKgPoint, finalConfidence: finalRollup.confidence, reserveEur: outcome.reserveTotalEur, actions, requiresApproval: outcome.requiresApproval };
 };
 
-export const approveAndExecute = async (closeRunId: string) => {
+export const approveAndExecute = async (closeRunId: string, approver: "user" | "system" = "user") => {
   const run = db.select().from(closeRuns).where(eq(closeRuns.id, closeRunId)).all()[0];
   if (!run) throw new Error("not found");
   if (!run.proposedActions) throw new Error("no proposed actions");
 
   db.update(closeRuns).set({ state: "EXECUTING", approved: true, approvedAt: Math.floor(Date.now() / 1000) }).where(eq(closeRuns.id, closeRunId)).run();
-  appendAudit({ orgId: run.orgId, actor: "user", type: "close.approved", payload: { closeRunId }, closeRunId });
+  appendAudit({ orgId: run.orgId, actor: approver, type: "close.approved", payload: { closeRunId, auto: approver === "system" }, closeRunId });
+  narrate(run.orgId, closeRunId, "EXECUTE", "thinking", approver === "system" ? "Auto-approved — executing now" : "Approved by user — executing now", {
+    body: "Calling the bunq /v1/payment endpoint via the signed RSA-SHA256 client. Each action lands in the audit chain.",
+  });
 
   const actions = JSON.parse(run.proposedActions) as ProposedAction[];
-  // Execution is mocked at the bunq-client layer when BUNQ_MOCK=1 / DRY_RUN=1; we still log every step.
+  const org = db.select().from(orgs).where(eq(orgs.id, run.orgId)).all()[0];
+  const ctx = loadContext();
+  const session = db.select().from(bunqSessions).where(eq(bunqSessions.orgId, run.orgId)).orderBy(desc(bunqSessions.id)).limit(1).all()[0];
+  // Mock-mode placeholders: callBunq returns canned responses so these don't need to be real.
+  const userId = org?.bunqUserId ?? ctx.userId ?? "0";
+  const fromAccountId = ctx.mainAccountId ?? "1";
+  const reserveAccountId = org?.reserveAccountId ?? ctx.reserveAccountId ?? "reserve_1";
+  const token = session?.sessionToken ?? "mock_session_token";
+
   for (const a of actions) {
     appendAudit({ orgId: run.orgId, actor: "agent", type: `action.${a.kind}`, payload: a, closeRunId });
+    if (a.kind === "reserve_transfer") {
+      narrate(run.orgId, closeRunId, "EXECUTE", "tool_call", `Sending €${a.amountEur.toFixed(2)} to your Carbon Reserve`, {
+        tool: "bunq",
+        meta: { fromAccountId, toAccountId: reserveAccountId, amountEur: a.amountEur, description: a.description },
+      });
+      await intraUserTransfer({
+        userId,
+        fromAccountId,
+        toAccountId: reserveAccountId,
+        amountEur: a.amountEur,
+        description: a.description,
+        token,
+        closeRunId,
+      });
+      narrate(run.orgId, closeRunId, "EXECUTE", "tool_result", `Carbon Reserve credited · €${a.amountEur.toFixed(2)}`);
+    } else if (a.kind === "credit_purchase") {
+      const project = CREDIT_PROJECTS.find((p) => p.id === a.projectId);
+      const projectLabel = project?.name ?? a.projectId;
+      narrate(run.orgId, closeRunId, "EXECUTE", "tool_call", `Reserving ${a.tonnes.toFixed(2)} t from ${projectLabel}`, {
+        tool: "credits-marketplace",
+        meta: { ...a, projectName: project?.name, registry: project?.registry, country: project?.country },
+      });
+    }
+    // credit_purchase actions stay audit-only for the hackathon (simulated marketplace).
   }
 
   db.update(closeRuns).set({ state: "COMPLETED", status: "completed", completedAt: Math.floor(Date.now() / 1000) }).where(eq(closeRuns.id, closeRunId)).run();
   appendAudit({ orgId: run.orgId, actor: "agent", type: "close.completed", payload: { actionCount: actions.length }, closeRunId });
+  narrate(run.orgId, closeRunId, "COMPLETE", "summary", "Loop closed", {
+    body: `${actions.length} action${actions.length === 1 ? "" : "s"} executed. Audit chain extended; the run is reproducible from /ledger.`,
+  });
+
+  // Snapshot a briefing into the audit chain so the run is reproducible later.
+  // Skip narrative to keep the close fast and deterministic; the report page
+  // re-renders narrative on demand.
+  try {
+    const { buildBriefing } = await import("@/lib/reports/briefing");
+    const briefing = await buildBriefing({ orgId: run.orgId, kind: "month", label: run.month, skipNarrative: true });
+    appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot", payload: briefing, closeRunId });
+  } catch (e) {
+    appendAudit({ orgId: run.orgId, actor: "agent", type: "briefing.snapshot_failed", payload: { error: String(e) }, closeRunId });
+  }
+
   return { state: "COMPLETED", executed: actions.length };
 };
 

@@ -70,6 +70,9 @@ export interface PriorityTarget {
   baseline_sub_category?: string | null;
   baseline_confidence?: number;
   baseline_tx_count?: number;
+  baseline_has_invoice?: boolean;
+  baseline_invoice_count?: number;
+  baseline_data_basis?: "invoice" | "spend_based";
 }
 
 // plans/matrix-research.md §6 — evidence-backed alternatives from the Research Agent.

@@ -283,6 +283,53 @@ CREATE TABLE IF NOT EXISTS onboarding_qa (
   answered_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_onbqa_run ON onboarding_qa(run_id);
+
+CREATE TABLE IF NOT EXISTS invoices (
+  id TEXT PRIMARY KEY,
+  org_id TEXT NOT NULL,
+  file_path TEXT NOT NULL,
+  file_name TEXT NOT NULL,
+  file_mime TEXT NOT NULL,
+  file_size_bytes INTEGER NOT NULL,
+  source TEXT NOT NULL,
+  gmail_message_id TEXT,
+  merchant_raw TEXT,
+  merchant_norm TEXT,
+  invoice_number TEXT,
+  invoice_date INTEGER,
+  due_date INTEGER,
+  subtotal_cents INTEGER,
+  vat_cents INTEGER,
+  total_cents INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'EUR',
+  category TEXT,
+  sub_category TEXT,
+  category_confidence REAL,
+  classifier_source TEXT,
+  linked_tx_id TEXT,
+  extraction_model TEXT NOT NULL,
+  extraction_raw TEXT,
+  status TEXT NOT NULL DEFAULT 'processed',
+  error_message TEXT,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_inv_org ON invoices(org_id);
+CREATE INDEX IF NOT EXISTS idx_inv_linked_tx ON invoices(linked_tx_id);
+CREATE INDEX IF NOT EXISTS idx_inv_gmail ON invoices(gmail_message_id);
+
+CREATE TABLE IF NOT EXISTS invoice_line_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  invoice_id TEXT NOT NULL,
+  description TEXT NOT NULL,
+  quantity REAL,
+  unit_price_cents INTEGER,
+  amount_cents INTEGER NOT NULL,
+  vat_rate_pct REAL,
+  vat_cents INTEGER,
+  category TEXT,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+CREATE INDEX IF NOT EXISTS idx_inv_li_invoice ON invoice_line_items(invoice_id);
 `;
 
 const dbPath = env.dbUrl.replace(/^file:/, "");

@@ -293,3 +293,51 @@ export type OnboardingRun = typeof onboardingRuns.$inferSelect;
 export type NewOnboardingRun = typeof onboardingRuns.$inferInsert;
 export type OnboardingQa = typeof onboardingQa.$inferSelect;
 export type NewOnboardingQa = typeof onboardingQa.$inferInsert;
+
+export const invoices = sqliteTable("invoices", {
+  id: text("id").primaryKey(),
+  orgId: text("org_id").notNull(),
+  filePath: text("file_path").notNull(),
+  fileName: text("file_name").notNull(),
+  fileMime: text("file_mime").notNull(),
+  fileSizeBytes: integer("file_size_bytes").notNull(),
+  source: text("source").notNull(),
+  gmailMessageId: text("gmail_message_id"),
+  merchantRaw: text("merchant_raw"),
+  merchantNorm: text("merchant_norm"),
+  invoiceNumber: text("invoice_number"),
+  invoiceDate: integer("invoice_date"),
+  dueDate: integer("due_date"),
+  subtotalCents: integer("subtotal_cents"),
+  vatCents: integer("vat_cents"),
+  totalCents: integer("total_cents").notNull(),
+  currency: text("currency").notNull().default("EUR"),
+  category: text("category"),
+  subCategory: text("sub_category"),
+  categoryConfidence: real("category_confidence"),
+  classifierSource: text("classifier_source"),
+  linkedTxId: text("linked_tx_id"),
+  extractionModel: text("extraction_model").notNull(),
+  extractionRaw: text("extraction_raw"),
+  status: text("status").notNull().default("processed"),
+  errorMessage: text("error_message"),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+export const invoiceLineItems = sqliteTable("invoice_line_items", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  invoiceId: text("invoice_id").notNull(),
+  description: text("description").notNull(),
+  quantity: real("quantity"),
+  unitPriceCents: integer("unit_price_cents"),
+  amountCents: integer("amount_cents").notNull(),
+  vatRatePct: real("vat_rate_pct"),
+  vatCents: integer("vat_cents"),
+  category: text("category"),
+  createdAt: integer("created_at").notNull().default(sql`(unixepoch())`),
+});
+
+export type Invoice = typeof invoices.$inferSelect;
+export type NewInvoice = typeof invoices.$inferInsert;
+export type InvoiceLineItem = typeof invoiceLineItems.$inferSelect;
+export type NewInvoiceLineItem = typeof invoiceLineItems.$inferInsert;

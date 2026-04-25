@@ -5,12 +5,15 @@ import {
   creditProjects,
   db,
   emissionEstimates,
+  invoiceLineItems,
+  invoices,
   orgs,
   policies,
   refinementQa,
   transactions,
 } from "@/lib/db/client";
 import { estimateEmission } from "@/lib/emissions/estimate";
+import { computeClusters, type Cluster } from "@/lib/agent/clusters";
 import {
   calculateTransactionSavings,
   rollupMonthlySavings,
@@ -117,6 +120,56 @@ export const getTaxSavingsForMonth = (orgId: string, month: string): MonthlySavi
   return rollupMonthlySavings(month, summaries);
 };
 
+export type ClusterWithQuestion = Cluster & {
+  runId: string | null;
+  question: string | null;
+  answer: string | null;
+  answered: boolean;
+};
+
+/**
+ * Build a live view of merchant clusters for the given month.
+ * Combines deterministic recomputation from current transactions with
+ * any persisted refinement Q&A from the latest close run, so the UI can show
+ * which clusters the agent has asked about and what the user answered.
+ */
+export const getClustersForMonth = (
+  orgId: string,
+  month: string,
+): ClusterWithQuestion[] => {
+  const txs = getTransactionsForMonth(orgId, month);
+  if (txs.length === 0) return [];
+
+  const items = txs.map((tx) => {
+    const est = estimateEmission({
+      category: tx.category ?? "other",
+      subCategory: tx.subCategory,
+      amountEur: tx.amountCents / 100,
+      classifierConfidence: tx.categoryConfidence ?? 0.5,
+    });
+    return { tx, est };
+  });
+
+  const clusters = computeClusters(items);
+
+  const latestRun = getLatestCloseRun(orgId);
+  const runId = latestRun?.id ?? null;
+  const qas = runId ? getQuestionsForRun(runId) : [];
+  const byClusterId = new Map(qas.map((q) => [q.clusterId, q]));
+
+  return clusters.map((c) => {
+    const qa = byClusterId.get(c.id);
+    return {
+      ...c,
+      runId,
+      question: qa?.question ?? null,
+      answer: qa?.answer ?? null,
+      answered: !!qa?.answer,
+      flagged: c.flagged || !!qa,
+    };
+  });
+};
+
 export const getLatestEstimatesForMonth = (orgId: string, month: string) => {
   const { start, end } = monthBounds(month);
   return db.select({
@@ -134,3 +187,28 @@ export const getLatestEstimatesForMonth = (orgId: string, month: string) => {
     .where(and(eq(transactions.orgId, orgId), gte(transactions.timestamp, start), lt(transactions.timestamp, end)))
     .all();
 };
+
+// ── Invoice queries ──
+
+export const getInvoicesForOrg = (orgId: string, limit = 100) =>
+  db.select().from(invoices).where(eq(invoices.orgId, orgId)).orderBy(desc(invoices.createdAt)).limit(limit).all();
+
+export const getInvoice = (id: string) =>
+  db.select().from(invoices).where(eq(invoices.id, id)).all()[0];
+
+export const getInvoiceLineItems = (invoiceId: string) =>
+  db.select().from(invoiceLineItems).where(eq(invoiceLineItems.invoiceId, invoiceId)).all();
+
+export const getInvoiceWithItems = (id: string) => {
+  const inv = getInvoice(id);
+  if (!inv) return null;
+  const items = getInvoiceLineItems(id);
+  return { ...inv, lineItems: items };
+};
+
+export const getInvoiceStats = (orgId: string) =>
+  db.select({
+    total: sql<number>`count(*)`,
+    linked: sql<number>`coalesce(sum(case when linked_tx_id is not null then 1 else 0 end), 0)`,
+    totalAmountCents: sql<number>`coalesce(sum(total_cents), 0)`,
+  }).from(invoices).where(eq(invoices.orgId, orgId)).all()[0];
