@@ -1,4 +1,4 @@
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import { buildPolicyFromProfile, creditShortlistFromProfile, mergePartialPolicy } from "@/lib/onboarding/calibration";
 import { renderPolicyMarkdown } from "@/lib/onboarding/markdown";
 import type { CompanyProfile } from "@/lib/onboarding/profile";
@@ -93,11 +93,9 @@ Return JSON only, no prose outside the JSON:
   }
 };
 
-export const draftPolicy = async (input: DrafterInput): Promise<DrafterOutput> => {
-  if (isAnthropicMock()) return deterministicDrafter(input);
-  try {
-    return await liveDrafter(input);
-  } catch {
-    return deterministicDrafter(input);
-  }
-};
+export const draftPolicy = async (input: DrafterInput): Promise<DrafterOutput> =>
+  withAnthropicFallback(
+    () => liveDrafter(input),
+    () => deterministicDrafter(input),
+    "onboarding.draftPolicy",
+  );

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import { ALL_CATEGORIES } from "@/lib/factors";
 import { fileToBase64 } from "./storage";
 
@@ -86,40 +86,44 @@ export async function extractInvoice(params: {
   mime: string;
   fileName: string;
 }): Promise<{ extraction: InvoiceExtraction; rawResponse: string }> {
-  if (isAnthropicMock()) {
+  const fallback = () => {
     const extraction = mockExtraction();
     return { extraction, rawResponse: JSON.stringify(extraction) };
-  }
+  };
 
-  const client = anthropic();
-  const b64 = fileToBase64(params.fileBuffer);
+  return withAnthropicFallback(
+    async () => {
+      const client = anthropic();
+      const b64 = fileToBase64(params.fileBuffer);
 
-  const imageContent = params.mime === "application/pdf"
-    ? { type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: b64 } }
-    : { type: "image" as const, source: { type: "base64" as const, media_type: params.mime as "image/jpeg" | "image/png", data: b64 } };
+      const imageContent = params.mime === "application/pdf"
+        ? { type: "document" as const, source: { type: "base64" as const, media_type: "application/pdf" as const, data: b64 } }
+        : { type: "image" as const, source: { type: "base64" as const, media_type: params.mime as "image/jpeg" | "image/png", data: b64 } };
 
-  const msg = await client.messages.create({
-    model: MODEL_SONNET,
-    max_tokens: 2000,
-    messages: [{
-      role: "user",
-      content: [
-        imageContent,
-        { type: "text", text: `${PROMPT}\n\nFilename: ${params.fileName}` },
-      ],
-    }],
-  });
+      const msg = await client.messages.create({
+        model: MODEL_SONNET,
+        max_tokens: 2000,
+        messages: [{
+          role: "user",
+          content: [
+            imageContent,
+            { type: "text", text: `${PROMPT}\n\nFilename: ${params.fileName}` },
+          ],
+        }],
+      });
 
-  const text = msg.content
-    .filter((c) => c.type === "text")
-    .map((c) => (c as { text: string }).text)
-    .join("");
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const text = msg.content
+        .filter((c) => c.type === "text")
+        .map((c) => (c as { text: string }).text)
+        .join("");
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
 
-  if (!jsonMatch) {
-    throw new Error("Claude did not return extractable JSON");
-  }
+      if (!jsonMatch) return fallback();
 
-  const parsed = InvoiceExtractionSchema.parse(JSON.parse(jsonMatch[0]));
-  return { extraction: parsed, rawResponse: text };
+      const parsed = InvoiceExtractionSchema.parse(JSON.parse(jsonMatch[0]));
+      return { extraction: parsed, rawResponse: text };
+    },
+    fallback,
+    "invoices.extractInvoice",
+  );
 }

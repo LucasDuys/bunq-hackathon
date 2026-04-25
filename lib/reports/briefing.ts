@@ -2,7 +2,7 @@ import { and, desc, eq, gte, lt } from "drizzle-orm";
 import { closeRuns, db, orgs, transactions } from "@/lib/db/client";
 import { totalBudgetMix } from "@/lib/credits/projects";
 import { estimateEmission } from "@/lib/emissions/estimate";
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import { carbonBriefingSchema, type CarbonBriefing, type Anomaly, type SwapSuggestion, type Period } from "./briefing-schema";
 import { DEFAULT_ORG_ID, monthBounds, currentMonth } from "@/lib/queries";
 
@@ -298,9 +298,6 @@ const merchantSwapSuggestions = async (top: MerchantRow[]): Promise<SwapSuggesti
     return out;
   };
 
-  if (isAnthropicMock() || !process.env.ANTHROPIC_API_KEY) return fallback();
-
-  const client = anthropic();
   const prompt = `You are a corporate sustainability advisor. For each merchant below, suggest ONE specific actionable lower-carbon swap. Name a real alternative (provider, transport mode, technology). Cite expected savings as a percentage in [10, 90].
 
 Return JSON only, shape:
@@ -311,48 +308,51 @@ ${candidates.map((c) => `- merchantNorm="${c.merchantNorm}" raw="${c.merchantRaw
 
 Rules: no emoji, rationale max 200 chars, alternative max 80 chars. Skip merchants with no good swap.`;
 
-  try {
-    const msg = await client.messages.create({
-      model: MODEL_SONNET,
-      max_tokens: 800,
-      messages: [{ role: "user", content: prompt }],
-    });
-    const text = msg.content
-      .filter((c) => c.type === "text")
-      .map((c) => (c as { text: string }).text)
-      .join("");
-    const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return fallback();
-    const parsed = JSON.parse(m[0]) as {
-      swaps: Array<{ merchantNorm: string; to: string; expectedSavingPct: number; rationale: string }>;
-    };
-    const out: SwapSuggestion[] = [];
-    for (const s of parsed.swaps) {
-      const merchant = candidates.find((c) => c.merchantNorm === s.merchantNorm);
-      if (!merchant) continue;
-      const pct = Math.max(10, Math.min(90, s.expectedSavingPct));
-      out.push({
-        from: merchant.merchantRaw,
-        to: s.to.slice(0, 200),
-        expectedSavingKg: merchant.co2eKg * (pct / 100),
-        expectedSavingPct: pct,
-        rationale: s.rationale.slice(0, 400),
-        currentCo2eKg: merchant.co2eKg,
-        currentSpendEur: merchant.spendEur,
-        merchantNorm: merchant.merchantNorm,
-        merchantRaw: merchant.merchantRaw,
-        generatedBy: "merchant_llm",
+  return withAnthropicFallback(
+    async () => {
+      const client = anthropic();
+      const msg = await client.messages.create({
+        model: MODEL_SONNET,
+        max_tokens: 800,
+        messages: [{ role: "user", content: prompt }],
       });
-    }
-    return out.length > 0 ? out : fallback();
-  } catch {
-    return fallback();
-  }
+      const text = msg.content
+        .filter((c) => c.type === "text")
+        .map((c) => (c as { text: string }).text)
+        .join("");
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) return fallback();
+      const parsed = JSON.parse(m[0]) as {
+        swaps: Array<{ merchantNorm: string; to: string; expectedSavingPct: number; rationale: string }>;
+      };
+      const out: SwapSuggestion[] = [];
+      for (const s of parsed.swaps) {
+        const merchant = candidates.find((c) => c.merchantNorm === s.merchantNorm);
+        if (!merchant) continue;
+        const pct = Math.max(10, Math.min(90, s.expectedSavingPct));
+        out.push({
+          from: merchant.merchantRaw,
+          to: s.to.slice(0, 200),
+          expectedSavingKg: merchant.co2eKg * (pct / 100),
+          expectedSavingPct: pct,
+          rationale: s.rationale.slice(0, 400),
+          currentCo2eKg: merchant.co2eKg,
+          currentSpendEur: merchant.spendEur,
+          merchantNorm: merchant.merchantNorm,
+          merchantRaw: merchant.merchantRaw,
+          generatedBy: "merchant_llm",
+        });
+      }
+      return out.length > 0 ? out : fallback();
+    },
+    fallback,
+    "briefing.merchantSwapSuggestions",
+  );
 };
 
 const buildNarrative = async (briefing: Omit<CarbonBriefing, "narrative">): Promise<string> => {
   const { period, summary, topCategories: cats, anomalies, swaps } = briefing;
-  if (isAnthropicMock() || !process.env.ANTHROPIC_API_KEY) {
+  const deterministic = (): string => {
     const deltaText = summary.deltaCo2ePct === null
       ? "no prior-period baseline"
       : `${summary.deltaCo2ePct >= 0 ? "+" : ""}${summary.deltaCo2ePct.toFixed(0)}% vs ${period.priorLabel}`;
@@ -364,8 +364,7 @@ const buildNarrative = async (briefing: Omit<CarbonBriefing, "narrative">): Prom
     if (anomalies.length > 0) lines.push(`${anomalies.length} ${anomalies.length === 1 ? "anomaly" : "anomalies"} flagged this period.`);
     if (swaps.length > 0) lines.push(`Top swap opportunity: ${swaps[0].to} (saves ~${swaps[0].expectedSavingKg.toFixed(0)} kg).`);
     return lines.join(" ");
-  }
-  const client = anthropic();
+  };
   const prompt = `Write a single-paragraph (60-90 words) plain-English carbon briefing for ${period.label}. Tone: confident, neutral, slightly forward-looking. No emoji. Inputs:
 - Total: ${summary.totalCo2eKg.toFixed(0)} kg CO2e from ${summary.txCount} transactions, EUR ${summary.totalSpendEur.toFixed(0)} spend
 - Confidence: ${(summary.confidence * 100).toFixed(0)}%
@@ -373,12 +372,20 @@ const buildNarrative = async (briefing: Omit<CarbonBriefing, "narrative">): Prom
 - Top categories: ${cats.slice(0, 3).map((c) => `${c.category} (${c.co2eKg.toFixed(0)} kg, ${c.sharePct.toFixed(0)}%)`).join(", ")}
 - Anomalies (${anomalies.length}): ${anomalies.slice(0, 2).map((a) => a.message).join(" | ") || "none"}
 - Top swap: ${swaps[0]?.rationale ?? "no obvious swap"}`;
-  const msg = await client.messages.create({ model: MODEL_SONNET, max_tokens: 300, messages: [{ role: "user", content: prompt }] });
-  return msg.content
-    .filter((c) => c.type === "text")
-    .map((c) => (c as { text: string }).text)
-    .join("")
-    .trim();
+  return withAnthropicFallback(
+    async () => {
+      const client = anthropic();
+      const msg = await client.messages.create({ model: MODEL_SONNET, max_tokens: 300, messages: [{ role: "user", content: prompt }] });
+      const text = msg.content
+        .filter((c) => c.type === "text")
+        .map((c) => (c as { text: string }).text)
+        .join("")
+        .trim();
+      return text || deterministic();
+    },
+    deterministic,
+    "briefing.buildNarrative",
+  );
 };
 
 export const buildBriefing = async (

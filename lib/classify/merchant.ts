@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { MODEL_HAIKU, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_HAIKU, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import { db, merchantCategoryCache } from "@/lib/db/client";
 import { ALL_CATEGORIES, SUB_CATEGORIES_BY_CATEGORY } from "@/lib/factors";
 import { normalizeMerchant, tryRules } from "./rules";
@@ -19,11 +19,14 @@ const OUTPUT_SCHEMA = z.object({
   rationale: z.string(),
 });
 
+const FALLBACK_CLASSIFICATION: Classification = {
+  category: "other",
+  subCategory: null,
+  confidence: 0.4,
+  source: "fallback",
+};
+
 const llmClassify = async (merchant: string, description: string | null): Promise<Classification> => {
-  if (isAnthropicMock()) {
-    return { category: "other", subCategory: null, confidence: 0.4, source: "fallback" };
-  }
-  const client = anthropic();
   const prompt = `You classify business transaction merchants into carbon-accounting categories.
 Categories: ${ALL_CATEGORIES.join(", ")}.
 Sub-categories per category: ${JSON.stringify(SUB_CATEGORIES_BY_CATEGORY)}.
@@ -33,20 +36,27 @@ If unsure, use category "other", subCategory null, confidence <0.5.
 Merchant: "${merchant}"
 Description: "${description ?? ""}"`;
 
-  const msg = await client.messages.create({
-    model: MODEL_HAIKU,
-    max_tokens: 300,
-    messages: [{ role: "user", content: prompt }],
-  });
-  const text = msg.content.filter((c) => c.type === "text").map((c) => (c as { text: string }).text).join("");
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) return { category: "other", subCategory: null, confidence: 0.3, source: "fallback" };
-  try {
-    const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonMatch[0]));
-    return { category: parsed.category, subCategory: parsed.subCategory, confidence: parsed.confidence, source: "llm" };
-  } catch {
-    return { category: "other", subCategory: null, confidence: 0.3, source: "fallback" };
-  }
+  return withAnthropicFallback(
+    async () => {
+      const client = anthropic();
+      const msg = await client.messages.create({
+        model: MODEL_HAIKU,
+        max_tokens: 300,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const text = msg.content.filter((c) => c.type === "text").map((c) => (c as { text: string }).text).join("");
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) return { ...FALLBACK_CLASSIFICATION, confidence: 0.3 };
+      try {
+        const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonMatch[0]));
+        return { category: parsed.category, subCategory: parsed.subCategory, confidence: parsed.confidence, source: "llm" } as Classification;
+      } catch {
+        return { ...FALLBACK_CLASSIFICATION, confidence: 0.3 };
+      }
+    },
+    () => FALLBACK_CLASSIFICATION,
+    "classify.llmClassify",
+  );
 };
 
 export const classifyMerchant = async (rawMerchant: string, description: string | null = null): Promise<Classification> => {

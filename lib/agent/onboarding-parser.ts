@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import { companyProfileSchema } from "@/lib/onboarding/profile";
 import {
   EMPTY_PARSER_OUTPUT,
@@ -294,12 +294,11 @@ export const parseUploadedPolicy = async (params: {
     if (!normalized.text && normalized.kind !== "pdf") {
       return { ...EMPTY_PARSER_OUTPUT, gaps: [{ field: "document", reason: "empty or unreadable" }] };
     }
-    if (isAnthropicMock()) return deterministicParser(normalized);
-    try {
-      return await liveParser(normalized);
-    } catch {
-      return deterministicParser(normalized);
-    }
+    return await withAnthropicFallback(
+      () => liveParser(normalized),
+      () => deterministicParser(normalized),
+      "onboarding.parseUploadedPolicy",
+    );
   } catch (e) {
     return {
       ...EMPTY_PARSER_OUTPUT,

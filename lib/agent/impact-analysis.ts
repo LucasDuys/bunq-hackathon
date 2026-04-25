@@ -1,4 +1,4 @@
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import { type MonthlySavingsSummary } from "@/lib/tax";
 import { BENCHMARKS, benchmarkFor, type Benchmark } from "@/lib/benchmarks";
 import { GREEN_ALTERNATIVES, type GreenAlternative } from "@/lib/tax/alternatives";
@@ -172,18 +172,18 @@ async function generateNarrative(params: {
     .filter((c) => c.vsAvgPct < -10)
     .sort((a, b) => a.vsAvgPct - b.vsAvgPct);
 
-  if (isAnthropicMock() || !process.env.ANTHROPIC_API_KEY) {
-    return buildMockNarrative(params, aboveAvg, belowAvg);
-  }
+  const fallback = () => buildMockNarrative(params, aboveAvg, belowAvg);
 
-  const client = anthropic();
-  const msg = await client.messages.create({
-    model: MODEL_SONNET,
-    max_tokens: 800,
-    messages: [
-      {
-        role: "user",
-        content: `You are a carbon accounting analyst writing a concise environmental impact report for a Dutch SME using bunq Business.
+  return withAnthropicFallback(
+    async () => {
+      const client = anthropic();
+      const msg = await client.messages.create({
+        model: MODEL_SONNET,
+        max_tokens: 800,
+        messages: [
+          {
+            role: "user",
+            content: `You are a carbon accounting analyst writing a concise environmental impact report for a Dutch SME using bunq Business.
 
 Write a 4-6 sentence narrative analysis based on this data. Be specific with numbers. Use plain language, no jargon. Address the business owner directly ("you" / "your").
 
@@ -204,14 +204,19 @@ Rules:
 - Compare to industry averages with specific percentages.
 - End with the single highest-impact action they can take and its EUR + CO₂e saving.
 - Never use "game-changer", "deep dive", "leverage", or corporate-speak.`,
-      },
-    ],
-  });
+          },
+        ],
+      });
 
-  return msg.content
-    .filter((c) => c.type === "text")
-    .map((c) => (c as { text: string }).text)
-    .join("");
+      const text = msg.content
+        .filter((c) => c.type === "text")
+        .map((c) => (c as { text: string }).text)
+        .join("");
+      return text || fallback();
+    },
+    fallback,
+    "impact-analysis.generateClaudeNarrative",
+  );
 }
 
 function buildMockNarrative(

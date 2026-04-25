@@ -14,7 +14,7 @@ import type {
   BetaWebSearchResultBlock,
 } from "@anthropic-ai/sdk/resources/beta.mjs";
 import type { BetaRunnableTool } from "@anthropic-ai/sdk/lib/tools/BetaRunnableTool.mjs";
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, isAnthropicMock, notifyAnthropicFailure } from "@/lib/anthropic/client";
 
 export type LlmCallResult = {
   jsonText: string | null;
@@ -48,15 +48,23 @@ export const callAgent = async (opts: LlmCallOptions): Promise<LlmCallResult> =>
     text: opts.system,
     cache_control: { type: "ephemeral" as const },
   };
-  const msg = (await client.messages.create({
-    model: opts.model ?? MODEL_SONNET,
-    max_tokens: opts.maxTokens ?? 4000,
-    temperature: opts.temperature ?? 0.2,
-    system: [systemBlock] as unknown as Anthropic.Messages.MessageCreateParamsNonStreaming["system"],
-    messages: [{ role: "user", content: opts.user }],
-  })) as Anthropic.Messages.Message & {
+  let msg: Anthropic.Messages.Message & {
     usage?: { input_tokens?: number; output_tokens?: number; cache_read_input_tokens?: number; cache_creation_input_tokens?: number };
   };
+  try {
+    msg = (await client.messages.create({
+      model: opts.model ?? MODEL_SONNET,
+      max_tokens: opts.maxTokens ?? 4000,
+      temperature: opts.temperature ?? 0.2,
+      system: [systemBlock] as unknown as Anthropic.Messages.MessageCreateParamsNonStreaming["system"],
+      messages: [{ role: "user", content: opts.user }],
+    })) as typeof msg;
+  } catch (err) {
+    // Trip the runtime offline flag so subsequent isMock() checks in the same
+    // process flip to deterministic — the next DAG node will use buildMock().
+    notifyAnthropicFailure(err, "dag.callAgent");
+    throw err;
+  }
 
   const rawText = msg.content
     .filter((c) => c.type === "text")
@@ -141,7 +149,13 @@ export const callAgentWithTools = async (opts: ToolCallOptions): Promise<ToolRun
   // Node exits cleanly with code 0. runUntilDone() consumes the iterator
   // first via `for await (const _ of this)` then awaits completion. See
   // node_modules/@anthropic-ai/sdk/.../BetaToolRunner.ts:369-396.
-  const finalMessage = await runner.runUntilDone();
+  let finalMessage: Anthropic.Beta.Messages.BetaMessage;
+  try {
+    finalMessage = await runner.runUntilDone();
+  } catch (err) {
+    notifyAnthropicFailure(err, "dag.callAgentWithTools");
+    throw err;
+  }
   const usage = (finalMessage.usage ?? {}) as {
     input_tokens?: number;
     output_tokens?: number;

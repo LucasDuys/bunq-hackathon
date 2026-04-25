@@ -1,4 +1,4 @@
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import { carbonReportSchema, type CarbonReport } from "./schema";
 
 const SYSTEM_PROMPT = `You extract structured CSRD ESRS E1-style carbon disclosures from corporate sustainability reports. You return JSON matching the provided schema exactly. Use null for any field the report does not disclose — never guess. Every numeric claim must be grounded in a specific passage. All emissions values are in tCO2e (convert if the source uses kt or Mt). All amounts are in EUR (convert if the source uses USD/GBP using rough period-average rates; note the conversion in the field's nearest string field).
@@ -124,33 +124,35 @@ export const extractCarbonReport = async (opts: {
   sourceFile: string;
   climateSectionText: string;
 }): Promise<CarbonReport> => {
-  if (isAnthropicMock() || !process.env.ANTHROPIC_API_KEY) {
-    return mockExtraction(opts);
-  }
+  return withAnthropicFallback(
+    async () => {
+      const client = anthropic();
+      const msg = await client.messages.create({
+        model: MODEL_SONNET,
+        max_tokens: 8000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: userPrompt(opts) }],
+      });
 
-  const client = anthropic();
-  const msg = await client.messages.create({
-    model: MODEL_SONNET,
-    max_tokens: 8000,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: userPrompt(opts) }],
-  });
+      const text = msg.content
+        .filter((c) => c.type === "text")
+        .map((c) => (c as { text: string }).text)
+        .join("");
 
-  const text = msg.content
-    .filter((c) => c.type === "text")
-    .map((c) => (c as { text: string }).text)
-    .join("");
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) return mockExtraction(opts);
 
-  const match = text.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error(`no JSON in response for ${opts.sourceFile}`);
-
-  const raw = JSON.parse(match[0]);
-  const parsed = carbonReportSchema.parse({
-    ...raw,
-    _extraction: {
-      model: MODEL_SONNET,
-      extractedAt: new Date().toISOString(),
+      const raw = JSON.parse(match[0]);
+      const parsed = carbonReportSchema.parse({
+        ...raw,
+        _extraction: {
+          model: MODEL_SONNET,
+          extractedAt: new Date().toISOString(),
+        },
+      });
+      return parsed;
     },
-  });
-  return parsed;
+    () => mockExtraction(opts),
+    "reports.extractCarbonReport",
+  );
 };

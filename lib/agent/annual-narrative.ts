@@ -1,4 +1,4 @@
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import type { CarbonReport } from "@/lib/reports/schema";
 
 /**
@@ -26,8 +26,6 @@ const FALLBACK_TRANSITION = (r: CarbonReport): string => {
 };
 
 export const generateAnnualTransitionPlan = async (r: CarbonReport): Promise<string> => {
-  if (isAnthropicMock() || !process.env.ANTHROPIC_API_KEY) return FALLBACK_TRANSITION(r);
-
   const cat1 = r.emissions.scope3.find((s) => s.category === "cat1_purchased_goods_services" && s.tco2e !== null);
   const cat6 = r.emissions.scope3.find((s) => s.category === "cat6_business_travel" && s.tco2e !== null);
 
@@ -41,22 +39,24 @@ Then describe the climate transition plan in plain English, organised around the
 
 Mention concrete levers per category (refurb electronics, low-carbon cloud regions, rail vs short-haul flights, fleet electrification). State that no SBTi-validated targets are in place yet. Reference the Carbon Reserve mechanism for funding EU-registered removal credits while reduction is in flight. No emoji. No motivational closers.`;
 
-  try {
-    const client = anthropic();
-    const msg = await client.messages.create({
-      model: MODEL_SONNET,
-      max_tokens: 600,
-      messages: [{ role: "user", content: prompt }],
-    });
-    const text = msg.content
-      .filter((c) => c.type === "text")
-      .map((c) => (c as { text: string }).text)
-      .join("")
-      .trim();
-    return text || FALLBACK_TRANSITION(r);
-  } catch {
-    return FALLBACK_TRANSITION(r);
-  }
+  return withAnthropicFallback(
+    async () => {
+      const client = anthropic();
+      const msg = await client.messages.create({
+        model: MODEL_SONNET,
+        max_tokens: 600,
+        messages: [{ role: "user", content: prompt }],
+      });
+      const text = msg.content
+        .filter((c) => c.type === "text")
+        .map((c) => (c as { text: string }).text)
+        .join("")
+        .trim();
+      return text || FALLBACK_TRANSITION(r);
+    },
+    () => FALLBACK_TRANSITION(r),
+    "annual-narrative.generateAnnualTransitionPlan",
+  );
 };
 
 export const enrichWithNarrative = async (r: CarbonReport): Promise<CarbonReport> => {

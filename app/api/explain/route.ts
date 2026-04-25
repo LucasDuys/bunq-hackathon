@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { APIError } from "@anthropic-ai/sdk";
 import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
 import { DEFAULT_ORG_ID, getActivePolicyRaw, getOrg } from "@/lib/queries";
 import { buildContextForMetric } from "@/lib/explain/context";
@@ -68,18 +69,22 @@ export async function POST(req: NextRequest) {
       };
       aborted.addEventListener("abort", onAbort);
 
+      const streamMockFallback = async () => {
+        const narrative = mockNarrate(entry.builder, context, scope, userQuestion, isFollowUp);
+        for await (const chunk of streamTextChunks(narrative)) {
+          if (aborted.aborted) break;
+          safeEnqueue({ type: "delta", value: chunk });
+        }
+        safeEnqueue({ type: "meta", tokensIn: 0, tokensOut: 0, cached: false });
+        safeEnqueue({ type: "done" });
+      };
+
       try {
         // Always emit the headline first so the panel paints instantly.
         safeEnqueue({ type: "headline", value: headline });
 
         if (isAnthropicMock()) {
-          const narrative = mockNarrate(entry.builder, context, scope, userQuestion, isFollowUp);
-          for await (const chunk of streamTextChunks(narrative)) {
-            if (aborted.aborted) break;
-            safeEnqueue({ type: "delta", value: chunk });
-          }
-          safeEnqueue({ type: "meta", tokensIn: 0, tokensOut: 0, cached: false });
-          safeEnqueue({ type: "done" });
+          await streamMockFallback();
           return;
         }
 
@@ -96,50 +101,67 @@ export async function POST(req: NextRequest) {
           question: userQuestion,
         });
 
-        const client = anthropic();
-        const live = client.messages.stream({
-          model: MODEL_SONNET,
-          max_tokens: 800,
-          temperature: 0.3,
-          system: [
-            { type: "text", text: prelude, cache_control: { type: "ephemeral" } },
-          ],
-          messages: [{ role: "user", content: userMessage }],
-        });
+        try {
+          const client = anthropic();
+          const live = client.messages.stream({
+            model: MODEL_SONNET,
+            max_tokens: 800,
+            temperature: 0.3,
+            system: [
+              { type: "text", text: prelude, cache_control: { type: "ephemeral" } },
+            ],
+            messages: [{ role: "user", content: userMessage }],
+          });
 
-        let tokensIn = 0;
-        let tokensOut = 0;
-        let cached = false;
+          let tokensIn = 0;
+          let tokensOut = 0;
+          let cached = false;
+          let sawAnyDelta = false;
 
-        for await (const event of live) {
-          if (aborted.aborted) break;
-          if (event.type === "content_block_delta") {
-            const delta = event.delta;
-            if (delta.type === "text_delta" && delta.text) {
-              safeEnqueue({ type: "delta", value: delta.text });
-            }
-          } else if (event.type === "message_delta") {
-            const usage = event.usage as
-              | {
-                  output_tokens?: number;
-                  input_tokens?: number;
-                  cache_read_input_tokens?: number;
-                  cache_creation_input_tokens?: number;
-                }
-              | undefined;
-            if (usage) {
-              tokensOut = usage.output_tokens ?? tokensOut;
-              tokensIn =
-                (usage.input_tokens ?? 0) +
-                (usage.cache_read_input_tokens ?? 0) +
-                (usage.cache_creation_input_tokens ?? 0);
-              cached = (usage.cache_read_input_tokens ?? 0) > 0;
+          for await (const event of live) {
+            if (aborted.aborted) break;
+            if (event.type === "content_block_delta") {
+              const delta = event.delta;
+              if (delta.type === "text_delta" && delta.text) {
+                sawAnyDelta = true;
+                safeEnqueue({ type: "delta", value: delta.text });
+              }
+            } else if (event.type === "message_delta") {
+              const usage = event.usage as
+                | {
+                    output_tokens?: number;
+                    input_tokens?: number;
+                    cache_read_input_tokens?: number;
+                    cache_creation_input_tokens?: number;
+                  }
+                | undefined;
+              if (usage) {
+                tokensOut = usage.output_tokens ?? tokensOut;
+                tokensIn =
+                  (usage.input_tokens ?? 0) +
+                  (usage.cache_read_input_tokens ?? 0) +
+                  (usage.cache_creation_input_tokens ?? 0);
+                cached = (usage.cache_read_input_tokens ?? 0) > 0;
+              }
             }
           }
-        }
 
-        safeEnqueue({ type: "meta", tokensIn, tokensOut, cached });
-        safeEnqueue({ type: "done" });
+          if (!sawAnyDelta && !aborted.aborted) {
+            // Stream returned nothing — fall back so the user sees content.
+            await streamMockFallback();
+            return;
+          }
+
+          safeEnqueue({ type: "meta", tokensIn, tokensOut, cached });
+          safeEnqueue({ type: "done" });
+        } catch (apiErr) {
+          // Anthropic API failed (credits exhausted, auth, rate-limit, etc.).
+          // Stream the deterministic mock narrative so the panel still works.
+          const status = apiErr instanceof APIError ? apiErr.status : null;
+          const reason = apiErr instanceof Error ? apiErr.message : "unknown";
+          console.warn(`[explain] live stream failed (${status ?? "no-status"}): ${reason}; falling back to mock.`);
+          await streamMockFallback();
+        }
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[explain] stream error:", message);

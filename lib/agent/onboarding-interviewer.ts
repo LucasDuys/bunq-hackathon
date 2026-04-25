@@ -1,4 +1,4 @@
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import {
   LABELS,
   MIN_REQUIRED_FIELDS,
@@ -318,14 +318,12 @@ Return pure JSON: { "done": boolean, "nextQuestion": { "topic": string, "kind": 
   }
 };
 
-export const runInterviewer = async (input: InterviewerInput): Promise<InterviewerOutput> => {
-  if (isAnthropicMock()) return deterministicInterviewer(input);
-  try {
-    return await liveInterviewer(input);
-  } catch {
-    return deterministicInterviewer(input);
-  }
-};
+export const runInterviewer = async (input: InterviewerInput): Promise<InterviewerOutput> =>
+  withAnthropicFallback(
+    () => liveInterviewer(input),
+    () => deterministicInterviewer(input),
+    "onboarding.runInterviewer",
+  );
 
 /**
  * Parse a free-text or numeric answer into structured profile data. Used when

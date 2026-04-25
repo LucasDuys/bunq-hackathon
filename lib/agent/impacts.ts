@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { MODEL_SONNET, anthropic, isAnthropicMock } from "@/lib/anthropic/client";
+import { MODEL_SONNET, anthropic, withAnthropicFallback } from "@/lib/anthropic/client";
 import type { BaselineItem } from "@/lib/impacts/aggregate";
 
 export type Quadrant = "win_win" | "pay_to_decarbonize" | "status_quo_trap" | "avoid";
@@ -369,46 +369,47 @@ Do not include alternatives for baselines you cannot ground. Prefer fewer, bette
 
 export const researchAlternatives = async (baselines: BaselineItem[]): Promise<ResolvedAlternative[]> => {
   if (baselines.length === 0) return [];
-  if (isAnthropicMock()) return mockAlternatives(baselines);
 
   const prompt = buildPrompt(baselines);
-  const client = anthropic();
-  try {
-    const msg = await client.messages.create({
-      model: MODEL_SONNET,
-      max_tokens: 4000,
-      messages: [{ role: "user", content: prompt }],
-    });
-    const text = msg.content
-      .filter((c) => c.type === "text")
-      .map((c) => (c as { text: string }).text)
-      .join("");
-    const m = text.match(/\{[\s\S]*\}/);
-    if (!m) return mockAlternatives(baselines);
-    const parsed = OUTPUT_SCHEMA.parse(JSON.parse(m[0]));
-    const byKey = new Map(baselines.map((b) => [b.key, b]));
-    const resolved: ResolvedAlternative[] = [];
-    for (const a of parsed.alternatives) {
-      const baseline = byKey.get(a.baselineKey);
-      if (!baseline) continue;
-      resolved.push({
-        baselineKey: baseline.key,
-        name: a.name,
-        type: a.type,
-        description: a.description,
-        costDeltaPct: a.costDeltaPct,
-        co2eDeltaPct: a.co2eDeltaPct,
-        costDeltaEurYear: Number((baseline.annualSpendEur * a.costDeltaPct).toFixed(2)),
-        co2eDeltaKgYear: Number((baseline.annualCo2eKg * a.co2eDeltaPct).toFixed(3)),
-        confidence: a.confidence,
-        feasibility: a.feasibility,
-        rationale: a.rationale,
-        sources: a.sources,
-        quadrant: computeQuadrant(a.costDeltaPct, a.co2eDeltaPct),
+  return withAnthropicFallback(
+    async () => {
+      const client = anthropic();
+      const msg = await client.messages.create({
+        model: MODEL_SONNET,
+        max_tokens: 4000,
+        messages: [{ role: "user", content: prompt }],
       });
-    }
-    return resolved.length > 0 ? resolved : mockAlternatives(baselines);
-  } catch {
-    return mockAlternatives(baselines);
-  }
+      const text = msg.content
+        .filter((c) => c.type === "text")
+        .map((c) => (c as { text: string }).text)
+        .join("");
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) return mockAlternatives(baselines);
+      const parsed = OUTPUT_SCHEMA.parse(JSON.parse(m[0]));
+      const byKey = new Map(baselines.map((b) => [b.key, b]));
+      const resolved: ResolvedAlternative[] = [];
+      for (const a of parsed.alternatives) {
+        const baseline = byKey.get(a.baselineKey);
+        if (!baseline) continue;
+        resolved.push({
+          baselineKey: baseline.key,
+          name: a.name,
+          type: a.type,
+          description: a.description,
+          costDeltaPct: a.costDeltaPct,
+          co2eDeltaPct: a.co2eDeltaPct,
+          costDeltaEurYear: Number((baseline.annualSpendEur * a.costDeltaPct).toFixed(2)),
+          co2eDeltaKgYear: Number((baseline.annualCo2eKg * a.co2eDeltaPct).toFixed(3)),
+          confidence: a.confidence,
+          feasibility: a.feasibility,
+          rationale: a.rationale,
+          sources: a.sources,
+          quadrant: computeQuadrant(a.costDeltaPct, a.co2eDeltaPct),
+        });
+      }
+      return resolved.length > 0 ? resolved : mockAlternatives(baselines);
+    },
+    () => mockAlternatives(baselines),
+    "impacts.researchAlternatives",
+  );
 };
