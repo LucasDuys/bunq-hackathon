@@ -12,7 +12,8 @@ screenshots/
 ├── desktop/             # 1440 × 900 — every page in the app
 ├── mobile/              # 390 × 844 — same set, mobile viewport
 ├── demo-deck-stages/    # /demo-deck — all 17 morphing canvas stages
-└── launch-scenes/       # /launch — auto-advancing pitch deck, sampled
+├── launch-scenes/       # /launch — auto-advancing pitch deck, sampled
+└── raw-bunq/            # raw bunq Business in-app captures (jpg)
 ```
 
 ## Page index (desktop / mobile)
