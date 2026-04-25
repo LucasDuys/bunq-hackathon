@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import { and, desc, eq, gte, like, lt, sql } from "drizzle-orm";
 import {
   auditEvents,
@@ -20,6 +22,37 @@ import {
   type CreditProject as CreditProjectFixture,
   type Assurance,
 } from "./schema";
+
+/**
+ * Look up the most recent prior-year fixture for carry-forward. Slug is the
+ * first lowercased word of the company name (e.g. "bunq B.V." -> "bunq").
+ * Walks back up to 5 years to find an available fixture so a 2026 report can
+ * inherit from a 2024 baseline if 2025 wasn't filed.
+ * Returns null if no fixture matches.
+ */
+const loadPriorReport = (
+  companyName: string,
+  year: number,
+): { slug: string; year: number; report: CarbonReport } | null => {
+  const slug = companyName
+    .toLowerCase()
+    .replace(/\b(b\.?v\.?|n\.?v\.?|gmbh|plc|sa|ag|inc|ltd|llc|corp)\b/g, "")
+    .trim()
+    .split(/\s+/)[0];
+  if (!slug) return null;
+  for (let priorYear = year - 1; priorYear >= year - 5; priorYear--) {
+    const fixturePath = path.join(process.cwd(), "fixtures", "reports", `${slug}-${priorYear}.json`);
+    if (!fs.existsSync(fixturePath)) continue;
+    try {
+      const raw = JSON.parse(fs.readFileSync(fixturePath, "utf8"));
+      const parsed = carbonReportSchema.parse(raw);
+      return { slug, year: priorYear, report: parsed };
+    } catch {
+      continue;
+    }
+  }
+  return null;
+};
 
 /**
  * Build a CSRD ESRS E1 - shaped annual carbon report for an org over a
@@ -426,6 +459,44 @@ export const buildAnnualReport = async (opts: { orgId?: string; year: number }):
       extractedAt: new Date().toISOString(),
     },
   };
+
+  // Carry forward qualitative content from a prior-year fixture if one exists.
+  // Numeric sections (E1-5/6/7/8) stay current-year ledger-derived; only the
+  // sections Carbo cannot derive from spend (targets, transition plan,
+  // governance, assurance, methodology hints) carry over.
+  const prior = loadPriorReport(company, opts.year);
+  if (prior) {
+    if (prior.report.targets.length > 0) reportInput.targets = prior.report.targets;
+    if (prior.report.transitionPlanSummary) reportInput.transitionPlanSummary = prior.report.transitionPlanSummary;
+    reportInput.assurance = prior.report.assurance;
+    reportInput.governance = prior.report.governance;
+    if (prior.report.framework !== "VSME" && prior.report.framework !== "VOLUNTARY") {
+      reportInput.framework = prior.report.framework;
+      reportInput.frameworkNotes = prior.report.frameworkNotes
+        ? `Carried forward from ${prior.slug}-${prior.year}: ${prior.report.frameworkNotes}`
+        : reportInput.frameworkNotes;
+    }
+    // Internal carbon price: if current ledger has none, fall back to prior.
+    if (!reportInput.internalCarbonPrice && prior.report.internalCarbonPrice) {
+      reportInput.internalCarbonPrice = prior.report.internalCarbonPrice;
+    }
+    // Methodology factor sources merge — current ones win, prior ones add context.
+    const merged = new Set<string>([
+      ...reportInput.methodology.factorSources,
+      ...prior.report.methodology.factorSources.map((s) => `${s} (carried forward)`),
+    ]);
+    reportInput.methodology.factorSources = Array.from(merged);
+    if (!reportInput.methodology.materialityMethod && prior.report.methodology.materialityMethod) {
+      reportInput.methodology.materialityMethod = `${prior.report.methodology.materialityMethod} (carried forward from ${prior.year})`;
+    }
+    reportInput._extraction = {
+      ...(reportInput._extraction ?? { model: "annual-rollup", extractedAt: new Date().toISOString() }),
+      warnings: [
+        ...(reportInput._extraction?.warnings ?? []),
+        `Carried forward from fixtures/reports/${prior.slug}-${prior.year}.json: targets, transition plan, governance, assurance, methodology hints. All carried fields require human review for the new reporting year.`,
+      ],
+    };
+  }
 
   // Validate against the canonical schema before returning.
   return carbonReportSchema.parse(reportInput);
