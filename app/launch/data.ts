@@ -407,11 +407,11 @@ export const TIMELINE: SceneSpec[] = [
   { id: "S11R", durationMs: 6000,  header: "Three questions to be sure.",
                                    caption: "Three questions for you · Sonnet · refine cluster", leafOpacity: 0 },
   { id: "S11P", durationMs: 6000,  header: "We move the money. You approve it.",
-                                   caption: "€412 → Carbon Reserve sub-account · funds carbon credit retirement", leafOpacity: 0 },
+                                   caption: "€412 moves from Operating to Carbon Reserve · signed RSA-SHA256 · bunq sub-account", leafOpacity: 0 },
 
   // Beat 5b — credit retirement
-  { id: "S11Q", durationMs: 6000,  header: "2.84 tonnes retired. Registered. Chained.",
-                                   caption: "Puro.earth · Gelderland Biochar · €145/tonne · permanent removal", leafOpacity: 0 },
+  { id: "S11Q", durationMs: 6000,  header: "Fewer emissions means fewer credits to buy.",
+                                   caption: "Fewer emissions = fewer credits to buy · Puro.earth · Gelderland Biochar · 2.84 tCO₂e retired", leafOpacity: 0 },
 
   // Beat 6 — alternatives → savings → compliance briefing
   { id: "S12",  durationMs: 2500,  title: "Carbo finds the swaps that pay you back.",          leafOpacity: 0.4 },
@@ -430,10 +430,10 @@ export const TIMELINE: SceneSpec[] = [
                                    caption: "1.87% net annual financial impact · 49 tCO₂e per €1M", leafOpacity: 0 },
 
   // Beat 7b — audit + proof
-  { id: "S15B", durationMs: 6000,  header: "Every decision. Every transfer. Cryptographically chained.",
-                                   caption: "SHA-256 · append-only · tamper-proof",               leafOpacity: 0 },
-  { id: "S15C", durationMs: 5000,  header: "One link. Anyone can verify.",
-                                   caption: "Public proof page · shareable · verified by Carbo",   leafOpacity: 0 },
+  { id: "S15B", durationMs: 6000,  header: "Every event hashes the one before it.\nChange one row — the whole chain breaks.",
+                                   caption: "Every event hashes the previous one · if any row changes the chain breaks · append-only", leafOpacity: 0 },
+  { id: "S15C", durationMs: 5000,  header: "Proof of Green. One link. Anyone can verify.",
+                                   caption: "Proof of Green · scan to verify · public dashboard powered by Carbo",   leafOpacity: 0 },
 
   // Beat 8 — lockup (dramatic dark-canvas finale)
   { id: "S16",  durationMs: 7000,  leafOpacity: 0 },

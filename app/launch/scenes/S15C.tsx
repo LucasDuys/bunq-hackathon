@@ -104,6 +104,23 @@ export default function S15C({ elapsedMs, durationMs, progress }: SceneProps) {
               fontFamily: "var(--font-inter), system-ui, sans-serif",
             }}
           >
+            {/* "PROOF OF GREEN" eyebrow */}
+            <span
+              style={{
+                fontFamily:
+                  "var(--font-source-code-pro), ui-monospace, monospace",
+                fontSize: 10,
+                letterSpacing: "1.6px",
+                textTransform: "uppercase",
+                color: "#3ecf8e",
+                opacity: badgeP,
+                transform: `translateY(${(1 - badgeP) * 8}px)`,
+                marginBottom: 10,
+              }}
+            >
+              Proof of Green
+            </span>
+
             {/* Verified badge */}
             <div
               style={{
@@ -309,13 +326,46 @@ export default function S15C({ elapsedMs, durationMs, progress }: SceneProps) {
               ))}
             </div>
 
+            {/* Savings callout */}
+            <div
+              style={{
+                width: "100%",
+                marginTop: 14,
+                borderRadius: 10,
+                padding: "10px 14px",
+                border: "1px solid rgba(62,207,142,0.20)",
+                background: "rgba(62,207,142,0.04)",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                opacity: statsP,
+                transform: `translateY(${(1 - statsP) * 8}px)`,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 18,
+                  fontVariantNumeric: "tabular-nums",
+                  color: "#3ecf8e",
+                  lineHeight: 1,
+                  fontWeight: 400,
+                }}
+              >
+                {"€"}
+                {Math.round(8924 * statsP).toLocaleString("en-NL")}
+              </span>
+              <span style={{ fontSize: 10, color: "#b4b4b4", lineHeight: 1.3 }}>
+                saved by reducing emissions at source — fewer credits needed
+              </span>
+            </div>
+
             {/* Reserve + credits pills */}
             <div
               style={{
                 width: "100%",
                 display: "flex",
                 gap: 10,
-                marginTop: 16,
+                marginTop: 10,
                 opacity: statsP,
                 transform: `translateY(${(1 - statsP) * 8}px)`,
               }}
