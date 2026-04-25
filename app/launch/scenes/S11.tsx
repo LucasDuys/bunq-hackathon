@@ -7,12 +7,16 @@
  * directly; we cap its internal duration at (durationMs - 2000) so all nodes
  * settle into "done" with a clear 2s tail before scene end.
  *
- * The camera does a slow methodical descent through the tier stack:
- *   - Beat 1 (0..15%):  wide hold (scale 0.85, y +60) — full chrome visible.
- *   - Beat 2 (15..45%): gentle settle (scale 0.92, y +30).
- *   - Beat 3 (45..75%): push down to the parallel pairs at tier 3-4.
- *   - Beat 4 (75..end): continue down past tier 5-6, landing tight on the
- *                       executive_report node at the bottom.
+ * The camera does a slow methodical descent through the tier stack. Scale is
+ * capped at 1.05 to keep DAG nodes pixel-grid aligned and crisp — descent is
+ * driven primarily by Y translation (which stays sharp because it's pixel
+ * aligned). At >1.06x, browsers fall off the GPU pixel grid and node text /
+ * model badges (Sonnet 4.6 / Haiku 4.5) render fuzzy.
+ *
+ *   - Beat 1 (0..20%):  settle from a hair zoomed-out to native (scale 1.0).
+ *   - Beat 2 (20..55%): hold at scale 1.0 and translate down to mid-DAG.
+ *   - Beat 3 (55..85%): tiny final push (scale 1.04) toward bottom tiers.
+ *   - Beat 4 (85..end): land tight on the executive_report node at scale 1.05.
  */
 
 import type { SceneProps } from "../types";
@@ -35,11 +39,11 @@ export default function S11({ elapsedMs, durationMs }: SceneProps) {
     >
       <CameraScript
         keyframes={[
-          { at: 0,    scale: 0.85, x: 0, y: 60 },
-          { at: 0.15, scale: 0.92, x: 0, y: 30 },
-          { at: 0.45, scale: 1.05, x: 0, y: -100 },
-          { at: 0.75, scale: 1.18, x: 0, y: -200 },
-          { at: 1.0,  scale: 1.28, x: 0, y: -280 },
+          { at: 0,    scale: 0.92, x: 0, y: 30 },
+          { at: 0.20, scale: 1.0,  x: 0, y: 0 },
+          { at: 0.55, scale: 1.0,  x: 0, y: -120 },
+          { at: 0.85, scale: 1.04, x: 0, y: -220 },
+          { at: 1.0,  scale: 1.05, x: 0, y: -260 },
         ]}
         elapsedMs={elapsedMs}
         durationMs={durationMs}
@@ -61,7 +65,7 @@ export default function S11({ elapsedMs, durationMs }: SceneProps) {
                   display: "flex",
                   alignItems: "flex-start",
                   justifyContent: "center",
-                  padding: "32px 24px",
+                  padding: "32px 24px 320px",
                   boxSizing: "border-box",
                   overflow: "auto",
                 }}

@@ -1,31 +1,25 @@
 "use client";
 
 /**
- * S13 — Alternatives matrix · zoom to win-win.
+ * S13 — Swap this · save that.
  *
- * Centered AlternativesMatrix inside a MacWindow. First 55% of the scene the
- * points reveal in their staggered bounce; once we cross 55% the matrix's
- * own internal zoom flips on, pulling the bottom-left win-win quadrant to
- * fill ~80% of the frame.
+ * Side-by-side flow: CURRENT SPEND → ALTERNATIVE → SAVINGS, one row per
+ * win-win swap (5 rows from MATRIX_POINTS), plus a TOTAL row that tallies
+ * the savings. Replaces the abstract scatter chart that lived here before
+ * (AlternativesMatrix is preserved but no longer used by this scene).
  *
- * Camera holds and frames — the matrix carries the motion. Wide hold opens
- * the scene with chrome visible (scale 0.95, y +30), settles to full view by
- * 20%, then ends with a very subtle push (scale 1.05) for added weight.
+ * Camera stays calm: opens slightly wide (scale 0.95, y +20), settles to 1.0,
+ * never pushes past 1.05 — keeps the numbers crisp (S11 was over-blurred at
+ * 1.28; we don't repeat that here).
  */
 
 import type { SceneProps } from "../types";
 import { MacWindow } from "../components/MacWindow";
 import { CameraScript } from "../components/CameraScript";
-import { AlternativesMatrix } from "../components/AlternativesMatrix";
+import { AlternativesFlow } from "../components/AlternativesFlow";
 import { MATRIX_POINTS } from "../data";
 
-const ZOOM_THRESHOLD = 0.55;
-
 export default function S13({ elapsedMs, durationMs, progress }: SceneProps) {
-  const revealProgress =
-    progress < ZOOM_THRESHOLD ? progress / ZOOM_THRESHOLD : 1;
-  const zoomToWinWin = progress >= ZOOM_THRESHOLD;
-
   return (
     <div
       style={{
@@ -36,15 +30,15 @@ export default function S13({ elapsedMs, durationMs, progress }: SceneProps) {
     >
       <CameraScript
         keyframes={[
-          { at: 0,    scale: 0.95, x: 0, y: 30 },
+          { at: 0,    scale: 0.95, x: 0, y: 20 },
           { at: 0.20, scale: 1.0,  x: 0, y: 0 },
-          { at: 1.0,  scale: 1.05, x: 0, y: 0 },
+          { at: 1.0,  scale: 1.03, x: 0, y: 0 },
         ]}
         elapsedMs={elapsedMs}
         durationMs={durationMs}
       >
         <MacWindow
-          title="Carbo — Alternatives matrix"
+          title="Carbo — Alternatives"
           showSidebar
           width={1280}
           height={900}
@@ -54,18 +48,13 @@ export default function S13({ elapsedMs, durationMs, progress }: SceneProps) {
             style={{
               width: "100%",
               height: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 32,
+              padding: "32px 48px",
               boxSizing: "border-box",
+              display: "flex",
+              flexDirection: "column",
             }}
           >
-            <AlternativesMatrix
-              points={MATRIX_POINTS}
-              progress={revealProgress}
-              zoomToWinWin={zoomToWinWin}
-            />
+            <AlternativesFlow points={MATRIX_POINTS} progress={progress} />
           </div>
         </MacWindow>
       </CameraScript>

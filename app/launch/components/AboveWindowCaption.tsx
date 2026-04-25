@@ -1,16 +1,16 @@
 "use client";
 
 /**
- * AboveWindowCaption — narration line that floats above the MacWindow chrome
- * during product scenes. Mirrors the "Using Github: searched channels …" header
- * in the ChatGPT-5.5 launch reference video. Reads as a verb-first sentence
- * fragment in Source Code Pro to feel like a developer console echo.
+ * AboveWindowCaption — narrator pill rendered in the launch video's BOTTOM
+ * PLATE. The plate is the dedicated text band below the camera-zoomed
+ * MacWindow stage; the pill never overlaps animations the way the previous
+ * absolute-positioned overlay did.
  *
- * Lifecycle (all in ms):
- *   0..200  — fades in + slides down 8px → 0
- *   200..(text.len*8 + 200) — characters reveal one by one
+ * Lifecycle (scene-local ms):
+ *   0..ENTER_MS                       — fade in + slide up 8px → 0
+ *   ENTER_MS..(typing window)         — characters reveal one by one
  *   hold for the rest of the scene's caption window
- *   last 320ms — fades out + slides up 8px
+ *   last EXIT_MS                      — fade out + slide down 8px
  *
  * Caption is sourced from `TIMELINE[i].caption` and rendered by LaunchTimeline,
  * so individual scenes never import this directly.
@@ -19,11 +19,8 @@
 import { useMemo } from "react";
 
 export type AboveWindowCaptionProps = {
-  /** The text to type out. */
   text: string;
-  /** ms elapsed inside the parent scene. */
   elapsedMs: number;
-  /** total scene duration in ms. */
   durationMs: number;
 };
 
@@ -45,26 +42,23 @@ export function AboveWindowCaption({
     return Math.min(text.length, Math.floor(t / PER_CHAR_MS));
   }, [elapsedMs, text]);
 
-  // Enter: 0 → ENTER_MS lerp opacity 0→1 and translateY -8 → 0
   const enterT = Math.max(0, Math.min(1, elapsedMs / ENTER_MS));
-  // Exit: exitStart → durationMs lerp opacity 1→0 and translateY 0 → -8
   const exitProgress =
     elapsedMs <= exitStart
       ? 0
       : Math.min(1, (elapsedMs - exitStart) / EXIT_MS);
 
   const opacity = enterT * (1 - exitProgress);
-  const translateY = -8 + enterT * 8 + exitProgress * -8;
+  // Enter from below (+8 → 0), exit downward (0 → +8). Bottom-plate physics:
+  // the pill rises out of the plate floor, then sinks back in.
+  const translateY = 8 - enterT * 8 + exitProgress * 8;
 
   const shown = text.slice(0, visibleChars);
 
   return (
     <div
       style={{
-        position: "absolute",
-        top: 28,
-        left: "50%",
-        transform: `translate(-50%, ${translateY}px)`,
+        transform: `translateY(${translateY}px)`,
         opacity,
         transition: "opacity 120ms linear",
         display: "flex",
@@ -72,10 +66,10 @@ export function AboveWindowCaption({
         gap: 10,
         padding: "6px 14px",
         borderRadius: 9999,
-        background: "rgba(255, 255, 255, 0.66)",
+        background: "rgba(255, 255, 255, 0.78)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
-        border: "1px solid rgba(15, 15, 15, 0.06)",
+        border: "1px solid rgba(15, 15, 15, 0.08)",
         color: "#3a3a3a",
         fontFamily:
           "var(--font-source-code-pro), ui-monospace, SFMono-Regular, monospace",
@@ -84,9 +78,11 @@ export function AboveWindowCaption({
         textTransform: "uppercase",
         whiteSpace: "nowrap",
         pointerEvents: "none",
-        zIndex: 50,
         fontVariantNumeric: "tabular-nums",
         willChange: "transform, opacity",
+        maxWidth: "92vw",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
       }}
       aria-live="polite"
       aria-atomic="true"

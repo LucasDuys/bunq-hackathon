@@ -131,7 +131,6 @@ export type SceneId =
   | "S05"
   | "S06"
   | "S07A"
-  | "S08C"
   | "S10"
   | "S11"
   | "S11A"
@@ -153,10 +152,16 @@ export type SceneSpec = {
   title?: string;
   /**
    * Optional caption rendered above the MacWindow during product scenes.
-   * Mirrors the "Using Github: searched channels …" narration in the
-   * ChatGPT-5.5 launch reference video.
+   * Source-code-pro 11px uppercase. Mirrors "Using Github: searched channels …"
+   * narration in the ChatGPT-5.5 launch reference video.
    */
   caption?: string;
+  /**
+   * Optional HEADER-level (Inter 400, ~clamp 56–88px) text rendered above the
+   * MacWindow on product scenes. Camera zooms past it as it pushes into the
+   * window content — the header naturally exits the top of the frame.
+   */
+  header?: string;
   /** Per-scene leaf opacity override (default 0.35). */
   leafOpacity?: number;
 };

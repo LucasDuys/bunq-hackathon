@@ -62,11 +62,13 @@ const PAPER_INK_4 = "#6a6a6a"; // tertiary, KvK / dashes
 const AH_TEAL = "#00ade6"; // Albert Heijn brand teal
 
 // ── Sidebar geometry ──────────────────────────────────────────────────────
-const SIDEBAR_W = 280;
+const SIDEBAR_W = 300;
 const SIDEBAR_GAP = 80; // distance between receipt and sidebar
-const SIDEBAR_ROW_H = 56;
-const SIDEBAR_PAD_X = 16;
+const SIDEBAR_ROW_H = 48;
+const SIDEBAR_ROW_GAP = 6;
+const SIDEBAR_PAD_X = 20;
 const SIDEBAR_PAD_TOP = 56; // room for "EXTRACTED" header
+const SIDEBAR_NUMBER_COL_W = 32; // width of the leading "01" column
 
 // Total horizontal envelope for the scene container.
 // We pad the receipt's bounding box for the rotation overhang.
@@ -95,17 +97,25 @@ export function ReceiptOCR({
   );
 
   // Default sidebar slot positions (absolute within the OCR scene container).
+  // The slot lands inside each numbered row, just past the "01" column, where
+  // the value text actually renders — so the flying clone visually merges with
+  // the row's value cell when lift completes.
   const defaultSlots: Slot[] = useMemo(() => {
+    const sidebarLeft = ROTATION_PAD + RECEIPT_W + SIDEBAR_GAP;
     const baseX =
-      ROTATION_PAD + RECEIPT_W + SIDEBAR_GAP + SIDEBAR_PAD_X;
-    const baseY = SIDEBAR_PAD_TOP + 16;
+      sidebarLeft + SIDEBAR_PAD_X + SIDEBAR_NUMBER_COL_W + 12;
+    // Where the value column's text top-left sits inside the first row.
+    // Sidebar padding-top (20) + EXTRACTED header (~17) + header margin (20)
+    // + (row_h - text_h)/2 = 20 + 17 + 20 + (48-14)/2 = 74. Then add the
+    // outer rotation pad to get container coordinates.
+    const baseY = ROTATION_PAD + 74;
     const maxSlot = liftRegions.reduce(
       (m, r) => Math.max(m, r.liftToSlot ?? -1),
       -1
     );
     return Array.from({ length: maxSlot + 1 }, (_, i) => ({
       x: baseX,
-      y: baseY + i * SIDEBAR_ROW_H,
+      y: baseY + i * (SIDEBAR_ROW_H + SIDEBAR_ROW_GAP),
     }));
   }, [liftRegions]);
 
@@ -115,7 +125,7 @@ export function ReceiptOCR({
     ROTATION_PAD * 2 + RECEIPT_W + SIDEBAR_GAP + SIDEBAR_W;
   const containerH = Math.max(
     RECEIPT_H + ROTATION_PAD * 2,
-    SIDEBAR_PAD_TOP + slots.length * SIDEBAR_ROW_H + 32
+    SIDEBAR_PAD_TOP + slots.length * (SIDEBAR_ROW_H + SIDEBAR_ROW_GAP) + 32
   );
 
   // Static prices, indexed by item region order. Aligned to the items in
@@ -216,7 +226,10 @@ export function ReceiptOCR({
       />
 
       {/* Lifted clones — animate from receipt position to sidebar slot.
-          These live OUTSIDE the rotated paper so they fly in screen space. */}
+          These live OUTSIDE the rotated paper so they fly in screen space.
+          Once the lift settles (progress = 1) we hand off the value to the
+          sidebar row and unmount the clone, so the value never appears
+          twice in the same place. */}
       {liftRegions.map((region) => {
         const triggerAt = computeRegionTriggerAt(region);
         const liftAt = triggerAt + LIFT_DELAY_MS;
@@ -224,9 +237,13 @@ export function ReceiptOCR({
         const slotIdx = region.liftToSlot ?? 0;
         const slot = slots[slotIdx];
         if (!slot) return null;
-        const liftProgress = clamp01(
-          (elapsedMs - liftAt) / LIFT_DURATION_MS
-        );
+        const rawProgress = (elapsedMs - liftAt) / LIFT_DURATION_MS;
+        // Once the clone has fully landed, the sidebar row owns the text.
+        // We unmount the clone slightly before the visual handoff completes
+        // (the sidebar row fades in over 200ms starting at the same instant)
+        // to avoid a 1-frame double-render on top of the row's value cell.
+        if (rawProgress >= 1) return null;
+        const liftProgress = clamp01(rawProgress);
 
         // Origin in container coordinates: percent of receipt → px, then
         // offset by the rotation pad. We approximate the rotation by ignoring
@@ -244,6 +261,9 @@ export function ReceiptOCR({
         const eased = easeOutSpring(liftProgress);
         const cx = fromX + (slot.x - fromX) * eased;
         const cy = fromY + (slot.y - fromY) * eased;
+        // Fade out as we land, so the handoff to the sidebar row is seamless.
+        const cloneOpacity =
+          liftProgress > 0.85 ? Math.max(0, 1 - (liftProgress - 0.85) / 0.15) : 1;
 
         return (
           <span
@@ -263,6 +283,7 @@ export function ReceiptOCR({
               zIndex: 5,
               willChange: "transform",
               fontVariantNumeric: "tabular-nums",
+              opacity: cloneOpacity,
             }}
           >
             {region.text}
@@ -921,9 +942,23 @@ function ExtractedSidebar({
 }) {
   const sidebarLeft = ROTATION_PAD + RECEIPT_W + SIDEBAR_GAP;
   const sidebarHeight = Math.max(
-    SIDEBAR_PAD_TOP + slots.length * SIDEBAR_ROW_H + 32,
+    SIDEBAR_PAD_TOP + slots.length * (SIDEBAR_ROW_H + SIDEBAR_ROW_GAP) + 24,
     280
   );
+
+  // Sort once so the row order matches the slot order (0..4).
+  const orderedRegions = regions
+    .slice()
+    .sort((a, b) => (a.liftToSlot ?? 0) - (b.liftToSlot ?? 0));
+
+  // The most recently triggered (still pre-occupied) region is the "active"
+  // one — we paint a brand-green left edge on its row to mirror the scan
+  // line's progress through the receipt.
+  let activeIdx = -1;
+  for (let i = 0; i < orderedRegions.length; i++) {
+    const triggerAt = computeRegionTriggerAt(orderedRegions[i]);
+    if (elapsedMs >= triggerAt) activeIdx = i;
+  }
 
   return (
     <div
@@ -938,8 +973,9 @@ function ExtractedSidebar({
         background: "#1f1f1f",
         border: "1px solid var(--border-default)",
         borderRadius: 12,
-        padding: `16px ${SIDEBAR_PAD_X}px`,
+        padding: `20px ${SIDEBAR_PAD_X}px`,
         color: "var(--fg-primary)",
+        boxSizing: "border-box",
       }}
     >
       <div
@@ -950,30 +986,37 @@ function ExtractedSidebar({
           letterSpacing: "1.2px",
           textTransform: "uppercase",
           color: "var(--fg-muted)",
-          marginBottom: 16,
+          marginBottom: 20,
         }}
       >
         Extracted via vision
       </div>
-      {regions
-        .slice()
-        .sort((a, b) => (a.liftToSlot ?? 0) - (b.liftToSlot ?? 0))
-        .map((region) => {
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: SIDEBAR_ROW_GAP,
+        }}
+      >
+        {orderedRegions.map((region, i) => {
           const triggerAt = computeRegionTriggerAt(region);
           const liftAt = triggerAt + LIFT_DELAY_MS;
           // The sidebar row is "occupied" once the lift has essentially
-          // settled. Until then we show an empty placeholder slot.
+          // settled. Until then we show an empty placeholder row.
           const occupied = elapsedMs >= liftAt + LIFT_DURATION_MS - 100;
-          const slotIdx = region.liftToSlot ?? 0;
+          const isActive = i === activeIdx && !occupied;
+          const slotIdx = region.liftToSlot ?? i;
           return (
             <SidebarRow
               key={`slot-${slotIdx}`}
               index={slotIdx + 1}
               text={region.text}
               occupied={occupied}
+              active={isActive}
             />
           );
         })}
+      </div>
     </div>
   );
 }
@@ -982,63 +1025,92 @@ function SidebarRow({
   index,
   text,
   occupied,
+  active,
 }: {
   index: number;
   text: string;
   occupied: boolean;
+  active: boolean;
 }) {
+  // Two-digit, leading-zero number — Source Code Pro, uppercase tracking,
+  // muted by default, brand-green when occupied. Borrowed from DESIGN.md
+  // §3.2 "Code Label" + KPI label conventions.
+  const numLabel = String(index).padStart(2, "0");
+  const accent = occupied
+    ? "var(--brand-green)"
+    : active
+      ? "var(--brand-green)"
+      : "transparent";
+
   return (
     <div
       style={{
-        display: "flex",
+        position: "relative",
+        display: "grid",
+        gridTemplateColumns: `${SIDEBAR_NUMBER_COL_W}px 1fr`,
         alignItems: "center",
         gap: 12,
-        height: SIDEBAR_ROW_H - 8,
-        marginBottom: 8,
-        padding: "0 4px",
+        height: SIDEBAR_ROW_H,
+        padding: "0 4px 0 12px",
+        borderRadius: 6,
+        background: occupied
+          ? "rgba(62, 207, 142, 0.04)"
+          : active
+            ? "var(--bg-inset)"
+            : "transparent",
+        transition:
+          "background 250ms ease-out, color 250ms ease-out",
       }}
     >
+      {/* 2px brand-green left edge when occupied or active — the row's only
+          accent. Mirrors the sidebar nav active state in DESIGN.md §4.6. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          left: 0,
+          top: 6,
+          bottom: 6,
+          width: 2,
+          background: accent,
+          borderRadius: 2,
+          opacity: accent === "transparent" ? 0 : 1,
+          transition: "opacity 250ms ease-out, background 250ms ease-out",
+        }}
+      />
+      {/* "01" — Source Code Pro 12, uppercase, 1.2px tracking */}
       <div
         style={{
-          width: 22,
-          height: 22,
-          borderRadius: 6,
-          background: occupied ? "var(--brand-green-soft)" : "var(--bg-inset)",
-          border: `1px solid ${
-            occupied ? "var(--brand-green-border)" : "var(--border-default)"
-          }`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           fontFamily:
             "var(--font-source-code-pro), ui-monospace, monospace",
-          fontSize: 11,
-          fontWeight: 500,
-          color: occupied ? "var(--brand-green)" : "var(--fg-muted)",
-          flexShrink: 0,
-          transition:
-            "background 200ms ease-out, border-color 200ms ease-out, color 200ms ease-out",
+          fontSize: 12,
+          fontWeight: 400,
+          letterSpacing: "1.2px",
+          textTransform: "uppercase",
+          color: occupied ? "var(--fg-secondary)" : "var(--fg-faint)",
           fontVariantNumeric: "tabular-nums",
+          transition: "color 250ms ease-out",
         }}
       >
-        {index}
+        {numLabel}
       </div>
+      {/* The value — Inter 14, weight 400. Hidden until the row is
+          occupied so it can't read as duplicated against the flying clone. */}
       <div
         style={{
           fontFamily: "var(--font-inter), system-ui, sans-serif",
           fontSize: 14,
           fontWeight: 400,
-          color: occupied ? "var(--fg-primary)" : "transparent",
+          color: occupied ? "var(--fg-primary)" : "var(--fg-faint)",
           whiteSpace: "nowrap",
           overflow: "hidden",
           textOverflow: "ellipsis",
-          flex: 1,
-          transition: "color 200ms ease-out",
           fontVariantNumeric: "tabular-nums",
+          opacity: occupied ? 1 : 0,
+          transition: "opacity 250ms ease-out, color 250ms ease-out",
         }}
       >
-        {/* Reserve space even when empty so the lift target is stable. */}
-        {occupied ? text : "·"}
+        {text}
       </div>
     </div>
   );

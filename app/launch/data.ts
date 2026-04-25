@@ -382,7 +382,7 @@ export const SCALE_TIERS: ScaleTier[] = [
 // Adjust durationMs here to retime without touching scene code.
 export const TIMELINE: SceneSpec[] = [
   // Beat 1 — problem
-  { id: "S01",  durationMs: 3800,  title: "Your books already know your carbon footprint.",  leafOpacity: 0.4 },
+  { id: "S01",  durationMs: 3800,  title: "Your books already know\nyour carbon footprint.",  leafOpacity: 0.4 },
   { id: "S01D", durationMs: 6500,  header: "We calculate and save taxes and emissions.",
                                    caption: "Carbo · live carbon view of your bunq books",   leafOpacity: 0 },
   { id: "S02",  durationMs: 7000,  header: "Reading every transaction.",
@@ -401,9 +401,7 @@ export const TIMELINE: SceneSpec[] = [
                                    caption: "Close · INGEST → CLASSIFY → ESTIMATE → CLUSTER", leafOpacity: 0 },
 
   // Beat 4 — DAG
-  { id: "S08C", durationMs: 4000,  header: "Eight agents. One brief.",
-                                   caption: "Eight agents · six tiers · two parallel fan-outs", leafOpacity: 0 },
-  { id: "S10",  durationMs: 2500,  title: "Eight agents. Five tiers. Two parallel fan-outs.", leafOpacity: 0.4 },
+  { id: "S10",  durationMs: 2800,  title: "Eight agents.\nTwo parallel fan-outs.", leafOpacity: 0.4 },
   { id: "S11",  durationMs: 11000, header: "Reasoning over your books.",
                                    caption: "Running DAG · Sonnet 4.6 · prompt cache hit",   leafOpacity: 0 },
   { id: "S11A", durationMs: 5000,  header: "Every step, hash-signed.",

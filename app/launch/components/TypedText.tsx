@@ -51,7 +51,7 @@ export function TypedText({
   return (
     <span
       className={className}
-      style={{ whiteSpace: "pre", display: "inline" }}
+      style={{ whiteSpace: "pre-wrap", display: "inline" }}
       aria-label={text}
     >
       {chars.map((ch, i) => {
@@ -68,7 +68,7 @@ export function TypedText({
             aria-hidden="true"
             style={{
               display: "inline",
-              whiteSpace: "pre",
+              whiteSpace: "pre-wrap",
               opacity,
               transition: "opacity 0ms",
             }}

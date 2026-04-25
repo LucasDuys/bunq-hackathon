@@ -14,7 +14,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Pause, Play } from "lucide-react";
 import { AboveWindowCaption } from "./components/AboveWindowCaption";
+import { HeaderOverlay } from "./components/HeaderOverlay";
 import { Leaf } from "./components/Leaf";
+import styles from "./launch.module.css";
 import { TIMELINE, TOTAL_DURATION_MS } from "./data";
 import type { SceneSpec } from "./types";
 import S01 from "./scenes/S01";
@@ -24,11 +26,7 @@ import S03 from "./scenes/S03";
 import S04 from "./scenes/S04";
 import S05 from "./scenes/S05";
 import S06 from "./scenes/S06";
-import S07 from "./scenes/S07";
 import S07A from "./scenes/S07A";
-import S08 from "./scenes/S08";
-import S08C from "./scenes/S08C";
-import S09 from "./scenes/S09";
 import S10 from "./scenes/S10";
 import S11 from "./scenes/S11";
 import S11A from "./scenes/S11A";
@@ -36,6 +34,7 @@ import S11R from "./scenes/S11R";
 import S11P from "./scenes/S11P";
 import S12 from "./scenes/S12";
 import S13 from "./scenes/S13";
+import S13B from "./scenes/S13B";
 import S13C from "./scenes/S13C";
 import S14 from "./scenes/S14";
 import S15 from "./scenes/S15";
@@ -44,11 +43,11 @@ import S16 from "./scenes/S16";
 // Order MUST match TIMELINE in data.ts.
 const SCENES = [
   S01, S01D, S02,
-  S03, S04, S05, S06, S07,
+  S03, S04, S05, S06,
   S07A,
-  S08, S08C, S09, S10, S11, S11A,
+  S10, S11, S11A,
   S11R, S11P,
-  S12, S13, S13C,
+  S12, S13, S13B, S13C,
   S14, S15,
   S16,
 ];
@@ -148,32 +147,57 @@ export function LaunchTimeline() {
 
   return (
     <>
-      {/* Stage — single mounted scene, keyed so scene-local RAF & state reset on transition. */}
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          overflow: "hidden",
-        }}
-      >
-        <ActiveScene
-          key={currentScene.id}
-          elapsedMs={sceneElapsedMs}
-          durationMs={currentScene.durationMs}
-          progress={sceneProgress}
-        />
-      </div>
+      {/* Three-band cinematic layout: top plate (chapter header) ·
+          stage (camera-zoomed scene) · bottom plate (narrator caption +
+          scene-progress hairline). Text plates live in the white shell so
+          they never collide with the dark MacWindow interior. */}
+      <div className={styles.frame}>
+        <header className={styles.topPlate}>
+          {currentScene.header ? (
+            <HeaderOverlay
+              key={`hdr-${currentScene.id}`}
+              text={currentScene.header}
+              elapsedMs={sceneElapsedMs}
+              durationMs={currentScene.durationMs}
+              sceneIndex={currentSceneIdx + 1}
+              sceneTotal={TIMELINE.length}
+            />
+          ) : null}
+        </header>
 
-      {/* Above-window narration caption (product scenes only).
-          ChatGPT-5.5-style "Using Github: searched channels …" header. */}
-      {currentScene.caption ? (
-        <AboveWindowCaption
-          key={`cap-${currentScene.id}`}
-          text={currentScene.caption}
-          elapsedMs={sceneElapsedMs}
-          durationMs={currentScene.durationMs}
-        />
-      ) : null}
+        <main className={styles.stage}>
+          <ActiveScene
+            key={currentScene.id}
+            elapsedMs={sceneElapsedMs}
+            durationMs={currentScene.durationMs}
+            progress={sceneProgress}
+          />
+        </main>
+
+        <footer className={styles.bottomPlate}>
+          <div
+            className={styles.sceneProgressTrack}
+            role="progressbar"
+            aria-label="Scene progress"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(sceneProgress * 100)}
+          >
+            <div
+              className={styles.sceneProgressFill}
+              style={{ transform: `scaleX(${sceneProgress})`, width: "100%" }}
+            />
+          </div>
+          {currentScene.caption ? (
+            <AboveWindowCaption
+              key={`cap-${currentScene.id}`}
+              text={currentScene.caption}
+              elapsedMs={sceneElapsedMs}
+              durationMs={currentScene.durationMs}
+            />
+          ) : null}
+        </footer>
+      </div>
 
       {/* Leaf — root-level so it drifts across scene boundaries. */}
       <Leaf

@@ -1,24 +1,30 @@
 "use client";
 
 /**
- * S13C — CFO report.
+ * S13C — Monthly briefing.
  *
- * Sits between the alternatives matrix abstraction (S13) and the "At scale"
- * title card (S14). Shows the actual Carbo CFO report surface — 4 KPI cards
- * plus the 2x2 price-vs-carbon impact matrix — inside MacWindow + the real
- * sidebar with the Reports nav item active.
+ * "The compliance report writes itself." Sits between the impact workspace
+ * (S13B) and the "At scale" title card (S14). Replaces the older CFO report
+ * matrix view with a hero briefing layout: huge sentence-case headline → KPI
+ * strip → executive read paragraph.
  *
- * Camera glides from a wide chrome-visible hold to a tighter push on the
- * impact matrix grid so the viewer reads the win-win quadrant.
+ * Camera: opens wide so the headline lands as a gesture, then VERY GENTLE
+ * push toward the executive read so the viewer settles into the prose. We
+ * cap scale at 1.05 — anything more and the type goes soft.
+ *
+ * Header text "The compliance report writes itself." is owned by
+ * LaunchTimeline / HeaderOverlay; this scene only renders the MacWindow body.
  */
 
 import type { SceneProps } from "../types";
 import { MacWindow } from "../components/MacWindow";
 import { CameraScript } from "../components/CameraScript";
 import { LaunchSidebar } from "../components/real/LaunchSidebar";
-import { LaunchCFOReport } from "../components/real/LaunchCFOReport";
+import { LaunchBriefingReport } from "../components/real/LaunchBriefingReport";
 
 export default function S13C({ elapsedMs, durationMs }: SceneProps) {
+  const progress = durationMs > 0 ? Math.min(1, Math.max(0, elapsedMs / durationMs)) : 1;
+
   return (
     <div
       style={{
@@ -30,16 +36,16 @@ export default function S13C({ elapsedMs, durationMs }: SceneProps) {
     >
       <CameraScript
         keyframes={[
-          { at: 0,    scale: 0.88, x: 0,    y: 50 },
-          { at: 0.25, scale: 0.95, x: 0,    y: 20 },
-          { at: 0.65, scale: 1.15, x: -100, y: -120 },
-          { at: 1.0,  scale: 1.30, x: -120, y: -180 },
+          { at: 0,    scale: 0.92, x: 0, y: 30 },
+          { at: 0.18, scale: 0.96, x: 0, y: 10 },
+          { at: 0.55, scale: 1.00, x: 0, y: -10 },
+          { at: 1.0,  scale: 1.05, x: 0, y: -30 },
         ]}
         elapsedMs={elapsedMs}
         durationMs={durationMs}
       >
         <MacWindow
-          title="Carbo — Reports · CSRD ESRS E1"
+          title="Carbo — Reports · Monthly briefing"
           showSidebar
           showSearch
           width={1480}
@@ -49,7 +55,7 @@ export default function S13C({ elapsedMs, durationMs }: SceneProps) {
           <div style={{ display: "flex", height: "100%" }}>
             <LaunchSidebar activeKey="reports" />
             <div style={{ flex: 1, minWidth: 0, overflow: "auto" }}>
-              <LaunchCFOReport />
+              <LaunchBriefingReport progress={progress} />
             </div>
           </div>
         </MacWindow>
