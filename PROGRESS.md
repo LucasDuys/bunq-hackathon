@@ -298,3 +298,14 @@ Full codebase audit: TypeScript compilation, API routes, core lib/ logic, UI com
 - [x] `lib/invoices/process.ts:113` — Non-EUR currencies silently stored as EUR with no warning. Added `console.warn` for non-EUR extractions. (2026-04-25)
 - [x] `components/ClusterConstellation.tsx:666` — Drop shadow `boxShadow: "rgba(0,0,0,0.20) 0 4px 18px"` on tooltip violated DESIGN.md §6 no-shadow rule. Removed. (2026-04-25)
 - [x] `app/invoices/[id]/page.tsx` — 3 instances of `font-semibold` (weight 600) → `font-normal` (weight 400) per DESIGN.md §3.3 max weight rule. (2026-04-25)
+
+## Launch Demo Enhancements (Ben)
+
+- [x] `app/launch/LaunchTimeline.tsx` — Background music: loads `public/launch-bg.mp3`, starts on first user interaction, pauses/resumes with demo, fades out over last 2.5s at demo end (2026-04-25)
+- [x] `app/launch/LaunchTimeline.tsx` — Dancing ghost mascot (`public/ghost.gif`) pinned top-left, 120px, always visible during demo (2026-04-25)
+- [x] `app/launch/scenes/S11Q.tsx` — New scene: carbon credit retirement certificate (uses existing `CreditCertificate` component with line-by-line print + RETIRED stamp) (2026-04-25)
+- [x] `app/launch/scenes/S15B.tsx` — New scene: audit hash chain visualization (uses existing `AuditLedgerScroll` component with terminal-style hash reveal + green verification sweep) (2026-04-25)
+- [x] `app/launch/data.ts` — S05 title updated to "Multimodal AI reads what bank text won't"; S11P caption describes RSA-SHA256 signed sub-account transfer; S11Q header "Fewer emissions means fewer credits to buy"; S15B header "Every event hashes the one before it" (2026-04-25)
+- [x] `app/launch/components/AboveWindowCaption.tsx` — Caption font bumped 12px→16px, letter-spacing 0.6px→0.3px for readability (2026-04-25)
+- [x] `app/launch/types.ts` — Added `S11Q` and `S15B` scene IDs to `SceneId` union (2026-04-25)
+- [x] Removed S15C (QR/Proof of Green scene) — not needed for demo (2026-04-25)
