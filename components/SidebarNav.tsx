@@ -30,6 +30,13 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    label: "Reports",
+    items: [
+      { href: "/briefing", label: "Briefing", icon: Activity },
+      { href: "/report/annual/2026", label: "Annual", icon: Sparkles },
+    ],
+  },
+  {
     label: "Operate",
     items: [
       { href: "/invoices", label: "Invoices", icon: FileText },
