@@ -80,6 +80,7 @@ export async function run(input: ExecReportInput, ctx: AgentContext): Promise<Ex
   const topRecommendations = ranked.slice(0, 5).map((r, i) => ({
     rank: i + 1,
     title: r.recommendation_title,
+    description: r.decision.cfo_summary ?? "",
     category: r.cluster_id ?? "",
     carbon_saving_kg:
       r.switching_impact.emissions_reduced_tco2e !== null

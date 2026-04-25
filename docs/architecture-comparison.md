@@ -68,7 +68,7 @@ baseline ─► research ──┤                                 ├─► gre
 | `lib/agent/impacts.ts` | 414 | called from `/impacts` (page render) | `lib/tax/*` + `GREEN_ALTERNATIVES`, **does NOT call runDag()** |
 | `lib/agent/impact-analysis.ts` | 269 | unwired (no current route) | `lib/tax/*` + `lib/benchmarks` |
 | **Onboarding suite** | 1,371 | `/api/onboarding/*` | own LLM stack, not in DAG |
-| **Legacy close machine** | 295 + ~100 | `/api/close/*` | `lib/agent/questions.ts` + `lib/agent/narrative.ts`, **does NOT call runDag()** |
+| **Legacy close machine** | 295 + ~100 | `/api/close/*` | **Calls `runDag()` in `DAG_RUNNING` state** (commit `187aace`), replacing legacy `questions.ts` + `narrative.ts` |
 
 ## Migration order — what's left
 
@@ -79,7 +79,7 @@ baseline ─► research ──┤                                 ├─► gre
    - Document judge-as-validator contract.
 2. **Annual-savings forecaster** (next spec): given an org's monthly spend distribution, project annual savings + payback under different switch-adoption rates. Currently the report tells you what *this* month would save; sales/CFO want "if you spend €X/mo, you save €Y/year."
 3. **Path consolidation:** decide between the canonical DAG and `lib/agent/impacts.ts`. Either retire `impacts.ts` (folding its `CategoryAnalysis` into Baseline's output) or keep two paths and document when to use each.
-4. **Legacy close-machine integration:** swap `lib/agent/close.ts::QUESTIONS_GENERATED` + `narrative.ts` for a `runDag()` call. The 12-state machine remains the orchestrator; the DAG replaces both legacy LLM touchpoints.
+4. ~~**Legacy close-machine integration:**~~ **DONE** (commit `187aace`). `lib/agent/close.ts` now calls `runDag()` in the `DAG_RUNNING` state, replacing both legacy LLM touchpoints (`questions.ts` + `narrative.ts`). The 12-state machine remains the orchestrator.
 5. **Onboarding ↔ DAG bridge:** the onboarding suite produces a draft policy + emission factor overrides. Wire those outputs into the canonical `policies` + `merchantCategoryCache` tables so the DAG picks them up.
 6. **Presentation page:** stop replaying the JSON fixture; call `/api/impacts/research` and render real `DagRunResult` data.
 
@@ -92,4 +92,4 @@ baseline ─► research ──┤                                 ├─► gre
 | Multi-tenant `researchCache` leakage | `researchCache` PK is `(category, jurisdiction, policyDigest, week)` — no `orgId` | **Resolved (R003, option B):** `research.ts::orgNeutralizeForCache` strips per-row source URLs to a `https://{domain}` prefix on cache insert + nulls snippets. Multi-tenant amortization preserved; cross-tenant reads only see domain-only evidence. Live (current invocation) results keep full URLs without round-tripping through the cache. PK + schema unchanged. |
 | Silent mock fallback masks API degradation | every proposal agent's `if (isMock())` branch | Emit `agent.<name>.fallback_to_mock` audit event + dashboard tile |
 | Two parallel agent paths | `runDag()` vs `impacts.ts` | **Resolved (R007, option B):** kept both. `runDag()` is the canonical monthly-close path (8-agent DAG, audit-chained, mock-aware) reached via `POST /api/impacts/research`. `lib/agent/impacts.ts` is the lightweight what-if simulator backing `app/impacts/page.tsx` and exports the `Quadrant` + `ResolvedAlternative` types consumed by `components/ImpactMatrix.tsx` and `lib/impacts/store.ts`. `lib/agent/impact-analysis.ts::buildCategoryAnalyses` powers the dashboard category roll-up at `app/page.tsx`. Both paths intentionally retained — DAG for new monthly-close work, `impacts.ts` for the simpler simulator + shared types. See `docs/agents/00-overview.md` "Entry points". |
-| Old close machine LLM still fires | `questions.ts` + `narrative.ts` | Replace with `runDag()` call inside `close.ts::QUESTIONS_GENERATED` |
+| ~~Old close machine LLM still fires~~ | `questions.ts` + `narrative.ts` | **RESOLVED** (commit `187aace`): close machine now calls `runDag()` in `DAG_RUNNING` state |

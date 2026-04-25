@@ -84,6 +84,8 @@ const VERDICT = z.enum(["approved", "approved_with_caveats", "needs_context", "r
 
 const JUDGED_SCHEMA = z.object({
   cluster_id: z.string().nullable(),
+  category: z.string().nullable().optional(),
+  sub_category: z.string().nullable().optional(),
   transaction_id: z.string().nullable(),
   cost_score: z.number().min(0).max(100),
   verdict: VERDICT,
@@ -175,8 +177,11 @@ const buildMock = (costSavings: CostSavingsOutput, pool: ResearchedPool | undefi
     const verdict = verdictForScore(score, sourceCount);
     const { monthly, annual } = correctMath(r);
     const topOpt = r.cost_saving_options[0];
+    const [cat, subCat] = r.current_spend.category.split("/");
     return {
       cluster_id: r.cluster_id,
+      category: cat ?? null,
+      sub_category: subCat ?? null,
       transaction_id: r.transaction_id,
       cost_score: score,
       verdict,
@@ -257,8 +262,11 @@ export async function run(input: CostJudgeInput, ctx: AgentContext): Promise<Cos
       const { sourceCount, quality: evidenceQuality } = evidenceQualityFor(source.cluster_id, input.researchedPool);
       const finalVerdict: z.infer<typeof VERDICT> = sourceCount === 0 ? "rejected" : j.verdict;
       const extraIssues = sourceCount === 0 ? [...j.issues_found, "zero_sources"] : j.issues_found;
+      const [srcCat, srcSubCat] = source.current_spend.category.split("/");
       return {
         ...j,
+        category: srcCat ?? null,
+        sub_category: srcSubCat ?? null,
         verdict: finalVerdict,
         corrected_monthly_saving_eur: finalVerdict === "rejected" ? 0 : monthly,
         corrected_annual_saving_eur: finalVerdict === "rejected" ? 0 : annual,

@@ -265,6 +265,8 @@ export interface JudgedBase {
 }
 
 export interface GreenJudgedResult extends JudgedBase {
+  category?: string | null;
+  sub_category?: string | null;
   green_score: number;
   corrected_current_kg_co2e: number | null;
   corrected_potential_kg_co2e_saved: number | null;
@@ -284,6 +286,8 @@ export interface GreenJudgeOutput {
 }
 
 export interface CostJudgedResult extends JudgedBase {
+  category?: string | null;
+  sub_category?: string | null;
   cost_score: number;
   corrected_monthly_saving_eur: number | null;
   corrected_annual_saving_eur: number | null;

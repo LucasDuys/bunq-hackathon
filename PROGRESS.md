@@ -211,3 +211,11 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Wired ExplainButtons across dashboard (4 KPIs, trend, breakdown, confidence, impact teaser), close detail (hero), report month (hero), reserve (hero + credit-mix), ledger (header + chain card), invoices (header), impacts (header), briefing (header). (2026-04-25)
 - [x] `app/globals.css` — `.explain-*` styles: tokenized colors, no shadows, mobile bottom-sheet, `prefers-reduced-motion` opacity-only. (2026-04-25)
 - [x] `KpiChip` — added optional `action` slot (top-right) so the Explain affordance composes without wrapping div hacks. (2026-04-25)
+
+## DAG ↔ Close Integration + Live Verification (2026-04-25)
+
+- [x] `lib/agent/close.ts` — DAG_RUNNING state calls runDag(), replaces legacy questions.ts + narrative.ts (commit 187aace) (2026-04-25)
+- [x] `lib/agent/close.ts` — persistDagRun() called after DAG completes so close-driven runs are visible in /agents inspector (2026-04-25)
+- [x] Live E2E verified: ANTHROPIC_MOCK=false, 0/7 mock agents, all Zod parsing passed, 400s wall time (2026-04-25)
+- [x] `scripts/live-close-test.ts` — Full close flow test script with CO₂ number breakdown (2026-04-25)
+- [x] `scripts/inspect-last-run.ts` — DAG run inspector script showing per-agent results (2026-04-25)

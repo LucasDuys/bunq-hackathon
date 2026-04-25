@@ -47,6 +47,8 @@ const VERDICT = z.enum(["approved", "approved_with_caveats", "needs_context", "r
 
 const JUDGED_SCHEMA = z.object({
   cluster_id: z.string().nullable(),
+  category: z.string().nullable().optional(),
+  sub_category: z.string().nullable().optional(),
   transaction_id: z.string().nullable(),
   green_score: z.number().min(0).max(100),
   verdict: VERDICT,
@@ -180,8 +182,11 @@ const buildMock = (greenAlt: GreenAltOutput, pool: ResearchedPool | undefined): 
     const { score, issues, evidenceQuality, sourceCount } = scoreResult(r, pool);
     const verdict = verdictForScore(score, sourceCount);
     const { current, saved } = correctMath(r);
+    const [cat, subCat] = r.current_purchase.normalized_item_or_category.split("/");
     return {
       cluster_id: r.cluster_id,
+      category: cat ?? null,
+      sub_category: subCat ?? null,
       transaction_id: r.transaction_id,
       green_score: score,
       verdict,
@@ -267,8 +272,11 @@ export async function run(input: GreenJudgeInput, ctx: AgentContext): Promise<Gr
       const { sourceCount, quality: evidenceQuality } = evidenceQualityFor(source.cluster_id, input.researchedPool);
       const finalVerdict: z.infer<typeof VERDICT> = sourceCount === 0 ? "rejected" : j.verdict;
       const extraIssues = sourceCount === 0 ? [...j.issues_found, "zero_sources"] : j.issues_found;
+      const [srcCat, srcSubCat] = source.current_purchase.normalized_item_or_category.split("/");
       return {
         ...j,
+        category: srcCat ?? null,
+        sub_category: srcSubCat ?? null,
         verdict: finalVerdict,
         corrected_current_kg_co2e: current,
         corrected_potential_kg_co2e_saved: finalVerdict === "rejected" ? 0 : saved,

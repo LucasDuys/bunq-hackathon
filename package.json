@@ -28,6 +28,7 @@
     "reports:mock": "tsx scripts/render-mock-pdf.ts",
     "invoice:test": "tsx scripts/test-invoice-extraction.ts",
     "invoice:test:live": "tsx scripts/test-invoice-extraction.ts --live",
+    "live-test": "tsx scripts/live-close-test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

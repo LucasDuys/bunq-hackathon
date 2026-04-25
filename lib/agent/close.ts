@@ -342,13 +342,13 @@ const executeCloseRun = async (id: string, orgId: string, month: string) => {
       affectedTxIds: JSON.stringify([]),
     }).run();
     db.update(closeRuns).set({ state: "AWAITING_ANSWERS" }).where(eq(closeRuns.id, id)).run();
-    return { id, initialCo2eKg: initial.co2eKgPoint, initialConfidence: initial.confidence, questionCount: 1, dagRunId: dag.runId };
+    return { id, initialCo2eKg: initial.co2eKgPoint, initialConfidence: initial.confidence, questionCount: 1, dagRunId: dag.runId, state: "AWAITING_ANSWERS" as CloseState };
   }
 
   // No question — close machine flows straight through finalizeEstimates →
   // APPLY_POLICY → PROPOSED (or AWAITING_APPROVAL).
-  await finalizeEstimates(id);
-  return { id, initialCo2eKg: initial.co2eKgPoint, initialConfidence: initial.confidence, questionCount: 0, dagRunId: dag.runId };
+  const finalResult = await finalizeEstimates(id);
+  return { id, initialCo2eKg: initial.co2eKgPoint, initialConfidence: initial.confidence, questionCount: 0, dagRunId: dag.runId, ...finalResult };
 };
 
 export const answerQuestion = async (closeRunId: string, qaId: number, answerLabel: string) => {
