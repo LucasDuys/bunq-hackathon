@@ -28,10 +28,11 @@ export const GET = async (
   }
 
   const buffer = readInvoiceFile(invoice.filePath);
+  const safeName = invoice.fileName.replace(/["\r\n\\]/g, "_");
   return new Response(new Uint8Array(buffer), {
     headers: {
       "Content-Type": invoice.fileMime,
-      "Content-Disposition": `inline; filename="${invoice.fileName}"`,
+      "Content-Disposition": `inline; filename="${safeName}"`,
       "Content-Length": String(buffer.length),
     },
   });

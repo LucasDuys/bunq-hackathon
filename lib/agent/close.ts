@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, gte, lt } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lt } from "drizzle-orm";
 import {
   auditEvents,
   bunqSessions,
@@ -370,9 +370,9 @@ export const answerQuestion = async (closeRunId: string, qaId: number, answerLab
 
   // Reclassify the affected txs
   const affectedIds = JSON.parse(qa.affectedTxIds) as string[];
-  const affectedTxs = affectedIds.length > 0 ? db.select().from(transactions).where(eq(transactions.id, affectedIds[0])).all().concat(
-    ...affectedIds.slice(1).map((tid) => db.select().from(transactions).where(eq(transactions.id, tid)).all())
-  ) : [];
+  const affectedTxs = affectedIds.length > 0
+    ? db.select().from(transactions).where(inArray(transactions.id, affectedIds)).all()
+    : [];
   for (const tx of affectedTxs) {
     db.update(transactions).set({
       category: chosen.category,

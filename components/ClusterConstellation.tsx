@@ -663,7 +663,6 @@ const ClusterTooltip = ({
         border: "1px solid var(--border-strong)",
         borderRadius: 12,
         padding: "12px 14px",
-        boxShadow: "rgba(0,0,0,0.20) 0 4px 18px",
         zIndex: 5,
       }}
     >

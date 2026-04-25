@@ -271,3 +271,30 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 | Dashboard surface | `app/page.tsx` (Reports panel) |
 | Mock | `scripts/render-mock-pdf.ts` (`npm run reports:mock`) |
 | Year-end CSV pair | `scripts/bunq-annual-export.ts` (`npm run bunq:annual-export`) |
+
+## Code Quality Audit & Bug Fixes (2026-04-25)
+
+Full codebase audit: TypeScript compilation, API routes, core lib/ logic, UI components.
+`tsc --noEmit` + `next build` both pass clean before and after all fixes.
+
+### Critical fixes
+
+- [x] `lib/policy/evaluate.ts` — `ruleEurForCategory()` missing switch default caused `TypeError: undefined.toFixed(2)` on unrecognized rule methods. Added exhaustive check with `never` type + fallback. (2026-04-25)
+- [x] `app/api/close/[id]/answer/route.ts` — Request body was `as`-cast without validation; malformed payloads crashed downstream. Added Zod schema (`z.object({ qaId: z.number().int(), answer: z.string().min(1) })`) with proper error response. (2026-04-25)
+- [x] `app/api/invoices/[id]/file/route.ts` — `Content-Disposition` header used unsanitized `invoice.fileName`; `\r\n` in filename allowed HTTP response splitting. Now strips `"`, `\r`, `\n`, `\` from filename. (2026-04-25)
+- [x] `lib/agent/close.ts:372-375` — N+1 query anti-pattern: fetched each affected transaction with a separate `db.select()` via `.concat(...map())`. Replaced with single `inArray(transactions.id, affectedIds)` query. (2026-04-25)
+
+### High-priority fixes
+
+- [x] `lib/emissions/estimate.ts:26` — `uncertaintyPct` from factor rows was used unclamped; values > 1.0 produced negative emission estimates. Added `Math.max(0, Math.min(1, u))` bound. (2026-04-25)
+- [x] `app/api/bunq/draft-callback/route.ts:39` — LIKE pattern used unsanitized `draftId` from external JSON. Added type guard (`typeof draftId !== "number"`) and `%`/`_` stripping. (2026-04-25)
+- [x] `components/SwitchCard.tsx` — 5 design system violations fixed: `font-bold` (700) → `font-medium` (500); `font-serif` removed; `font-semibold` (600) → `font-medium` (500) in 3 places; hard-coded `rgba(48,192,111,...)` → `var(--brand-green-border)` token; `boxShadow` glow removed per DESIGN.md no-shadow rule. (2026-04-25)
+- [x] `components/TrendChart.tsx:4-5` — Documented hard-coded hex constants as mirrors of `--brand-green` / `--status-info` (raw hex needed for SVG `stopColor` in Recharts). (2026-04-25)
+
+### Medium-priority fixes
+
+- [x] `lib/invoices/process.ts:50` — Date window filter only applied when >1 candidates; a single wrong-date match was accepted unchecked. Now applies window regardless of candidate count. (2026-04-25)
+- [x] `lib/invoices/process.ts:68` — `candidates[0].id` could throw if all candidates were filtered out. Changed to `candidates[0]?.id ?? null`. (2026-04-25)
+- [x] `lib/invoices/process.ts:113` — Non-EUR currencies silently stored as EUR with no warning. Added `console.warn` for non-EUR extractions. (2026-04-25)
+- [x] `components/ClusterConstellation.tsx:666` — Drop shadow `boxShadow: "rgba(0,0,0,0.20) 0 4px 18px"` on tooltip violated DESIGN.md §6 no-shadow rule. Removed. (2026-04-25)
+- [x] `app/invoices/[id]/page.tsx` — 3 instances of `font-semibold` (weight 600) → `font-normal` (weight 400) per DESIGN.md §3.3 max weight rule. (2026-04-25)

@@ -30,13 +30,14 @@ export const POST = async (req: Request) => {
   if (!draft) return NextResponse.json({ error: "no DraftPayment in body" }, { status: 400 });
 
   const { id: draftId, status } = draft;
-  if (!draftId) return NextResponse.json({ error: "no draftId" }, { status: 400 });
+  if (!draftId || typeof draftId !== "number") return NextResponse.json({ error: "no draftId" }, { status: 400 });
 
   // Look up the close run via the audit row we wrote when creating the draft.
   // Audit payload is JSON text; we use a LIKE filter as a cheap index-free scan.
+  const safeDraftId = String(draftId).replace(/[%_]/g, "");
   const candidates = db.select()
     .from(auditEvents)
-    .where(like(auditEvents.payload, `%"draftId":${draftId}%`))
+    .where(like(auditEvents.payload, `%"draftId":${safeDraftId}%`))
     .all();
   const created = candidates.find((r) => r.type === "bunq.draft.created");
   if (!created || !created.closeRunId) {

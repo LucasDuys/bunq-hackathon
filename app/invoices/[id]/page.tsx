@@ -38,10 +38,10 @@ export default async function InvoiceDetailPage({
 
         <div className="flex items-start justify-between">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.8px] font-semibold" style={{ color: "var(--text-mute)" }}>
+            <div className="text-[11px] uppercase tracking-[0.8px] font-normal" style={{ color: "var(--text-mute)" }}>
               Invoice
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight mt-1.5" style={{ color: "var(--text)" }}>
+            <h1 className="text-2xl font-normal tracking-tight mt-1.5" style={{ color: "var(--text)" }}>
               {invoice.merchantRaw ?? invoice.fileName}
             </h1>
             {invoice.invoiceNumber && (
@@ -142,7 +142,7 @@ export default async function InvoiceDetailPage({
               <table className="w-full text-xs">
                 <thead>
                   <tr
-                    className="text-left text-[10px] uppercase tracking-[0.5px] font-semibold"
+                    className="text-left text-[10px] uppercase tracking-[0.5px] font-normal"
                     style={{ borderBottom: "1px solid var(--border)", color: "var(--text-faint)" }}
                   >
                     <th className="py-2.5 pr-3">Description</th>

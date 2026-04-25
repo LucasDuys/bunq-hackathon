@@ -47,7 +47,7 @@ export function linkToTransaction(params: {
 
   if (candidates.length === 0) return null;
 
-  if (params.invoiceDate && candidates.length > 1) {
+  if (params.invoiceDate) {
     const windowSec = 7 * 86400;
     const filtered = candidates.filter(
       (tx) =>
@@ -65,7 +65,7 @@ export function linkToTransaction(params: {
     );
   }
 
-  return candidates[0].id;
+  return candidates[0]?.id ?? null;
 }
 
 export async function processInvoice(params: {
@@ -111,6 +111,9 @@ export async function processInvoice(params: {
   let linkedTxId: string | null = null;
 
   if (extraction) {
+    if (extraction.currency !== "EUR") {
+      console.warn(`Invoice ${invoiceId}: non-EUR currency "${extraction.currency}" — treating as EUR (no conversion available)`);
+    }
     merchantNorm = normalizeMerchant(extraction.merchant);
     const cls = await classifyMerchant(extraction.merchant);
     category = cls.category;

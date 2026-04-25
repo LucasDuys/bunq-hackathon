@@ -33,11 +33,11 @@ export function SwitchCard({
     >
       <div className="flex items-start gap-3 mb-3">
         <div
-          className="w-7 h-7 rounded-lg grid place-items-center text-xs font-bold shrink-0 mt-0.5"
+          className="w-7 h-7 rounded-lg grid place-items-center text-xs font-medium shrink-0 mt-0.5"
           style={{
-            background: "rgba(48,192,111,0.10)",
+            background: "var(--brand-green-soft, rgba(62,207,142,0.10))",
             color: "var(--green-bright)",
-            border: "1px solid rgba(48,192,111,0.20)",
+            border: "1px solid var(--brand-green-border)",
           }}
         >
           {rank}
@@ -55,7 +55,7 @@ export function SwitchCard({
               style={{ color: "var(--green)" }}
             />
             <span
-              className="text-[13px] font-semibold"
+              className="text-[13px] font-medium"
               style={{ color: "var(--green-bright)" }}
             >
               {toLabel}
@@ -64,7 +64,7 @@ export function SwitchCard({
         </div>
         <div className="text-right shrink-0">
           <div
-            className="text-lg font-semibold tabular-nums font-serif"
+            className="text-lg font-medium tabular-nums"
             style={{ color: "var(--green-bright)" }}
           >
             −{sw.co2eReductionPct}%
@@ -102,7 +102,6 @@ export function SwitchCard({
             style={{
               width: `${afterWidth}%`,
               background: "linear-gradient(90deg, var(--green), var(--green-bright))",
-              boxShadow: "0 0 6px rgba(48,192,111,0.3)",
               transition: "width 600ms ease-out",
             }}
           />
@@ -122,7 +121,7 @@ export function SwitchCard({
             CO₂e avoided
           </div>
           <div
-            className="text-sm font-semibold tabular-nums"
+            className="text-sm font-medium tabular-nums"
             style={{ color: "var(--green-bright)" }}
           >
             {fmtKg(sw.annualCo2eSavingKg)}/yr
@@ -140,7 +139,7 @@ export function SwitchCard({
             Cost saved
           </div>
           <div
-            className="text-sm font-semibold tabular-nums"
+            className="text-sm font-medium tabular-nums"
             style={{ color: sw.annualCostSavingEur > 0 ? "var(--green-bright)" : "var(--text-dim)" }}
           >
             {sw.annualCostSavingEur > 0 ? fmtEur(sw.annualCostSavingEur, 0) : "€ 0"}/yr

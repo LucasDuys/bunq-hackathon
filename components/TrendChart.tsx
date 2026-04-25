@@ -1,6 +1,7 @@
 "use client";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
+// Mirrors --brand-green / --status-info; raw hex needed for SVG gradient stopColor
 const GREEN = "#3ecf8e";
 const INFO = "#5fb9ff";
 

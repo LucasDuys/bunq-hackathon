@@ -19,7 +19,7 @@ export type PolicyOutcome = {
   requiresApproval: boolean;
 };
 
-const ruleEurForCategory = (rule: ReserveRule, agg: CategoryAggregate) => {
+const ruleEurForCategory = (rule: ReserveRule, agg: CategoryAggregate): number => {
   switch (rule.method) {
     case "pct_spend":
       return agg.spendEur * rule.value;
@@ -27,6 +27,10 @@ const ruleEurForCategory = (rule: ReserveRule, agg: CategoryAggregate) => {
       return agg.co2eKg * rule.value;
     case "flat_eur":
       return rule.value;
+    default: {
+      const _exhaustive: never = rule.method;
+      return agg.co2eKg * rule.value;
+    }
   }
 };
 
