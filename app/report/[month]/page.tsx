@@ -1,15 +1,4 @@
 import {
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-  Badge,
-  CodeLabel,
-  ConfidenceBar,
-  SectionDivider,
-  Stat,
-} from "@/components/ui";
-import {
   DEFAULT_ORG_ID,
   getCategorySpendForMonth,
   getLatestCloseRun,
@@ -18,6 +7,9 @@ import {
 import { fmtEur, fmtKg, fmtPct } from "@/lib/utils";
 import { generateCsrdNarrative } from "@/lib/agent/narrative";
 import type { CreditProject } from "@/lib/db/schema";
+import { ConfidenceBar } from "@/components/ui";
+import { ExplainButton } from "@/components/ExplainButton";
+import { ShieldCheck } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +22,18 @@ function categoryToken(cat: string): string {
   if (c.includes("service")) return "var(--cat-services)";
   if (c.includes("good") || c.includes("procure")) return "var(--cat-goods)";
   return "var(--cat-other)";
+}
+
+function formatCategoryName(cat: string): string {
+  return cat.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase());
+}
+
+function formatMonthLabel(month: string): string {
+  // month is "YYYY-MM"
+  const [y, m] = month.split("-");
+  if (!y || !m) return month;
+  const date = new Date(Number(y), Number(m) - 1, 1);
+  return date.toLocaleDateString("en-NL", { year: "numeric", month: "long" });
 }
 
 export default async function ReportPage({ params }: { params: Promise<{ month: string }> }) {
@@ -78,351 +82,398 @@ export default async function ReportPage({ params }: { params: Promise<{ month: 
     euPct: euPct * 100,
   });
 
+  const headlineCo2T = headlineCo2 / 1000;
+  const monthLabel = formatMonthLabel(month);
+
   return (
-    <div className="relative z-[1] flex flex-col gap-10 print:gap-6">
-      {/* ── Header ─────────────────────────────── */}
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex flex-col gap-3">
-          <CodeLabel>CSRD · ESRS E1 extract</CodeLabel>
-          <h1
-            className="text-[36px] font-normal m-0"
-            style={{
-              color: "var(--fg-primary)",
-              lineHeight: 1.1,
-              letterSpacing: "-0.015em",
-            }}
-          >
-            Monthly carbon report — {month}
-          </h1>
-          <p
-            className="text-[16px] m-0"
-            style={{ color: "var(--fg-secondary)", maxWidth: "66ch", lineHeight: 1.5 }}
-          >
-            Voluntary monthly slice. Methodology and uncertainty quantified per the GHG Protocol
-            Scope 3 guidance. Numbers below pair every CO₂e figure with a confidence indicator.
-          </p>
+    <div className="rp-stagger flex flex-col gap-14 print:gap-8">
+      {/* ── Hero ─────────────────────────────────────────── */}
+      <header className="rp-hero">
+        <div className="flex items-start justify-between gap-6 flex-wrap">
+          <span className="rp-hero__eyebrow">
+            <ShieldCheck className="h-3 w-3" />
+            CSRD · ESRS E1 extract
+          </span>
+          <span className="rp-status-pill rp-status-pill--filled">Audit-ready</span>
+          <span className="ml-auto">
+            <ExplainButton metric="month-co2e" scope={{ month }} />
+          </span>
         </div>
-        <Badge tone="info">Audit-ready</Badge>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-10 items-end">
+          <div className="flex flex-col gap-5">
+            <h1 className="rp-hero__title">
+              Monthly carbon report <em>— {monthLabel}</em>
+            </h1>
+            <p className="rp-hero__lede">
+              Voluntary monthly slice. Methodology and uncertainty quantified per the GHG Protocol Scope 3
+              guidance. Every CO₂e figure below pairs with a confidence indicator; per-row factor lineage is
+              recorded in the audit ledger.
+            </p>
+          </div>
+
+          {/* Hero number */}
+          <div className="flex flex-col gap-4 min-w-[280px]">
+            <span
+              className="font-mono text-[11px]"
+              style={{
+                color: "var(--fg-muted)",
+                letterSpacing: "1.2px",
+                textTransform: "uppercase",
+              }}
+            >
+              Gross emissions
+            </span>
+            <div className="rp-bignum">
+              <span className="rp-bignum__value">
+                {headlineCo2T >= 1 ? headlineCo2T.toFixed(2) : headlineCo2.toFixed(0)}
+              </span>
+              <span className="rp-bignum__unit">{headlineCo2T >= 1 ? "tCO₂e" : "kgCO₂e"}</span>
+            </div>
+            <div style={{ maxWidth: 280 }}>
+              <ConfidenceBar value={confidence} animate />
+            </div>
+          </div>
+        </div>
+
+        <div className="rp-hero__meta">
+          <span className="rp-hero__meta-row">
+            <span>Period</span>
+            <b>{month}</b>
+          </span>
+          <span className="rp-hero__meta-row">
+            <span>Spend analysed</span>
+            <b>{fmtEur(totalSpend, 0)}</b>
+          </span>
+          <span className="rp-hero__meta-row">
+            <span>Categories</span>
+            <b>{catRows.length}</b>
+          </span>
+          <span className="rp-hero__meta-row">
+            <span>Close run</span>
+            <b>{run?.id ? `#${run.id}` : "—"}</b>
+          </span>
+        </div>
       </header>
 
-      {/* ── Headline stats ─────────────────────── */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <Card>
-          <CardBody>
-            <Stat
-              label="Gross emissions"
-              value={fmtKg(headlineCo2)}
-              sub={`${fmtEur(totalSpend, 0)} spend analysed`}
-            />
-            <div className="mt-4">
-              <ConfidenceBar value={confidence} />
-            </div>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Stat
-              label="Credits retired"
-              value={`${totalTonnes.toFixed(2)} t`}
-              sub={`${fmtPct(euPct)} EU · ${fmtPct(removalPct)} removal`}
-            />
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Stat
-              label="Reserve transferred"
-              value={fmtEur(run?.reserveEur ?? 0, 0)}
-              sub={run ? `Close run ${run.id}` : "No close run yet"}
-            />
-          </CardBody>
-        </Card>
+      {/* ── KPI strip ─────────────────────────────────────── */}
+      <section className="rp-kpis">
+        <div className="rp-kpis__cell">
+          <span className="rp-kpis__label">Credits retired</span>
+          <span className="rp-kpis__value">
+            {totalTonnes.toFixed(2)}
+            <span className="rp-kpis__value-unit">tCO₂e</span>
+          </span>
+          <span className="rp-kpis__sub">across {mix.length} project{mix.length === 1 ? "" : "s"}</span>
+        </div>
+        <div className="rp-kpis__cell">
+          <span className="rp-kpis__label">EU registry share</span>
+          <span className="rp-kpis__value" style={{ color: euPct >= 0.5 ? "var(--brand-green)" : "var(--fg-primary)" }}>
+            {fmtPct(euPct).replace("%", "")}
+            <span className="rp-kpis__value-unit">%</span>
+          </span>
+          <span className="rp-kpis__sub">Gold Standard / Puro.earth EU</span>
+        </div>
+        <div className="rp-kpis__cell">
+          <span className="rp-kpis__label">Removal share</span>
+          <span className="rp-kpis__value">
+            {(removalPct * 100).toFixed(0)}
+            <span className="rp-kpis__value-unit">%</span>
+          </span>
+          <span className="rp-kpis__sub">{((1 - removalPct) * 100).toFixed(0)}% reduction credits</span>
+        </div>
+        <div className="rp-kpis__cell">
+          <span className="rp-kpis__label">Reserve transferred</span>
+          <span className="rp-kpis__value" style={{ color: "var(--brand-green)" }}>
+            {fmtEur(run?.reserveEur ?? 0, 0).replace("€", "").trim()}
+            <span className="rp-kpis__value-unit">EUR</span>
+          </span>
+          <span className="rp-kpis__sub">{run ? `Close ${run.id}` : "no close run yet"}</span>
+        </div>
       </section>
 
-      <SectionDivider />
+      {/* ── Narrative ─────────────────────────────────────── */}
+      {narrative && (
+        <section className="rp-narrative">
+          <span className="rp-narrative__eyebrow">Narrative summary · auto-drafted</span>
+          <p className="rp-narrative__body">{narrative}</p>
+        </section>
+      )}
 
-      {/* ── Narrative ──────────────────────────── */}
-      <section className="flex flex-col gap-4">
-        <CodeLabel>Narrative summary</CodeLabel>
-        <p
-          className="text-[16px] m-0"
-          style={{ color: "var(--fg-secondary)", maxWidth: "66ch", lineHeight: 1.6 }}
+      {/* ── E1-6 emissions table ──────────────────────────── */}
+      <section className="rp-section">
+        <div className="rp-section__head">
+          <span className="rp-section__num">E1-6 · Scope 3 Cat 1 / 6</span>
+          <h2 className="rp-section__title">Gross GHG emissions</h2>
+          <span className="rp-section__rule" />
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="rp-table">
+            <thead>
+              <tr>
+                <th>Category</th>
+                <th className="is-num">Spend</th>
+                <th className="is-num">CO₂e</th>
+                <th className="is-num" style={{ width: 200 }}>Share</th>
+              </tr>
+            </thead>
+            <tbody>
+              {catRows.map(([cat, v]) => (
+                <tr key={cat}>
+                  <td>
+                    <span
+                      className="rp-cat-dot"
+                      style={{ "--cat": categoryToken(cat) } as React.CSSProperties}
+                    >
+                      {formatCategoryName(cat)}
+                    </span>
+                  </td>
+                  <td className="is-num" style={{ color: "var(--fg-secondary)" }}>
+                    {fmtEur(v.spendEur, 0)}
+                  </td>
+                  <td className="is-num">{fmtKg(v.co2eKg)}</td>
+                  <td className="is-num">
+                    <div className="rp-share-cell">
+                      <div className="rp-share-bar">
+                        <div
+                          className="rp-share-bar__fill"
+                          style={
+                            {
+                              width: `${totalCo2 ? (v.co2eKg / totalCo2) * 100 : 0}%`,
+                              "--fill": categoryToken(cat),
+                            } as React.CSSProperties
+                          }
+                        />
+                      </div>
+                      <span className="rp-share-pct">
+                        {totalCo2 ? `${((v.co2eKg / totalCo2) * 100).toFixed(0)}%` : "—"}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td>
+                  <span
+                    className="font-mono text-[11px]"
+                    style={{ letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--fg-muted)" }}
+                  >
+                    Total
+                  </span>
+                </td>
+                <td className="is-num">{fmtEur(totalSpend, 0)}</td>
+                <td className="is-num">{fmtKg(totalCo2)}</td>
+                <td className="is-num">100%</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div
+          className="flex items-start justify-between gap-8 flex-wrap pt-2"
         >
-          {narrative}
-        </p>
+          <p
+            className="m-0 text-[13px]"
+            style={{ color: "var(--fg-muted)", maxWidth: "62ch", lineHeight: 1.55 }}
+          >
+            <span style={{ color: "var(--fg-secondary)" }}>Method —</span> spend-based using Exiobase, DEFRA 2024
+            and ADEME Base Carbone factors. Uncertainty varies by tier and is preserved at row level; aggregate
+            confidence is computed via quadrature.
+          </p>
+          <div className="min-w-[240px]">
+            <ConfidenceBar value={confidence} animate />
+          </div>
+        </div>
       </section>
 
-      <SectionDivider label="E1-6 — Gross GHG emissions" />
+      {/* ── E1-7 credits ──────────────────────────────────── */}
+      <section className="rp-section">
+        <div className="rp-section__head">
+          <span className="rp-section__num">E1-7 · Post-reduction purchase</span>
+          <h2 className="rp-section__title">Carbon removal &amp; credits</h2>
+          <span className="rp-section__rule" />
+        </div>
 
-      {/* ── Emissions table ────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Emissions by category (approximated)</CardTitle>
-          <CodeLabel>Scope 3 · Cat 1 / 6</CodeLabel>
-        </CardHeader>
-        <CardBody>
-          <div className="overflow-x-auto">
-            <table className="w-full text-[14px]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+          <div className="rp-statcard rp-statcard--accent">
+            <span className="rp-statcard__label">Total retired</span>
+            <span className="rp-statcard__value">
+              {totalTonnes.toFixed(2)}
+              <span className="rp-statcard__value-unit">tCO₂e</span>
+            </span>
+            <span className="rp-statcard__sub">cancelled this close</span>
+          </div>
+          <div className="rp-statcard">
+            <span className="rp-statcard__label">EU-based</span>
+            <span className="rp-statcard__value" style={{ color: euPct >= 0.5 ? "var(--brand-green)" : "var(--fg-primary)" }}>
+              {fmtPct(euPct).replace("%", "")}
+              <span className="rp-statcard__value-unit">%</span>
+            </span>
+            <span className="rp-statcard__sub">Gold Standard · Puro.earth EU</span>
+          </div>
+          <div className="rp-statcard">
+            <span className="rp-statcard__label">Removal vs reduction</span>
+            <span className="rp-statcard__value">
+              {(removalPct * 100).toFixed(0)}
+              <span className="rp-statcard__value-unit">% removal</span>
+            </span>
+            <span className="rp-statcard__sub">{((1 - removalPct) * 100).toFixed(0)}% reduction</span>
+          </div>
+        </div>
+
+        {mix.length > 0 ? (
+          <div className="overflow-x-auto pt-2">
+            <table className="rp-table">
               <thead>
-                <tr style={{ borderBottom: "1px solid var(--border-default)" }}>
-                  <th
-                    className="code-label text-left py-3 pr-4"
-                    style={{ fontWeight: 400 }}
-                  >
-                    Category
-                  </th>
-                  <th
-                    className="code-label text-right py-3 pr-4"
-                    style={{ fontWeight: 400 }}
-                  >
-                    Spend
-                  </th>
-                  <th
-                    className="code-label text-right py-3 pr-4"
-                    style={{ fontWeight: 400 }}
-                  >
-                    CO₂e
-                  </th>
-                  <th
-                    className="code-label text-right py-3"
-                    style={{ fontWeight: 400 }}
-                  >
-                    Share
-                  </th>
+                <tr>
+                  <th>Project</th>
+                  <th>Type</th>
+                  <th>Registry</th>
+                  <th className="is-num">Tonnes</th>
+                  <th className="is-num">EUR</th>
                 </tr>
               </thead>
               <tbody>
-                {catRows.map(([cat, v]) => (
-                  <tr key={cat} style={{ borderBottom: "1px solid var(--border-faint)" }}>
-                    <td className="py-3 pr-4" style={{ color: "var(--fg-primary)" }}>
-                      <span className="inline-flex items-center gap-2">
+                {mix.map((m) => (
+                  <tr key={m.project.id}>
+                    <td>
+                      <div className="flex items-center gap-3">
                         <span
-                          className="inline-block rounded-full"
-                          style={{
-                            width: 6,
-                            height: 6,
-                            background: categoryToken(cat),
-                          }}
+                          className="inline-block w-1.5 h-1.5 rounded-full"
+                          style={{ background: "var(--brand-green)" }}
                         />
-                        <span className="capitalize">{cat}</span>
+                        <span style={{ color: "var(--fg-primary)", letterSpacing: "-0.005em" }}>
+                          {m.project.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        className="rp-cat-pill"
+                        style={
+                          {
+                            "--cat":
+                              m.project.type === "reduction"
+                                ? "var(--cat-services)"
+                                : "var(--brand-green)",
+                          } as React.CSSProperties
+                        }
+                      >
+                        {m.project.type.replace("_", " ")}
                       </span>
                     </td>
-                    <td
-                      className="py-3 pr-4 text-right tabular-nums"
-                      style={{ color: "var(--fg-secondary)" }}
-                    >
-                      {fmtEur(v.spendEur, 0)}
+                    <td>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: 12,
+                          color: "var(--fg-muted)",
+                          letterSpacing: "0.4px",
+                        }}
+                      >
+                        {m.project.registry}
+                      </span>
                     </td>
-                    <td
-                      className="py-3 pr-4 text-right tabular-nums"
-                      style={{ color: "var(--fg-primary)" }}
-                    >
-                      {fmtKg(v.co2eKg)}
-                    </td>
-                    <td
-                      className="py-3 text-right tabular-nums"
-                      style={{ color: "var(--fg-muted)" }}
-                    >
-                      {totalCo2 ? `${((v.co2eKg / totalCo2) * 100).toFixed(0)}%` : "—"}
-                    </td>
+                    <td className="is-num">{m.tonnes.toFixed(3)}</td>
+                    <td className="is-num">{fmtEur(m.eur)}</td>
                   </tr>
                 ))}
-                <tr>
-                  <td className="py-3 pr-4" style={{ color: "var(--fg-primary)" }}>
-                    Total
-                  </td>
-                  <td
-                    className="py-3 pr-4 text-right tabular-nums"
-                    style={{ color: "var(--fg-primary)" }}
-                  >
-                    {fmtEur(totalSpend, 0)}
-                  </td>
-                  <td
-                    className="py-3 pr-4 text-right tabular-nums"
-                    style={{ color: "var(--fg-primary)" }}
-                  >
-                    {fmtKg(totalCo2)}
-                  </td>
-                  <td
-                    className="py-3 text-right tabular-nums"
-                    style={{ color: "var(--fg-primary)" }}
-                  >
-                    100%
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>
-          <div className="mt-4 flex items-start justify-between gap-6 flex-wrap">
-            <p
-              className="text-[13px] m-0"
-              style={{ color: "var(--fg-muted)", maxWidth: "66ch", lineHeight: 1.5 }}
-            >
-              Method: spend-based (Exiobase · DEFRA 2024 · ADEME Base Carbone). Uncertainty varies
-              by factor; see the ledger for per-row lineage.
-            </p>
-            <div className="min-w-[220px]">
-              <ConfidenceBar value={confidence} />
-            </div>
-          </div>
-        </CardBody>
-      </Card>
-
-      <SectionDivider label="E1-7 — Credits & removals" />
-
-      {/* ── Credits card ───────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Carbon removal and carbon credits</CardTitle>
-          <CodeLabel>Post-reduction purchase mix</CodeLabel>
-        </CardHeader>
-        <CardBody>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-            <Stat
-              label="Total credits"
-              value={`${totalTonnes.toFixed(2)} t`}
-              sub="Retired this close"
-            />
-            <Stat
-              label="EU-based"
-              value={fmtPct(euPct)}
-              sub="Registry: Gold Standard / Puro.earth EU"
-              tone={euPct >= 0.5 ? "positive" : "default"}
-            />
-            <Stat
-              label="Removal vs reduction"
-              value={`${(removalPct * 100).toFixed(0)}% removal`}
-              sub={`${((1 - removalPct) * 100).toFixed(0)}% reduction`}
-            />
-          </div>
-          {mix.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-[14px]">
-                <thead>
-                  <tr style={{ borderBottom: "1px solid var(--border-default)" }}>
-                    <th
-                      className="code-label text-left py-3 pr-4"
-                      style={{ fontWeight: 400 }}
-                    >
-                      Project
-                    </th>
-                    <th
-                      className="code-label text-left py-3 pr-4"
-                      style={{ fontWeight: 400 }}
-                    >
-                      Type
-                    </th>
-                    <th
-                      className="code-label text-left py-3 pr-4"
-                      style={{ fontWeight: 400 }}
-                    >
-                      Registry
-                    </th>
-                    <th
-                      className="code-label text-right py-3 pr-4"
-                      style={{ fontWeight: 400 }}
-                    >
-                      Tonnes
-                    </th>
-                    <th
-                      className="code-label text-right py-3"
-                      style={{ fontWeight: 400 }}
-                    >
-                      EUR
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mix.map((m) => (
-                    <tr key={m.project.id} style={{ borderBottom: "1px solid var(--border-faint)" }}>
-                      <td className="py-3 pr-4" style={{ color: "var(--fg-primary)" }}>
-                        {m.project.name}
-                      </td>
-                      <td
-                        className="py-3 pr-4 capitalize"
-                        style={{ color: "var(--fg-secondary)" }}
-                      >
-                        {m.project.type.replace("_", " ")}
-                      </td>
-                      <td className="py-3 pr-4" style={{ color: "var(--fg-muted)" }}>
-                        <span className="font-mono text-[12px]">{m.project.registry}</span>
-                      </td>
-                      <td
-                        className="py-3 pr-4 text-right tabular-nums"
-                        style={{ color: "var(--fg-primary)" }}
-                      >
-                        {m.tonnes.toFixed(3)}
-                      </td>
-                      <td
-                        className="py-3 text-right tabular-nums"
-                        style={{ color: "var(--fg-primary)" }}
-                      >
-                        {fmtEur(m.eur)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-[14px] m-0" style={{ color: "var(--fg-muted)" }}>
-              No credit purchases recorded for this month.
-            </p>
-          )}
-        </CardBody>
-      </Card>
-
-      <SectionDivider label="Methodology" />
-
-      {/* ── Methodology prose ──────────────────── */}
-      <section className="flex flex-col gap-4" style={{ maxWidth: "66ch" }}>
-        <h2
-          className="text-[24px] font-normal m-0"
-          style={{ color: "var(--fg-primary)", lineHeight: 1.25, letterSpacing: "-0.005em" }}
-        >
-          Methodology and data lineage
-        </h2>
-        <div
-          className="flex flex-col gap-4 text-[16px]"
-          style={{ color: "var(--fg-secondary)", lineHeight: 1.6 }}
-        >
-          <p className="m-0">
-            Transactions are ingested via the bunq MUTATION webhook and classified merchant-first
-            (regex rules) with an LLM fallback. Per-transaction CO₂e = spend × factor; factors
-            are sourced from DEFRA 2024, ADEME Base Carbone, and Exiobase v3. Each factor carries
-            an uncertainty percentage following GHG Protocol Tier guidance.
+        ) : (
+          <p
+            className="text-[14px] m-0 pt-2"
+            style={{ color: "var(--fg-muted)" }}
+          >
+            No credit purchases recorded for {month}.
           </p>
-          <p className="m-0">
-            Confidence = (1 − factor uncertainty) × classifier confidence × tier weight.
-            Uncertainty is clustered at the merchant level; a Claude Sonnet 4.6 agent generates
-            at most three high-impact refinement questions per close to reduce variance.
-          </p>
-          <p className="m-0">
-            Reserve allocation and credit recommendations follow a declarative policy (see the{" "}
-            <code
-              className="text-[13px] px-1.5 py-0.5 rounded font-mono"
-              style={{ background: "var(--bg-inset)", color: "var(--fg-muted)" }}
-            >
-              policies
-            </code>{" "}
-            row). Every state transition is appended to a SHA-256 hash-chained{" "}
-            <code
-              className="text-[13px] px-1.5 py-0.5 rounded font-mono"
-              style={{ background: "var(--bg-inset)", color: "var(--fg-muted)" }}
-            >
-              audit_events
-            </code>{" "}
-            log — UPDATE and DELETE are blocked by trigger.
-          </p>
-        </div>
+        )}
       </section>
 
-      {/* ── Print overrides ────────────────────── */}
+      {/* ── Methodology ───────────────────────────────────── */}
+      <section className="rp-section">
+        <div className="rp-section__head">
+          <span className="rp-section__num">Appendix · Methodology</span>
+          <h2 className="rp-section__title">How these numbers were built</h2>
+          <span className="rp-section__rule" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-10 gap-y-6">
+          <div className="flex flex-col gap-3">
+            <span
+              className="font-mono text-[11px]"
+              style={{ letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--brand-green)" }}
+            >
+              01 Ingestion
+            </span>
+            <p
+              className="m-0 text-[14px]"
+              style={{ color: "var(--fg-secondary)", lineHeight: 1.6 }}
+            >
+              Transactions arrive via the bunq MUTATION webhook. Each row is hash-chained into the
+              append-only audit ledger before classification.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <span
+              className="font-mono text-[11px]"
+              style={{ letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--brand-green)" }}
+            >
+              02 Classification
+            </span>
+            <p
+              className="m-0 text-[14px]"
+              style={{ color: "var(--fg-secondary)", lineHeight: 1.6 }}
+            >
+              Merchant-first regex rules; Claude Haiku 4.5 fallback. Per-transaction CO₂e = spend ×
+              factor (DEFRA 2024 · ADEME · Exiobase v3). Each factor row carries an uncertainty %
+              following GHG Protocol tier guidance.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <span
+              className="font-mono text-[11px]"
+              style={{ letterSpacing: "1.2px", textTransform: "uppercase", color: "var(--brand-green)" }}
+            >
+              03 Confidence &amp; close
+            </span>
+            <p
+              className="m-0 text-[14px]"
+              style={{ color: "var(--fg-secondary)", lineHeight: 1.6 }}
+            >
+              Confidence = (1 − factor uncertainty) × classifier confidence × tier weight. Uncertainty
+              clusters drive ≤3 refine questions per close. Reserve allocation and credit choice follow a
+              declarative <code className="font-mono text-[12px] px-1 py-0.5 rounded" style={{ background: "var(--bg-inset)", color: "var(--fg-secondary)" }}>policies</code> row.
+            </p>
+          </div>
+        </div>
+
+        <p
+          className="m-0 text-[12px] pt-6 mt-2 border-t"
+          style={{
+            color: "var(--fg-muted)",
+            borderColor: "var(--border-faint)",
+            fontFamily: "var(--font-mono)",
+            letterSpacing: "1px",
+            textTransform: "uppercase",
+          }}
+        >
+          Audit ledger · SHA-256 hash-chained · UPDATE/DELETE blocked by trigger · Operational-control boundary
+        </p>
+      </section>
+
+      {/* Print overrides */}
       <style>{`
         @media print {
           body { background: #fff !important; color: #000 !important; }
           .ca-card { border-color: rgba(0,0,0,0.15) !important; background: #fff !important; }
           .code-label { color: rgba(0,0,0,0.55) !important; }
+          .rp-bignum, .rp-hero__title, .rp-section__title { color: #000 !important; }
+          .rp-hero__title em { color: #555 !important; }
         }
       `}</style>
     </div>

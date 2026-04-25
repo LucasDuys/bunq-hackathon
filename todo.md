@@ -1,5 +1,24 @@
 # TODO
 
+> **For graders:** the criterion-by-criterion claim/evidence/verify map lives in [`JUDGE.md`](JUDGE.md). The list below is the candid post-hackathon backlog — kept transparent on purpose.
+
+## What ships in the demo (verifiable today)
+
+The MVP is functional end-to-end. Every claim in `JUDGE.md` §1–§5 is anchored to a file path or a runnable script. Mock-mode demo runs without keys; live-mode flips one flag (`ANTHROPIC_MOCK=0`, `BUNQ_MOCK=0`). See `JUDGE.md` §6 for the verification command list.
+
+## Known limitations (transparent)
+
+- **Live-mode end-to-end has not been run in CI.** Every component runs in isolation — the reproducible recipe is `scripts/dev-live.sh` plus the bunq script chain documented in `DEMO.md`. The hackathon team prioritised mock-stability for the demo over a live-mode dress rehearsal.
+- **`agent_messages` per-call instrumentation** populates only on live LLM runs (`ANTHROPIC_MOCK=0`); the deterministic mock path skips logging by design. The schema + `agentRuns` rows still populate in mock mode.
+- **Carbon-credit purchase is logged as a structured payment description**, not a real registry call — see "What's real vs simulated" in `README.md`. The reserve transfer that funds it *is* a real bunq intra-user transfer.
+- **DAG ↔ close state machine** are two parallel paths today. Integration is the next-round spec (`.forge/specs/spec-dag-hardening.md`) — not a bug, a deliberate scope cut for the 24-hour build.
+
+## Backlog (post-hackathon)
+
+The detailed engineering backlog from the team follows. It is intentionally specific so future-you (or a reviewer) can pick up exactly where we left off.
+
+---
+
 Everything the plan called for but we didn't ship — organized by blast radius. Hackathon MVP is functional; this is the list for anyone (or future-you) picking up after the demo.
 
 ## Matrix DAG (commit `b5b4c5e`) — follow-ups

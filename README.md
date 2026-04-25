@@ -7,6 +7,26 @@ Built for **bunq Hackathon 7.0** (April 24-25, 2026). 3-person team, 24-hour bui
 ## Pitch
 > "We turn bunq transactions into a monthly, audit-ready carbon report — and automatically fund your EU carbon reserve."
 
+## Judge guide
+
+| Criterion | Where it shows up | Anchor |
+|---|---|---|
+| **Impact & usefulness** (30%) | CSRD report, tax-savings + reserve loop, real bunq transfer, switch recommendations | [JUDGE §1](JUDGE.md#1-impact--usefulness--30) |
+| **Creativity & innovation** (25%) | 8-agent DAG with code-adjudicated judges, refine-Q clustering, hash-chained ledger, DB-persisted state machines | [JUDGE §2](JUDGE.md#2-creativity--innovation--25) |
+| **Technical execution** (20%) | Idempotent state transitions, quadrature confidence math, Zod-validated tool_use, prompt-cached system prompts | [JUDGE §3](JUDGE.md#3-technical-execution--20) |
+| **bunq integration** (15%) | RSA-SHA256 signing, 3-leg OAuth, sub-accounts, signed-webhook ingest, intra-user transfer | [JUDGE §4](JUDGE.md#4-bunq-integration--15) |
+| **Pitch** (~10%) | One-pager `PITCH.md`, click-by-click `DEMO.md`, in-app `/presentation` deck | [JUDGE §5](JUDGE.md#5-pitch--10) |
+
+[`JUDGE.md`](JUDGE.md) is the single-page claim → file evidence → run-to-verify map. [`PITCH.md`](PITCH.md) is the 60-second narrative. [`DEMO.md`](DEMO.md) is the click-by-click demo with expected screen output.
+
+## What's novel here
+
+- **8-agent DAG, not a chatbot.** `lib/agents/dag/` — Baseline → Research → [Green Alt ‖ Cost Savings] → [Green Judge ‖ Cost Judge] → Credit Strategy → Executive Report. See [`docs/agents/00-overview.md`](docs/agents/00-overview.md).
+- **LLMs author, code adjudicates.** `greenJudge` and `costJudge` re-verify math and source-evidence in code; their verdicts can flip the LLM's. Credit-strategy and report numbers are computed *before* the LLM sees them.
+- **DB-persisted state machines** (12-state close, 10-state onboarding). No LangGraph, no Temporal. Every transition is `WHERE state = ...` — idempotent, replayable, restart-safe.
+- **SHA-256 hash-chained audit ledger** (`lib/audit/append.ts`). Append-only via SQL trigger. Tampering breaks `verifyChain` on the next read.
+- **Quadrature confidence rollup** (`lib/emissions/estimate.ts`). Variance-correct, spend-weighted, refine-Q clustering on `spend × (1 − confidence)`.
+
 ## Stack
 - **Next.js 16 App Router** (TypeScript), Tailwind 4, Recharts.
 - **SQLite** via better-sqlite3 + **Drizzle ORM**; append-only `audit_events` hash-chain via trigger.
@@ -42,12 +62,14 @@ npm run reset    # wipes + re-seeds. Restart `npm run dev` afterward so the DB h
 ```
 
 ## Demo flow (3 minutes)
-1. `/` — overview, 61 tx, €39k spend, no CO₂e yet. Click **Run Carbon Close**.
-2. `/close/[id]` — pipeline animates; pauses at 3 refinement questions. Answer each → confidence rises.
-3. Proposed actions — reserve transfer + 4.8 t of EU credits across biochar / peatland / reforestation. Click **Approve & execute**.
-4. `/report/2026-04` — CSRD ESRS E1 extract (E1-6 + E1-7 tables + methodology footnote).
-5. `/ledger` — SHA-256 hash chain; chain-valid badge.
-6. `/categories` — impact matrix: train vs flight is 16× difference.
+
+**TL;DR:** Run Carbon Close → answer 3 refinement questions → approve → see CSRD report + signed audit chain. Full click-by-click with expected screen text in [`DEMO.md`](DEMO.md).
+
+1. `/` — dashboard, 61 tx, €39k spend, click **Run Carbon Close**.
+2. `/close/[id]` — pipeline animates through `INGEST → CLASSIFY → ESTIMATE → CLUSTER`; pauses at 3 refinement questions surfaced by spend-weighted uncertainty.
+3. Answer each → confidence rises (method flips `spend_based → refined`).
+4. Proposed actions — reserve transfer + 4.8 t of EU credits across biochar / peatland / reforestation. Click **Approve & execute**.
+5. `/report/2026-04` (ESRS E1-6 + E1-7) → `/ledger` (SHA-256 chain valid) → `/impacts` (cost-vs-carbon 2×2 matrix) → `/presentation` (interactive DAG deck).
 
 ## Emission Estimation Approach
 

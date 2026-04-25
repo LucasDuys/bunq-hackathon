@@ -223,6 +223,7 @@ export const KpiChip = ({
   unit,
   trend,
   trendTone = "neutral",
+  action,
 }: {
   icon?: React.ReactNode;
   label: string;
@@ -230,9 +231,11 @@ export const KpiChip = ({
   unit?: string;
   trend?: string;
   trendTone?: "green" | "red" | "neutral";
+  /** Optional top-right slot, e.g. an Explain button. */
+  action?: React.ReactNode;
 }) => (
   <div
-    className="ca-card ca-card--hover flex items-center gap-3"
+    className="ca-card ca-card--hover flex items-center gap-3 relative"
     style={{ padding: "16px 18px", minHeight: 76 }}
   >
     {icon && (
@@ -276,6 +279,11 @@ export const KpiChip = ({
         }}
       >
         {trend}
+      </div>
+    )}
+    {action && (
+      <div className="absolute top-2 right-2">
+        {action}
       </div>
     )}
   </div>

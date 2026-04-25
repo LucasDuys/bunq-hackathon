@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   Activity,
@@ -11,7 +11,6 @@ import {
   Leaf,
   type LucideIcon,
   Menu,
-  Search,
   Shield,
   Sparkles,
   Target,
@@ -49,6 +48,9 @@ const GROUPS: Group[] = [
 type OnboardingLink = { href: string; label: string } | null;
 type CloseLink = { href: string; label: string; month: string } | null;
 
+const isMac =
+  typeof navigator !== "undefined" && /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+
 export const SidebarNav = ({
   onboardingLink,
   closeLink,
@@ -57,7 +59,9 @@ export const SidebarNav = ({
   closeLink: CloseLink;
 }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const askActive = pathname === "/assistant" || pathname.startsWith("/assistant/");
 
   useEffect(() => {
     setOpen(false);
@@ -77,8 +81,20 @@ export const SidebarNav = ({
     };
   }, [open]);
 
-  const isActive = (href: string) =>
-    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  // Global ⌘K / Ctrl+K → jump to assistant. Makes the kbd hint truthful.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      if (mod && (e.key === "k" || e.key === "K")) {
+        const tag = (e.target as HTMLElement | null)?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        e.preventDefault();
+        if (!askActive) router.push("/assistant");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [askActive, router]);
 
   return (
     <>
@@ -136,13 +152,24 @@ export const SidebarNav = ({
           </button>
         </div>
 
-        {/* Search */}
+        {/* Featured: Ask Carbo (assistant entry) */}
         <div className="px-3 pt-3 shrink-0">
-          <button type="button" className="sidebar-search">
-            <Search className="h-3.5 w-3.5 shrink-0" />
-            <span>Search</span>
-            <span className="sidebar-search-kbd">⌘K</span>
-          </button>
+          <Link
+            href="/assistant"
+            aria-current={askActive ? "page" : undefined}
+            aria-label="Ask Carbo — open the assistant"
+            className="sidebar-ask"
+          >
+            <span className="sidebar-ask__icon-wrap" aria-hidden="true">
+              <Sparkles className="sidebar-ask__icon" />
+            </span>
+            <span className="sidebar-ask__label">
+              {askActive ? "Assistant" : "Ask Carbo"}
+            </span>
+            <span className="sidebar-ask__kbd" aria-hidden="true">
+              {isMac ? "⌘K" : "Ctrl K"}
+            </span>
+          </Link>
         </div>
 
         {/* Groups */}
@@ -152,7 +179,10 @@ export const SidebarNav = ({
               <div className="px-2.5 mb-2 code-label">{g.label}</div>
               <ul className="flex flex-col gap-0.5">
                 {g.items.map((it) => {
-                  const active = isActive(it.href);
+                  const active =
+                    it.href === "/"
+                      ? pathname === "/"
+                      : pathname.startsWith(it.href);
                   const Icon = it.icon;
                   return (
                     <li key={it.href} className="sidebar-link-row">

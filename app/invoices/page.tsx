@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FileText, Mail, Upload as UploadIcon, Link2 } from "lucide-react";
 import { Badge, Card, CardBody, CardHeader, CardTitle, Stat, SectionDivider } from "@/components/ui";
 import { InvoiceUpload } from "@/components/InvoiceUpload";
+import { ExplainButton } from "@/components/ExplainButton";
 import { DEFAULT_ORG_ID, getInvoicesForOrg, getInvoiceStats } from "@/lib/queries";
 import { fmtEur, fmtPct } from "@/lib/utils";
 
@@ -14,7 +15,7 @@ export default async function InvoicesPage() {
   return (
     <div className="relative z-[1] flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-[11px] uppercase tracking-[0.8px] font-semibold" style={{ color: "var(--text-mute)" }}>
             Documents
@@ -25,6 +26,9 @@ export default async function InvoicesPage() {
           <p className="text-[13px] mt-1" style={{ color: "var(--text-dim)" }}>
             Upload invoices or forward them to your Carbo inbox. Claude extracts line items, categories, and VAT automatically.
           </p>
+        </div>
+        <div className="shrink-0 mt-2">
+          <ExplainButton metric="invoice-stats" />
         </div>
       </div>
 

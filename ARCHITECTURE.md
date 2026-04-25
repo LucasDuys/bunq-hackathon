@@ -50,6 +50,36 @@ Supporting: `orgs`, `policies`, `emission_factors`, `credit_projects`, `credit_p
 - `DRY_RUN=1` skips the real bunq transfer but still writes `action.reserve_transfer` to the audit log — the demo is visually identical.
 - `MAX_TOOL_CALLS=8` caps bunq calls per close run.
 
+## Reasoning layer — 8-agent DAG
+
+Lives in `lib/agents/dag/`. Entry point: `POST /api/impacts/research` → `runDag()` in `index.ts`. Persists per-agent latency / tokens / cache-hit rate into `agent_runs` + `agent_messages` (live mode only).
+
+```
+                    spendBaseline (deterministic)
+                            │
+                            ▼
+                       research            (Sonnet 4.6 + web_search_20250305 + 30d cache)
+                            │
+                  ┌─────────┴─────────┐
+                  ▼                   ▼
+             greenAlternatives    costSavings    (Sonnet 4.6, parallel)
+                  │                   │
+                  ▼                   ▼
+              greenJudge          costJudge      (Sonnet; verdict re-verified in code)
+                  └─────────┬─────────┘
+                            ▼
+                     creditStrategy             (Sonnet writes prose; numbers deterministic)
+                            │
+                            ▼
+                     executiveReport            (CFO-facing; numbers frozen pre-LLM)
+```
+
+**Authority discipline.** LLMs author, code adjudicates. `greenJudge` / `costJudge` re-check evidence quality and arithmetic in code — they can flip an LLM's `approved` to `rejected` on hard rules (zero-source recommendation, math mismatch). `creditStrategy` math is computed deterministically before the Sonnet prose is generated. `executiveReport` numbers are frozen before the LLM writes the CFO summary. The LLM cannot move money or invent savings.
+
+**Mock fallback.** Every Sonnet-using agent has a deterministic `buildMock()` path used when `ANTHROPIC_MOCK=1` (default). Demo flow stays populated without an API key. Live mode (`ANTHROPIC_MOCK=0`) uses native tool_use with Zod validation (`lib/agents/dag/llm.ts::callAgent`, `callAgentWithTools`).
+
+The close state machine and the DAG run independently today; integration is on the spec list (`.forge/specs/spec-dag-hardening.md`). See [`docs/agents/00-overview.md`](docs/agents/00-overview.md) for per-agent system prompts and I/O schemas.
+
 ## Confidence & ranges
 - Per-tx: `point = spend × factor`, range `±factor.uncertainty%`, confidence `(1 − u) · classifierConfidence · tierWeight`.
 - Rollup: point sum + quadrature-summed half-ranges; spend-weighted mean confidence.

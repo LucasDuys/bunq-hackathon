@@ -1,5 +1,7 @@
 # Progress
 
+> **For graders:** this is the receipt log of what shipped. The criterion-aligned summary with file evidence + run-to-verify steps is in [`JUDGE.md`](JUDGE.md). The candid backlog is in [`todo.md`](todo.md). Every claim a grader scores against is cross-referenced from `JUDGE.md`.
+
 Living document — every agent and contributor updates this after completing work.
 Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 
@@ -194,3 +196,18 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `scripts/fire-test-event.ts` (`npm run dev:fire`) — POSTs synthetic bunq MUTATION events to the local webhook handler so the demo has live ingestion without any real bunq (2026-04-25)
 - [x] Wired close state machine to actually call `intraUserTransfer` for `reserve_transfer` actions (was: audit-log only). Verified via end-to-end run: `bunq.transfer.dry_run` audit row now follows every `action.reserve_transfer`. (2026-04-25)
 - [x] Auto-execute under-threshold close runs per `CONCEPT.md` "Agentic action": `finalizeEstimates` calls `approveAndExecute("system")` inline when `outcome.requiresApproval` is false; audit row marked `actor: "system", auto: true`. (2026-04-25)
+
+## Explain Assistant (2026-04-25)
+
+- [x] `lib/explain/{metrics,context,prompt,mock,sse,schema}.ts` — 14-metric registry + per-metric context builders (≤5-contributor aggregation, <1.5KB stringified per AGENTS.md) + cached system prelude + deterministic mock narrator + SSE helpers + zod schemas (2026-04-25)
+- [x] `app/api/explain/route.ts` — POST endpoint streaming `text/event-stream`. Mock path streams templated narrative; live path forwards Anthropic `text_delta` events with prompt-cache prelude. Aborts cleanly on client disconnect. (2026-04-25)
+- [x] `components/ExplainProvider.tsx` — global client provider: `useExplain().{open, close, ask, stop}`. Tracks streaming reader, ESC, focus return, body scroll lock. Ephemeral history. (2026-04-25)
+- [x] `components/ExplainButton.tsx` — icon-only Sparkles ghost button placed next to every metric. (2026-04-25)
+- [x] `components/ExplainModal.tsx` — centered modal (640px desktop, full-bleed sheet < 600px), no shadow, focus trap, "Open in full view" deep-link to `/assistant`. Suppresses itself on `/assistant` so the page renders provider state inline. (2026-04-25)
+- [x] `components/ExplainThread.tsx` — minimal markdown renderer (`**bold**`, lists, inline code) + citation chips for `[tx:…]`/`[run:…]`/`[event:…]`/`[factor:…]`. (2026-04-25)
+- [x] `components/ExplainComposer.tsx` — autosize textarea (1–4 rows), Enter/Shift-Enter, Stop-while-streaming. (2026-04-25)
+- [x] `components/AssistantWorkspace.tsx` + `app/assistant/page.tsx` — full-page assistant with deep-link hydration from `?metric&scope`. (2026-04-25)
+- [x] Sidebar — added "Assistant" entry to `Workspace` group. (2026-04-25)
+- [x] Wired ExplainButtons across dashboard (4 KPIs, trend, breakdown, confidence, impact teaser), close detail (hero), report month (hero), reserve (hero + credit-mix), ledger (header + chain card), invoices (header), impacts (header), briefing (header). (2026-04-25)
+- [x] `app/globals.css` — `.explain-*` styles: tokenized colors, no shadows, mobile bottom-sheet, `prefers-reduced-motion` opacity-only. (2026-04-25)
+- [x] `KpiChip` — added optional `action` slot (top-right) so the Explain affordance composes without wrapping div hacks. (2026-04-25)

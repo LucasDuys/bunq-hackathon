@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Source_Code_Pro } from "next/font/google";
 import { Sidebar } from "@/components/Sidebar";
+import { ExplainProvider } from "@/components/ExplainProvider";
+import { ExplainModal } from "@/components/ExplainModal";
 import "./globals.css";
 
 const inter = Inter({
@@ -24,12 +26,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" className={`${inter.variable} ${sourceCodePro.variable} h-full`}>
       <body className="min-h-full flex">
-        <Sidebar />
-        <main className="layout-main flex-1 min-w-0 flex flex-col">
-          <div className="flex-1 w-full max-w-[1200px] mx-auto px-6 py-8">
-            {children}
-          </div>
-        </main>
+        <ExplainProvider>
+          <Sidebar />
+          <main className="layout-main flex-1 min-w-0 flex flex-col">
+            <div className="flex-1 w-full max-w-[1200px] mx-auto px-6 py-8">
+              {children}
+            </div>
+          </main>
+          <ExplainModal />
+        </ExplainProvider>
       </body>
     </html>
   );

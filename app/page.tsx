@@ -28,6 +28,7 @@ import {
 import { StartCloseButton } from "@/components/StartCloseButton";
 import { TrendChart } from "@/components/TrendChart";
 import { ClusterConstellation } from "@/components/ClusterConstellation";
+import { ExplainButton } from "@/components/ExplainButton";
 import { getActiveRunForOrg } from "@/lib/agent/onboarding";
 import {
   DEFAULT_ORG_ID,
@@ -259,6 +260,7 @@ export default async function Overview() {
           unit="CO₂e"
           trend={hasRun ? `±${Math.round((1 - confidence) * co2ePoint)} kg` : undefined}
           trendTone="neutral"
+          action={<ExplainButton metric="month-co2e" scope={{ month }} size="xs" />}
         />
         <KpiChip
           icon={<Sparkles className="h-[15px] w-[15px]" />}
@@ -267,6 +269,7 @@ export default async function Overview() {
           unit="%"
           trend={hasRun && confidence >= 0.85 ? "high" : hasRun ? "medium" : undefined}
           trendTone={confidence >= 0.85 ? "green" : "neutral"}
+          action={<ExplainButton metric="month-confidence" scope={{ month }} size="xs" />}
         />
         <KpiChip
           icon={<ShieldCheck className="h-[15px] w-[15px]" />}
@@ -274,12 +277,14 @@ export default async function Overview() {
           value={latestRun?.reserveEur ? fmtEur(latestRun.reserveEur, 0) : "—"}
           unit={latestRun?.approved ? "transferred" : "pending"}
           trendTone="green"
+          action={<ExplainButton metric="month-reserve" scope={{ month }} size="xs" />}
         />
         <KpiChip
           icon={<Zap className="h-[15px] w-[15px]" />}
           label="Transactions"
           value={String(txs.length)}
           unit={`of ${allTxs.length}`}
+          action={<ExplainButton metric="month-transactions" scope={{ month }} size="xs" />}
         />
       </div>
 
@@ -292,7 +297,10 @@ export default async function Overview() {
             <CodeLabel className="block mb-2">6-month footprint</CodeLabel>
             <CardTitle>Emissions over time</CardTitle>
           </div>
-          <Badge tone="default">kg CO₂e per month</Badge>
+          <div className="flex items-center gap-2">
+            <Badge tone="default">kg CO₂e per month</Badge>
+            <ExplainButton metric="trend" />
+          </div>
         </CardHeader>
         <CardBody>
           <TrendChart data={trend} />
@@ -309,6 +317,7 @@ export default async function Overview() {
                 <CodeLabel className="block mb-2">Spend by category</CodeLabel>
                 <CardTitle>Where the footprint comes from</CardTitle>
               </div>
+              <ExplainButton metric="month-co2e" scope={{ month }} />
             </CardHeader>
             <CardBody className="px-0 py-0">
               {/* Top-6 inline (matches old dashboard) */}
@@ -391,7 +400,10 @@ export default async function Overview() {
                         <CodeLabel className="block mb-2">Confidence per category</CodeLabel>
                         <CardTitle>How sure we are, by category</CardTitle>
                       </div>
-                      <CodeLabel>{month}</CodeLabel>
+                      <div className="flex items-center gap-2">
+                        <CodeLabel>{month}</CodeLabel>
+                        <ExplainButton metric="month-confidence" scope={{ month }} />
+                      </div>
                     </CardHeader>
                     <CardBody className="p-0">
                       <table className="w-full text-[13px]">
@@ -475,7 +487,11 @@ export default async function Overview() {
 
       {/* ─── Impact Insights teaser — dual lens ─── */}
       {impactCategories.length > 0 && (
-        <Link href="/impacts" className="block group">
+        <div className="relative">
+          <div className="absolute top-3 right-3 z-10">
+            <ExplainButton metric="impact-summary" size="xs" />
+          </div>
+          <Link href="/impacts" className="block group">
           <div className="ca-card ca-card--hover flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-3.5 min-w-0">
               <div
@@ -539,6 +555,7 @@ export default async function Overview() {
             </div>
           </div>
         </Link>
+        </div>
       )}
 
       {/* ─── Footer attribution ─── */}

@@ -3,6 +3,7 @@ import type { Quadrant } from "@/lib/agent/impacts";
 import { Card, CardBody, CodeLabel } from "@/components/ui";
 import type { MatrixPoint } from "@/components/ImpactMatrix";
 import { RunImpactResearch } from "@/components/RunImpactResearch";
+import { ExplainButton } from "@/components/ExplainButton";
 import type { PlannableAlternative } from "@/components/ScenarioPlanner";
 import {
   ImpactsWorkspace,
@@ -182,7 +183,10 @@ export default async function ImpactsPage() {
             Ember and vendor sustainability pages, judged by our green and cost LLM panels.
           </p>
         </div>
-        <RunImpactResearch hasData={hasData} />
+        <div className="flex items-center gap-2">
+          <ExplainButton metric="impact-summary" />
+          <RunImpactResearch hasData={hasData} />
+        </div>
       </div>
 
       {!hasData ? (

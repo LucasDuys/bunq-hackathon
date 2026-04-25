@@ -9,6 +9,7 @@ import {
   SectionDivider,
   Stat,
 } from "@/components/ui";
+import { ExplainButton } from "@/components/ExplainButton";
 import { DEFAULT_ORG_ID, getAllAudit } from "@/lib/queries";
 import { verifyChain } from "@/lib/audit/append";
 
@@ -82,6 +83,7 @@ export default async function LedgerPage() {
           <Badge tone={chain.valid ? "positive" : "danger"}>
             {chain.valid ? "Chain verified" : `Broken at id=${chain.brokenAtId}`}
           </Badge>
+          <ExplainButton metric="ledger" />
         </div>
       </div>
 
@@ -129,7 +131,10 @@ export default async function LedgerPage() {
       <Card>
         <CardHeader>
           <CardTitle>Chain events</CardTitle>
-          <CodeLabel>{events.length} rows</CodeLabel>
+          <div className="flex items-center gap-2">
+            <CodeLabel>{events.length} rows</CodeLabel>
+            <ExplainButton metric="ledger" />
+          </div>
         </CardHeader>
         <CardBody className="!px-0 !py-0">
           <div className="overflow-x-auto">

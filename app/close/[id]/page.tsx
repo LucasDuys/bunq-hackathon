@@ -25,6 +25,7 @@ import {
 import { ApproveButton, QuestionCard } from "@/components/CloseActions";
 import { CloseChatStream } from "@/components/CloseChatStream";
 import { RerunCloseButton } from "@/components/RerunCloseButton";
+import { ExplainButton } from "@/components/ExplainButton";
 import { fmtEur, fmtKg } from "@/lib/utils";
 import {
   DEFAULT_ORG_ID,
@@ -346,6 +347,7 @@ export default async function CloseRunPage({
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            <ExplainButton metric="close-summary" scope={{ runId: id }} />
             {!isApproved && proposed && unansweredCount === 0 && (
               <ApproveButton runId={id} amountEur={reserveAmount} />
             )}

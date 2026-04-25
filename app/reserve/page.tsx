@@ -11,6 +11,8 @@ import {
   SectionDivider,
   Stat,
 } from "@/components/ui";
+import { ExplainButton } from "@/components/ExplainButton";
+import { currentMonth } from "@/lib/queries";
 import {
   DEFAULT_ORG_ID,
   getCreditProjects,
@@ -64,7 +66,8 @@ export default async function ReservePage() {
             carbon credit purchases once you approve a run.
           </p>
         </div>
-        <div className="shrink-0 mt-2">
+        <div className="shrink-0 mt-2 flex items-center gap-2">
+          <ExplainButton metric="month-reserve" scope={{ month: latest?.month ?? currentMonth() }} />
           <Link href="/">
             <Button variant="primary" size="md">
               Run carbon close
@@ -176,7 +179,10 @@ export default async function ReservePage() {
       <Card>
         <CardHeader>
           <CardTitle>Recommended credit mix</CardTitle>
-          <Badge tone="positive">EU · ≥ 70% removal</Badge>
+          <div className="flex items-center gap-2">
+            <Badge tone="positive">EU · ≥ 70% removal</Badge>
+            <ExplainButton metric="month-reserve" scope={{ month: latest?.month ?? currentMonth() }} />
+          </div>
         </CardHeader>
         <CardBody className="!px-0 !py-0">
           {mix.length === 0 && projects.length === 0 && (
