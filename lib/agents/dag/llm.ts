@@ -136,7 +136,12 @@ export const callAgentWithTools = async (opts: ToolCallOptions): Promise<ToolRun
     messages: [userMessage],
   });
 
-  const finalMessage = await runner.done();
+  // SDK 0.91.0 quirk: BetaToolRunner.done() returns the completion promise
+  // without consuming the async iterator, so the promise never resolves and
+  // Node exits cleanly with code 0. runUntilDone() consumes the iterator
+  // first via `for await (const _ of this)` then awaits completion. See
+  // node_modules/@anthropic-ai/sdk/.../BetaToolRunner.ts:369-396.
+  const finalMessage = await runner.runUntilDone();
   const usage = (finalMessage.usage ?? {}) as {
     input_tokens?: number;
     output_tokens?: number;

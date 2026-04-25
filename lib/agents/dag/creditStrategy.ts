@@ -337,7 +337,9 @@ export async function run(input: CreditStrategyInput, ctx: AgentContext): Promis
         "",
         "Return strict JSON: { results: [{ cluster_id, credit_type, tax_treatment, cfo_summary, verification_needed, recommendation_status }] }.",
         "Keep credit_type consistent with the supplied `credit.type` unless you have strong evidence otherwise.",
-        "recommendation_status MUST be EXACTLY one of: strong_financial_case | positive_with_tax_incentive | positive_only_if_policy_required | not_financially_positive | requires_tax_verification | insufficient_data. Do not paraphrase or invent values.",
+        "Each result MUST match this skeleton EXACTLY (every field, correct type, no booleans where arrays are expected, no paraphrased enums):",
+        'Skeleton: {"cluster_id":"string|null","credit_type":"removal_technical|removal_nature|reduction|mixed|unknown","tax_treatment":"confirmed|scenario_only|not_applicable|requires_verification","cfo_summary":"string (≤400 chars)","verification_needed":["string","string"],"recommendation_status":"strong_financial_case|positive_with_tax_incentive|positive_only_if_policy_required|not_financially_positive|requires_tax_verification|insufficient_data"}',
+        "verification_needed MUST be an ARRAY of short strings (e.g. [\"Confirm EIA eligibility\", \"Validate scope-3 boundary\"]). NEVER a boolean. Empty array [] if no verification steps apply.",
       ].join("\n"),
       maxTokens: 20000,
     });

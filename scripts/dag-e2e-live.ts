@@ -27,18 +27,16 @@ process.on("exit", (code) => {
   process.stderr.write(`[e2e] process.exit fired with code ${code}\n`);
 });
 // Cap research scope so a single E2E run doesn't fire 360 web_search calls.
-// Baseline produces ~20 priority targets; 3 clusters proves the pipeline.
-process.env.RESEARCH_MAX_CLUSTERS = process.env.RESEARCH_MAX_CLUSTERS ?? "3";
-process.env.RESEARCH_MAX_SEARCHES_PER_CLUSTER = process.env.RESEARCH_MAX_SEARCHES_PER_CLUSTER ?? "2";
+// Baseline produces ~20 priority targets; 2 clusters with 1 search each keeps
+// total wall time reasonable while exercising the live web_search path.
+process.env.RESEARCH_MAX_CLUSTERS = process.env.RESEARCH_MAX_CLUSTERS ?? "2";
+process.env.RESEARCH_MAX_SEARCHES_PER_CLUSTER = process.env.RESEARCH_MAX_SEARCHES_PER_CLUSTER ?? "1";
 
-// KNOWN ISSUE — Anthropic SDK 0.91.0's `client.beta.messages.toolRunner({...}).done()`
-// silently exits the Node process (exit code 0, no error, no stack) when used
-// with the native `web_search_20250305` tool. Reproduced via
-// scripts/dag-debug-tool.ts. Plain `callAgent` (no tools) works fine, so the
-// other 6 LLM agents run live — only research falls back to the deterministic
-// template path. This keeps the E2E observable end-to-end. Override with
-// `RESEARCH_DISABLED=0` once the SDK regression is fixed (or pinned forward).
-process.env.RESEARCH_DISABLED = process.env.RESEARCH_DISABLED ?? "1";
+// Research is now LIVE by default (the SDK 0.91.0 toolRunner silent-exit bug
+// was resolved by switching `runner.done()` -> `runner.runUntilDone()` in
+// lib/agents/dag/llm.ts). Override with RESEARCH_DISABLED=1 if you want the
+// deterministic template fallback for cost/latency reasons.
+process.env.RESEARCH_DISABLED = process.env.RESEARCH_DISABLED ?? "0";
 
 const TIMESTAMP = new Date().toISOString().replace(/[:.]/g, "-");
 const REPORTS_DIR = join(process.cwd(), ".forge", "reports");
@@ -204,8 +202,9 @@ const main = async () => {
   lines.push(`- **runId**: \`${result.runId}\``);
   lines.push(`- **Total wall time**: ${fmtMs(totalMs)}`);
   lines.push(`- **Org / month**: ${ORG_ID} / ${MONTH}`);
-  lines.push(`- **Mode**: LIVE Anthropic for 6/7 LLM agents; research forced to template path (see "Known issue" below).`);
-  lines.push(`- **Research scope**: max ${process.env.RESEARCH_MAX_CLUSTERS} clusters × ${process.env.RESEARCH_MAX_SEARCHES_PER_CLUSTER} searches each (capped, but unused while RESEARCH_DISABLED=1)`);
+  const researchLive = process.env.RESEARCH_DISABLED !== "1";
+  lines.push(`- **Mode**: LIVE Anthropic for ${researchLive ? "all 7" : "6/7"} LLM agents${researchLive ? " (research uses native web_search)" : "; research forced to template path"}.`);
+  lines.push(`- **Research scope**: max ${process.env.RESEARCH_MAX_CLUSTERS} clusters × ${process.env.RESEARCH_MAX_SEARCHES_PER_CLUSTER} searches each${researchLive ? "" : " (capped, but unused while RESEARCH_DISABLED=1)"}`);
   lines.push(`- **Audit chain**: ${verdict.valid ? `valid (${(verdict as { count?: number }).count ?? "?"} events)` : `BROKEN at id ${(verdict as { brokenAtId?: number }).brokenAtId}`}`);
   lines.push(`- **Audit events emitted by runDag**: ${auditEvents.length}`);
   let totalIn = 0;
@@ -390,13 +389,13 @@ const main = async () => {
   lines.push(`- Web-search spend estimate: €${result.research.summary.web_search_spend_eur.toFixed(4)}.`);
   lines.push(`- Compare future live runs against this report by diffing the headline numbers + per-agent latency table.`);
   lines.push("");
-  lines.push("## Known issue — research toolRunner crash");
+  lines.push("## Resolved issue — research toolRunner crash");
   lines.push("");
-  lines.push("Anthropic SDK 0.91.0's `client.beta.messages.toolRunner({...}).done()` silently exits the Node process (exit code 0, no error, no stack) when used with the native `web_search_20250305` tool. Reproduced in `scripts/dag-debug-tool.ts`: a single-iteration call dies before producing any output.");
+  lines.push("**Status: RESOLVED.** Anthropic SDK 0.91.0's `BetaToolRunner.done()` returns its `#completion` promise without consuming the async iterator (see `node_modules/@anthropic-ai/sdk/.../BetaToolRunner.ts:369-371`). The promise never resolves, the event loop drains, Node exits cleanly with code 0 and no output.");
   lines.push("");
-  lines.push("Diagnosis: `callAgent` (plain JSON-only Sonnet, no toolRunner) returns ~1s with proper output. The crash is specific to the toolRunner + native server-tool combination.");
+  lines.push("Fix: swap `await runner.done()` → `await runner.runUntilDone()` at `lib/agents/dag/llm.ts:139`. `runUntilDone()` consumes the iterator first via `for await (const _ of this)` then awaits completion. One-line change, no SDK upgrade needed.");
   lines.push("");
-  lines.push("Workaround for this E2E: `RESEARCH_DISABLED=1` forces research into the deterministic template-fallback path. The other 6 LLM agents (greenAlt, costSavings, greenJudge, costJudge, creditStrategy, executiveReport) still run live against Sonnet. Once the SDK regression is fixed (or pinned forward), unset `RESEARCH_DISABLED` and re-run for a fully-live baseline.");
+  lines.push("Use `RESEARCH_DISABLED=1` only if you want the deterministic template fallback for cost or latency reasons.");
   lines.push("");
 
   log("[8/8] writing report...");
