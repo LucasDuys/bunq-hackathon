@@ -32,6 +32,7 @@ import S10 from "./scenes/S10";
 import S11 from "./scenes/S11";
 import S11R from "./scenes/S11R";
 import S11P from "./scenes/S11P";
+import S11Q from "./scenes/S11Q";
 import S12 from "./scenes/S12";
 import S12B from "./scenes/S12B";
 import S13 from "./scenes/S13";
@@ -39,6 +40,8 @@ import S13B from "./scenes/S13B";
 import S13C from "./scenes/S13C";
 import S14 from "./scenes/S14";
 import S15 from "./scenes/S15";
+import S15B from "./scenes/S15B";
+import S15C from "./scenes/S15C";
 import S16 from "./scenes/S16";
 
 // Order MUST match TIMELINE in data.ts.
@@ -46,9 +49,10 @@ const SCENES = [
   S01, S01B, S01C, S01D, S02,
   S03, S04, S05, S06,
   S10, S11,
-  S11R, S11P,
+  S11R, S11P, S11Q,
   S12, S12B, S13, S13B, S13C,
   S14, S15,
+  S15B, S15C,
   S16,
 ];
 

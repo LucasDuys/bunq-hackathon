@@ -1,7 +1,9 @@
 import { eq, and, desc, gte, lt, sql } from "drizzle-orm";
 import { db, closeRuns, auditEvents, creditPurchases, orgs, transactions, emissionEstimates } from "@/lib/db/client";
 import { verifyChain } from "./append";
-import { monthBounds } from "@/lib/queries";
+import { monthBounds, getTransactionsForMonth } from "@/lib/queries";
+import { estimateEmission } from "@/lib/emissions/estimate";
+import { calculateTransactionSavings, rollupMonthlySavings } from "@/lib/tax";
 
 export interface ProofMonth {
   month: string;
@@ -18,6 +20,13 @@ export interface CategoryBreakdown {
   txCount: number;
 }
 
+export interface SavingsOverview {
+  totalPotentialEur: number;
+  annualProjection: number;
+  topSchemes: { name: string; totalEur: number }[];
+  topCategories: { category: string; savingsEur: number; co2eKg: number }[];
+}
+
 export interface ProofStats {
   org: { id: string; name: string; createdAt: number };
   totalCo2eKg: number;
@@ -30,6 +39,7 @@ export interface ProofStats {
   avgConfidence: number;
   closedMonths: ProofMonth[];
   categoryBreakdown: CategoryBreakdown[];
+  savings: SavingsOverview;
   chainIntegrity: { valid: boolean; eventCount: number };
   latestHash: string;
   memberSince: string;
@@ -148,6 +158,56 @@ export function getProofStats(orgId: string): ProofStats | null {
   const totalSpendEur = categoryBreakdown.reduce((s, c) => s + c.spendEur, 0);
   const totalTxCount = categoryBreakdown.reduce((s, c) => s + c.txCount, 0);
 
+  // Compute savings across all closed months
+  let totalPotentialSavings = 0;
+  const schemeAgg = new Map<string, { name: string; eur: number }>();
+  const catSavingsAgg = new Map<string, { savingsEur: number; co2eKg: number }>();
+  for (const m of closedMonths) {
+    const txs = getTransactionsForMonth(orgId, m.month);
+    const summaries = txs
+      .filter((tx) => tx.category && tx.amountCents > 0)
+      .map((tx) => {
+        const est = estimateEmission({
+          category: tx.category!,
+          subCategory: tx.subCategory,
+          amountEur: tx.amountCents / 100,
+          classifierConfidence: tx.categoryConfidence ?? 0.5,
+        });
+        return calculateTransactionSavings({
+          category: tx.category!,
+          subCategory: tx.subCategory,
+          amountEur: tx.amountCents / 100,
+          estimate: est,
+        });
+      });
+    const rollup = rollupMonthlySavings(m.month, summaries);
+    totalPotentialSavings += rollup.totalPotentialSavingsEur;
+    for (const sv of rollup.byScheme) {
+      const prev = schemeAgg.get(sv.schemeId) ?? { name: sv.schemeName, eur: 0 };
+      prev.eur += sv.totalEur;
+      schemeAgg.set(sv.schemeId, prev);
+    }
+    for (const cv of rollup.byCategory) {
+      const prev = catSavingsAgg.get(cv.category) ?? { savingsEur: 0, co2eKg: 0 };
+      prev.savingsEur += cv.potentialSavingsEur;
+      prev.co2eKg += cv.co2eKg;
+      catSavingsAgg.set(cv.category, prev);
+    }
+  }
+
+  const savings: SavingsOverview = {
+    totalPotentialEur: totalPotentialSavings,
+    annualProjection: totalPotentialSavings * (12 / Math.max(closedMonths.length, 1)),
+    topSchemes: [...schemeAgg.values()]
+      .sort((a, b) => b.eur - a.eur)
+      .slice(0, 5)
+      .map((sv) => ({ name: sv.name, totalEur: sv.eur })),
+    topCategories: [...catSavingsAgg.entries()]
+      .sort((a, b) => b[1].savingsEur - a[1].savingsEur)
+      .slice(0, 5)
+      .map(([cat, v]) => ({ category: cat, savingsEur: v.savingsEur, co2eKg: v.co2eKg })),
+  };
+
   // 1 tCO₂ ≈ 50 trees absorbing per year, ≈ 1 transatlantic flight, ≈ 6000 km driven
   const tonnes = totalCo2eKg / 1000;
 
@@ -163,6 +223,7 @@ export function getProofStats(orgId: string): ProofStats | null {
     avgConfidence: closedMonths.length > 0 ? confidenceSum / closedMonths.length : 0,
     closedMonths,
     categoryBreakdown,
+    savings,
     chainIntegrity: {
       valid: chain.valid,
       eventCount: "count" in chain ? (chain.count as number) : 0,

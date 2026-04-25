@@ -714,6 +714,461 @@ function BunqSubAccountsScaled() {
   );
 }
 
+// ─── CSRD report stage — the report writes itself ───────────────────────
+//
+// Mirrors the deck's standard split layout (caption left, animation right).
+// The right side is a stylised CSRD ESRS E1 source PDF that visually
+// assembles itself: cover band → KPI tiles → methodology → recommendations
+// → audit-chain valid badge → signature line. Colour palette matches the
+// real `lib/reports/render-briefing.tsx` output (forest-950 header band +
+// mint-500 accent + paper body) so the deck shows the actual artifact.
+//
+// Savings stats sit under the caption on the left so the audience reads
+// the numerical case (6–12 weeks of staff time, €15–40k consultant fees,
+// −80% assembly hours) at the same time as the report assembles.
+
+export function CsrdReportFrame({
+  visible,
+  caption,
+}: {
+  visible: boolean;
+  caption: { eyebrow: string; headline: string; sub?: string };
+}) {
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          key="csrd-report"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, transition: { duration: 0.18, ease: "easeIn" } }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="pointer-events-none fixed inset-0 z-30"
+        >
+          <div className="grid h-full w-full grid-cols-12 items-stretch gap-6 px-12 py-12">
+            {/* Left — caption + savings callouts */}
+            <motion.div
+              className="col-span-5 flex flex-col justify-center gap-5"
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
+            >
+              <span className="font-mono text-sm uppercase tracking-[0.22em] text-[var(--brand-green)]">
+                {caption.eyebrow}
+              </span>
+              <h1 className="max-w-[24ch] text-balance text-4xl font-normal leading-[1.05] tracking-tight text-[var(--fg-primary)] md:text-5xl">
+                {caption.headline}
+              </h1>
+              {caption.sub && (
+                <p className="max-w-[44ch] text-balance text-base text-[var(--fg-secondary)] md:text-lg">
+                  {caption.sub}
+                </p>
+              )}
+              <div className="mt-4 flex flex-col gap-3">
+                <SavingCallout
+                  label="Q1 staff time"
+                  value="6–12 weeks → 1 click"
+                  delay={0.7}
+                />
+                <SavingCallout
+                  label="Consultant fees avoided"
+                  value="€15–40k / yr"
+                  delay={0.95}
+                />
+                <SavingCallout
+                  label="Assembly hours"
+                  value="−80%"
+                  delay={1.2}
+                />
+              </div>
+            </motion.div>
+
+            {/* Right — animated PDF preview */}
+            <motion.div
+              className="col-span-7 flex h-full items-center justify-center"
+              initial={{ opacity: 0, y: 60, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.7, ease: [0.32, 0.72, 0.34, 1] }}
+            >
+              <CsrdReportPreview />
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function SavingCallout({
+  label,
+  value,
+  delay,
+}: {
+  label: string;
+  value: string;
+  delay: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -10 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut", delay }}
+      className="flex items-baseline gap-3 border-l-2 border-[var(--brand-green)] py-1 pl-3"
+    >
+      <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--fg-muted)]">
+        {label}
+      </span>
+      <span className="text-base font-medium tabular-nums text-[var(--brand-green)] md:text-lg">
+        {value}
+      </span>
+    </motion.div>
+  );
+}
+
+// ── PDF preview ──
+// Stylised facsimile of the real CSRD source PDF. Uses the same bunq Easy
+// Green palette as `lib/reports/render-briefing.tsx`. Sections fade in over
+// ~4 seconds in document order so the eye is led top-to-bottom as if the
+// report is being assembled live.
+
+const REPORT_COLOR = {
+  forest950: "#002E1B",
+  mint500: "#00ff95",
+  mint200: "#cdffad",
+  paper: "#fafaf9",
+  surface: "#ffffff",
+  ink: "#0e0f0c",
+  fgSecondary: "#454745",
+  fgMuted: "#737373",
+  border: "rgba(14,15,12,0.12)",
+} as const;
+
+function CsrdReportPreview() {
+  const ms = useElapsedMs();
+  // Each section has its own delay; reveal interpolates 0→1 over 350ms.
+  const reveal = (delay: number) =>
+    Math.max(0, Math.min(1, (ms - delay) / 350));
+
+  return (
+    <div
+      style={{
+        width: 480,
+        height: 620,
+        background: REPORT_COLOR.paper,
+        color: REPORT_COLOR.ink,
+        borderRadius: 10,
+        // Drop shadow exception (DESIGN.md): simulated physical document.
+        filter:
+          "drop-shadow(0 30px 50px rgba(0, 0, 0, 0.55)) drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35))",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        fontFamily: "var(--font-inter), system-ui, sans-serif",
+      }}
+    >
+      {/* Forest header band — matches render-briefing.tsx §header */}
+      <div
+        style={{
+          background: REPORT_COLOR.forest950,
+          padding: "16px 28px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          opacity: reveal(0),
+          transition: "opacity 200ms ease-out",
+        }}
+      >
+        <div>
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 700,
+              color: REPORT_COLOR.mint500,
+              letterSpacing: "-0.3px",
+            }}
+          >
+            CARBO
+          </div>
+          <div
+            style={{
+              fontSize: 8,
+              color: REPORT_COLOR.mint200,
+              letterSpacing: "0.6px",
+              textTransform: "uppercase",
+              marginTop: 2,
+            }}
+          >
+            CSRD ESRS E1 SOURCE · auto-generated by bunq
+          </div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 9, color: REPORT_COLOR.mint200 }}>
+            Acme BV
+          </div>
+          <div
+            style={{
+              fontSize: 8,
+              color: REPORT_COLOR.mint200,
+              letterSpacing: "0.4px",
+            }}
+          >
+            close.completed · 2026-04-01
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div
+        style={{
+          padding: "22px 28px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 18,
+          flex: 1,
+        }}
+      >
+        {/* Hero period — paragraph 1 of the cover */}
+        <div style={{ opacity: reveal(300), transition: "opacity 200ms ease-out" }}>
+          <div
+            style={{
+              fontSize: 26,
+              fontWeight: 600,
+              letterSpacing: "-0.02em",
+              lineHeight: 1.05,
+            }}
+          >
+            March 2026
+          </div>
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 11,
+              color: REPORT_COLOR.fgSecondary,
+            }}
+          >
+            Monthly carbon close · ESRS E1-6 + E1-7
+          </div>
+          <div
+            style={{
+              marginTop: 10,
+              height: 2,
+              width: 56,
+              background: REPORT_COLOR.mint500,
+            }}
+          />
+        </div>
+
+        {/* KPI tiles — three across */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 8,
+            opacity: reveal(900),
+            transition: "opacity 200ms ease-out",
+          }}
+        >
+          <KpiTile label="Baseline" value="240" unit="tCO₂e / yr" />
+          <KpiTile label="After Carbo" value="150" unit="tCO₂e / yr" accent />
+          <KpiTile label="Reduction" value="−37.5" unit="%" accent />
+        </div>
+
+        {/* Methodology */}
+        <ReportSection
+          number="1.0"
+          title="Methodology"
+          delay={1500}
+          reveal={reveal}
+        >
+          Spend-based factors per ESRS E1-6, GHG Scope 3 Cat 1.
+          Calibrated confidence 0.42–0.94 across 61 transactions.
+          Sources: DEFRA 2024 · ADEME · Exiobase.
+        </ReportSection>
+
+        {/* Recommendations */}
+        <ReportSection
+          number="2.0"
+          title="Switch recommendations"
+          delay={2100}
+          reveal={reveal}
+        >
+          5 approved · 1 with caveats · 1 rejected
+          (ArcelorMittal — zero source citations, code-overridden)
+        </ReportSection>
+
+        {/* Audit chain badge */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            opacity: reveal(2700),
+            transition: "opacity 200ms ease-out",
+          }}
+        >
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 4,
+              background: REPORT_COLOR.mint500,
+              boxShadow: `0 0 10px ${REPORT_COLOR.mint500}`,
+            }}
+          />
+          <span
+            style={{
+              fontSize: 10,
+              fontFamily:
+                "var(--font-source-code-pro), ui-monospace, monospace",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+              color: REPORT_COLOR.ink,
+            }}
+          >
+            SHA-256 audit chain · valid
+          </span>
+        </div>
+
+        {/* Signature line */}
+        <div
+          style={{
+            marginTop: "auto",
+            opacity: reveal(3300),
+            transition: "opacity 200ms ease-out",
+          }}
+        >
+          <div
+            style={{
+              height: 1,
+              background: REPORT_COLOR.ink,
+              width: "55%",
+            }}
+          />
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 9,
+              color: REPORT_COLOR.fgMuted,
+              fontFamily:
+                "var(--font-source-code-pro), ui-monospace, monospace",
+              letterSpacing: "0.18em",
+              textTransform: "uppercase",
+            }}
+          >
+            Sustainability lead — limited assurance review
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KpiTile({
+  label,
+  value,
+  unit,
+  accent = false,
+}: {
+  label: string;
+  value: string;
+  unit: string;
+  accent?: boolean;
+}) {
+  return (
+    <div
+      style={{
+        padding: "10px 12px",
+        borderRadius: 6,
+        background: accent ? "rgba(0, 255, 149, 0.10)" : REPORT_COLOR.surface,
+        border: accent
+          ? "1px solid rgba(0, 255, 149, 0.45)"
+          : `1px solid ${REPORT_COLOR.border}`,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 7.5,
+          fontFamily:
+            "var(--font-source-code-pro), ui-monospace, monospace",
+          letterSpacing: "1.4px",
+          textTransform: "uppercase",
+          color: REPORT_COLOR.fgMuted,
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          marginTop: 6,
+          fontSize: 22,
+          fontWeight: 600,
+          fontVariantNumeric: "tabular-nums",
+          color: accent ? "#005d36" : REPORT_COLOR.ink,
+          letterSpacing: "-0.01em",
+          lineHeight: 1,
+        }}
+      >
+        {value}
+      </div>
+      <div
+        style={{
+          marginTop: 3,
+          fontSize: 9,
+          color: REPORT_COLOR.fgSecondary,
+        }}
+      >
+        {unit}
+      </div>
+    </div>
+  );
+}
+
+function ReportSection({
+  number,
+  title,
+  delay,
+  reveal,
+  children,
+}: {
+  number: string;
+  title: string;
+  delay: number;
+  reveal: (delay: number) => number;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        opacity: reveal(delay),
+        transition: "opacity 200ms ease-out",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 9,
+          fontFamily:
+            "var(--font-source-code-pro), ui-monospace, monospace",
+          color: "#005d36",
+          letterSpacing: "0.20em",
+          textTransform: "uppercase",
+        }}
+      >
+        {number} · {title}
+      </div>
+      <div
+        style={{
+          marginTop: 4,
+          fontSize: 10.5,
+          lineHeight: 1.45,
+          color: REPORT_COLOR.fgSecondary,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 // ─── Stage 10 — Ask (closing) ────────────────────────────────────────────
 export function AskFrame({ visible }: { visible: boolean }) {
   // Top recommendations get listed in the closing frame so the pitch ends

@@ -243,7 +243,7 @@ curl -X POST http://localhost:3000/api/impacts/research \
 | 6 | **`/ledger`** | SHA-256 chain renders a live "Chain valid" badge. |
 | 7 | **`/impacts`** | Cost-vs-carbon 2×2 matrix of switch recommendations. |
 | 8 | **`/presentation`** | Interactive scroll-sync deck of the DAG. |
-| 9 | **`/demo-deck`** | 13-stage morphing canvas — Hook → Ingest → OCR → Cluster → Agents → DAG → Verdicts → Matrix → Reserve → Scale → CO₂ → Ask. `Space` to advance, `R` to reset. |
+| 9 | **`/demo-deck`** | 14-stage morphing canvas — Hook → Ingest → OCR → Cluster → Agents → DAG → Verdicts → Matrix → Reserve → CSRD report → Scale → CO₂ → Ask. `Space` to advance, `R` to reset. |
 
 ---
 

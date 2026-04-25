@@ -12,11 +12,11 @@ import type { StageConfig } from "./stages";
 // slide without scrolling or zooming. text-4xl md:text-5xl headlines.
 
 export function Caption({ stage }: { stage: StageConfig }) {
-  // The DAG stage and the receipt-OCR stage both own their captions internally
-  // (split layout — text on the left, animation on the right) so the top
-  // caption strip is suppressed for those stages.
+  // Stages that render their own internal caption (split layout — text on
+  // the left, animation on the right) suppress the top caption strip.
   if (stage.frames.dag) return null;
   if (stage.frames.receiptOcr) return null;
+  if (stage.frames.csrdReport) return null;
   return (
     <div className="pointer-events-none fixed left-0 right-0 top-0 z-30 flex flex-col items-center px-12 pt-10 md:pt-14">
       <AnimatePresence mode="wait">
