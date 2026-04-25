@@ -134,7 +134,17 @@ const readCache = (key: string): ResearchedAlternative[] | null => {
   const age = Math.floor(Date.now() / 1000) - row.createdAt;
   if (age > row.ttlSec) return null;
   try {
-    return JSON.parse(row.alternativesJson) as ResearchedAlternative[];
+    const alts = JSON.parse(row.alternativesJson) as ResearchedAlternative[];
+    // R010 / T006 — re-derive `logoUrl` on read for cache rows written before
+    // the field existed. logoUrl is a deterministic function of `domain`, so
+    // back-filling on read costs nothing and keeps consumers from having to
+    // null-guard a field the type contract says is always present.
+    for (const a of alts) {
+      for (const s of a.sources) {
+        if (!s.logoUrl && s.domain) s.logoUrl = logoFor(s.domain);
+      }
+    }
+    return alts;
   } catch {
     return null;
   }
@@ -155,6 +165,11 @@ const orgNeutralizeForCache = (alts: ResearchedAlternative[]): ResearchedAlterna
       url: s.domain ? `https://${s.domain}` : s.url,
       snippet: null,
       domain: s.domain,
+      // R010 / T006 — `logoUrl` is a deterministic function of `domain`, which
+      // is itself the org-neutral identifier. Re-deriving on cache write keeps
+      // the field consistent with the post-neutralization domain (and means
+      // older cache rows without the field are repaired on the next write).
+      logoUrl: s.domain ? logoFor(s.domain) : s.logoUrl,
       fetched_at: s.fetched_at,
     })),
   }));
@@ -234,6 +249,13 @@ const domainOf = (url: string): string => {
   }
 };
 
+// R010 / T006 — deterministic vendor-logo URL keyed off `domain`. We never
+// fetch the favicon at runtime: the executive matrix's <img> tag does that
+// once on render. Keeping the pattern centralised means the matcher in
+// costSavings/greenAlternatives does not need its own copy of the template.
+const logoFor = (domain: string): string =>
+  `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+
 // -----------------------------------------------------------------------------
 // Fallback ladder — deterministic synthesis from template library when live search
 // is unavailable or returns zero results. Provenance reflects this honestly.
@@ -254,13 +276,17 @@ const templateToResearched = (
   confidence: t.confidence,
   feasibility: mapTemplateFeasibility(t.feasibility),
   geography: "EU",
-  sources: t.sources.map((s) => ({
-    title: s.title,
-    url: s.url,
-    snippet: null,
-    domain: domainOf(s.url),
-    fetched_at: Math.floor(Date.now() / 1000),
-  })),
+  sources: t.sources.map((s) => {
+    const domain = domainOf(s.url);
+    return {
+      title: s.title,
+      url: s.url,
+      snippet: null,
+      domain,
+      logoUrl: logoFor(domain),
+      fetched_at: Math.floor(Date.now() / 1000),
+    };
+  }),
   provenance,
   freshness_days: 0,
   flags: t.simulated ? ["single_source_only"] : [],
@@ -380,13 +406,17 @@ const researchOneCluster = async (
       ) {
         return "SKIPPED: alternative matches incumbent; did not record.";
       }
-      const sources: EvidenceSource[] = args.source_urls.map((url) => ({
-        title: url,
-        url,
-        snippet: null,
-        domain: domainOf(url),
-        fetched_at: Math.floor(Date.now() / 1000),
-      }));
+      const sources: EvidenceSource[] = args.source_urls.map((url) => {
+        const domain = domainOf(url);
+        return {
+          title: url,
+          url,
+          snippet: null,
+          domain,
+          logoUrl: logoFor(domain),
+          fetched_at: Math.floor(Date.now() / 1000),
+        };
+      });
       const id = sha256(`${target.cluster_id}|${args.name}|${args.vendor ?? ""}`).slice(0, 16);
       const alt: ResearchedAlternative = {
         id,

@@ -73,11 +73,17 @@ export interface PriorityTarget {
 }
 
 // plans/matrix-research.md §6 — evidence-backed alternatives from the Research Agent.
+// R010 / T006 — `logoUrl` is a deterministic Google s2 favicon URL keyed off
+// `domain`. We populate it in code after the LLM returns (never asked from the
+// model) so the executive matrix can render real vendor logos with no extra
+// network calls. Survives `orgNeutralizeForCache` since logoUrl depends solely
+// on the already-org-neutral `domain` field.
 export interface EvidenceSource {
   title: string;
   url: string;
   snippet: string | null;
   domain: string;
+  logoUrl: string;
   fetched_at: number; // unix sec
 }
 
@@ -160,6 +166,11 @@ export interface GreenAltOutput {
       source: "api" | "emission_factor_library" | "historical_data" | "simulated" | "assumption";
       confidence: Confidence;
       comparability_notes: string;
+      // R010 / T006 — populated in code by case-insensitive substring match of
+      // `alternative_name` (when the alt is a product/supplier) against the
+      // research sources for the same cluster. Null when no match.
+      suggested_vendor_domain: string | null;
+      suggested_vendor_logo_url: string | null;
     }>;
     recommendation_status:
       | "recommend_switch"
@@ -212,6 +223,11 @@ export interface CostSavingsOutput {
       business_risk: "low" | "medium" | "high";
       carbon_effect: "lower" | "neutral" | "higher" | "unknown";
       notes: string;
+      // R010 / T006 — populated in code by case-insensitive substring match of
+      // `option_name` against the research sources for the same cluster. Null
+      // when the option is not a vendor switch or no matching source is found.
+      suggested_vendor_domain: string | null;
+      suggested_vendor_logo_url: string | null;
     }>;
     recommendation_status:
       | "recommend_switch"

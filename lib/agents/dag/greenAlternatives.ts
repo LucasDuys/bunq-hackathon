@@ -52,6 +52,11 @@ const ALT_SCHEMA = z.object({
   source: z.enum(["api", "emission_factor_library", "historical_data", "simulated", "assumption"]),
   confidence: z.number().min(0).max(1),
   comparability_notes: z.string(),
+  // R010 / T006 — vendor-logo enrichment, populated by the post-parse pass
+  // (never asked from the LLM). Defaults to null so live JSON without these
+  // fields parses cleanly; the matcher fills them in code.
+  suggested_vendor_domain: z.string().nullable().default(null),
+  suggested_vendor_logo_url: z.string().nullable().default(null),
 });
 
 const RESULT_SCHEMA = z.object({
@@ -111,7 +116,67 @@ const buildCandidates = (baseline: BaselineOutput, pool: ResearchedPool | undefi
     .filter((c) => c.templates.length > 0 || c.researched.length > 0);
 };
 
-const templateToAlternative = (t: AltTemplate, baseKg: number) => ({
+type Alt = z.infer<typeof ALT_SCHEMA>;
+
+// R010 / T006 — case-insensitive substring match between an alternative name
+// and the per-cluster research sources. Mirrors `costSavings::matchVendorToSource`
+// — keeping the helper local rather than shared so neither agent has to import
+// from the other (they run in parallel and any cross-import would create
+// avoidable coupling). Sources passed in MUST be the same cluster's pool —
+// matching against the global pool produces false-positive logos from
+// unrelated categories.
+const matchVendorToSource = (
+  vendorName: string | null,
+  sources: { domain: string; title: string; logoUrl: string }[],
+): { domain: string; logoUrl: string } | null => {
+  if (!vendorName) return null;
+  const v = vendorName.toLowerCase();
+  for (const s of sources) {
+    if (s.domain) {
+      const head = s.domain.split(".")[0].toLowerCase();
+      if (v.includes(head) || s.domain.toLowerCase().includes(v)) {
+        return { domain: s.domain, logoUrl: s.logoUrl };
+      }
+    }
+    if (s.title && s.title.toLowerCase().includes(v)) {
+      return { domain: s.domain, logoUrl: s.logoUrl };
+    }
+  }
+  return null;
+};
+
+const collectClusterSources = (
+  researched: ResearchedAlternative[],
+): { domain: string; title: string; logoUrl: string }[] => {
+  const out: { domain: string; title: string; logoUrl: string }[] = [];
+  for (const a of researched) {
+    for (const s of a.sources) {
+      out.push({ domain: s.domain, title: s.title, logoUrl: s.logoUrl });
+    }
+  }
+  return out;
+};
+
+// R010 / T006 — only product/supplier alternatives carry a meaningful "vendor"
+// concept. Behavior + travel_mode + procurement_policy alternatives are
+// process changes, not switches to a named brand, so we leave their logo
+// fields null even when a research source happens to substring-match.
+const enrichGreenAltsWithLogos = (alts: Alt[], researched: ResearchedAlternative[]): void => {
+  const sources = collectClusterSources(researched);
+  for (const a of alts) {
+    const isVendorish = a.alternative_type === "product" || a.alternative_type === "supplier";
+    if (!isVendorish) {
+      a.suggested_vendor_domain = null;
+      a.suggested_vendor_logo_url = null;
+      continue;
+    }
+    const m = matchVendorToSource(a.alternative_name, sources);
+    a.suggested_vendor_domain = m?.domain ?? null;
+    a.suggested_vendor_logo_url = m?.logoUrl ?? null;
+  }
+};
+
+const templateToAlternative = (t: AltTemplate, baseKg: number): Alt => ({
   alternative_name: t.name,
   alternative_type: mapType(t.type),
   estimated_kg_co2e: Number((baseKg * (1 + t.co2eDeltaPct)).toFixed(1)),
@@ -122,6 +187,8 @@ const templateToAlternative = (t: AltTemplate, baseKg: number) => ({
   source: (t.simulated ? "simulated" : "emission_factor_library") as "simulated" | "emission_factor_library",
   confidence: t.confidence,
   comparability_notes: t.rationale,
+  suggested_vendor_domain: null,
+  suggested_vendor_logo_url: null,
 });
 
 const mapResearchedType = (
@@ -139,7 +206,7 @@ const mapResearchedType = (
   }
 };
 
-const researchedToAlternative = (a: ResearchedAlternative, baseKg: number) => {
+const researchedToAlternative = (a: ResearchedAlternative, baseKg: number): Alt => {
   const co2eDelta = a.co2e_delta_pct ?? 0;
   const saved = -baseKg * co2eDelta;
   const sourceLabel = a.provenance === "template" ? "emission_factor_library" : "api";
@@ -154,6 +221,8 @@ const researchedToAlternative = (a: ResearchedAlternative, baseKg: number) => {
     source: sourceLabel as "api" | "emission_factor_library" | "historical_data" | "simulated" | "assumption",
     confidence: a.confidence,
     comparability_notes: a.description,
+    suggested_vendor_domain: null,
+    suggested_vendor_logo_url: null,
   };
 };
 
@@ -184,6 +253,9 @@ const mockOutput = (baseline: BaselineOutput, pool: ResearchedPool | undefined):
     const alts = c.researched.length > 0
       ? c.researched.map((r) => researchedToAlternative(r, baseKg))
       : c.templates.map((t) => templateToAlternative(t, baseKg));
+    // R010 / T006 — vendor-logo enrichment using THIS cluster's research pool
+    // (never the global pool, to avoid cross-category logo bleed).
+    enrichGreenAltsWithLogos(alts, c.researched);
     const topSaving = alts.reduce((s, a) => Math.max(s, a.carbon_saving_kg ?? 0), 0);
     return {
       cluster_id: c.target.cluster_id,
@@ -310,6 +382,18 @@ export async function run(input: GreenAltInput, ctx: AgentContext): Promise<Gree
     }
     const parsed = OUTPUT_SCHEMA.parse(JSON.parse(jsonText));
     const results = parsed.results;
+    // R010 / T006 — post-parse vendor-logo enrichment. Same `cluster_id ->
+    // researched[]` lookup pattern as costSavings; null cluster_id leaves the
+    // alternatives unmatched (honest behavior — we can't trust a cross-cluster
+    // logo when we don't know which cluster the LLM was scoring).
+    const researchedByCluster = new Map<string, ResearchedAlternative[]>();
+    for (const c of candidates) {
+      researchedByCluster.set(c.target.cluster_id, c.researched);
+    }
+    for (const r of results) {
+      const researched = r.cluster_id ? researchedByCluster.get(r.cluster_id) ?? [] : [];
+      enrichGreenAltsWithLogos(r.alternatives, researched);
+    }
     const totalCurrent = results.reduce((s, r) => s + (r.current_purchase.estimated_kg_co2e ?? 0), 0);
     const totalSaved = results.reduce(
       (s, r) => s + Math.max(0, ...r.alternatives.map((a) => a.carbon_saving_kg ?? 0)),
