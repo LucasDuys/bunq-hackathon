@@ -59,6 +59,8 @@ The deeper "wow" mechanism: **LLMs author, code adjudicates.** Sonnet writes rec
 | Per-call instrumentation: tokens in/out, latency, cache-hit rate | `lib/db/schema.ts` (`agentRuns`, `agentMessages`); `lib/impacts/store.ts` (`persistDagRun`) | After live DAG run, `agentRuns` table populates |
 | Webhook idempotency (dedup on `bunqTxId`) | `app/api/webhook/bunq/route.ts:36-40` | Re-fire same event with `npm run dev:fire`; one DB row |
 | Type-safety end-to-end: TS strict, Zod at every LLM I/O boundary, Drizzle for DB | `tsconfig.json`, `lib/agents/dag/types.ts`, `lib/db/schema.ts` | `npm run typecheck` |
+| Input sanitization: HTTP header injection guard, LIKE-pattern escaping, Zod on all POST bodies | `app/api/invoices/[id]/file/route.ts:31`, `app/api/bunq/draft-callback/route.ts:35`, `app/api/close/[id]/answer/route.ts:5-8` | Read the routes; no raw `as` casts on user input |
+| Emissions math bounded: `uncertaintyPct` clamped to [0,1], exhaustive switch in policy eval | `lib/emissions/estimate.ts:26`, `lib/policy/evaluate.ts:22` | Factor with `uncertaintyPct > 1` cannot produce negative kgCO₂e |
 | 9 per-agent docs with system prompt + I/O schema | `docs/agents/00-overview.md` … `08-research.md` | Read the directory |
 
 ---
