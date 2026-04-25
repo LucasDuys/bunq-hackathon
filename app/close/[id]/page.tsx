@@ -19,9 +19,12 @@ import {
   CardTitle,
   CodeLabel,
   ConfidenceBar,
+  SectionDivider,
   Stat,
 } from "@/components/ui";
-import { CloseActions } from "@/components/CloseActions";
+import { ApproveButton, QuestionCard } from "@/components/CloseActions";
+import { CloseChatStream } from "@/components/CloseChatStream";
+import { RerunCloseButton } from "@/components/RerunCloseButton";
 import { fmtEur, fmtKg } from "@/lib/utils";
 import {
   DEFAULT_ORG_ID,
@@ -86,22 +89,61 @@ const phaseColor = (phase: PhaseKey): string => {
   }
 };
 
-const phaseCopy = (phase: PhaseKey, questionCount: number): string => {
+const phaseHeadline = (
+  phase: PhaseKey,
+  state: string,
+  unanswered: number,
+  approved: boolean,
+): string => {
+  if (approved) return "Reserve transferred.";
   switch (phase) {
     case "INGEST":
       return "Ingesting transactions…";
     case "CLASSIFY":
       return "Matching merchants…";
     case "ESTIMATE":
-      return "Estimating emissions…";
+      return state === "ESTIMATE_FINAL"
+        ? "Refining the estimate…"
+        : "Estimating emissions…";
     case "CLUSTER":
-      return questionCount > 0
-        ? `${questionCount} questions for you.`
+      return unanswered > 0
+        ? `${unanswered} question${unanswered === 1 ? "" : "s"} for you.`
         : "Clustering uncertainty…";
     case "READY":
-      return "Ready to approve.";
+      return state === "EXECUTING"
+        ? "Transferring to reserve…"
+        : "Ready to approve.";
     case "APPROVED":
       return "Reserve transferred.";
+  }
+};
+
+const phaseSub = (
+  phase: PhaseKey,
+  state: string,
+  unanswered: number,
+  approved: boolean,
+): string => {
+  if (approved) return "Loop closed for this month.";
+  switch (phase) {
+    case "INGEST":
+      return "Pulling this month's bunq transactions into the run.";
+    case "CLASSIFY":
+      return "Mapping each merchant to a category and emission factor.";
+    case "ESTIMATE":
+      return state === "ESTIMATE_FINAL"
+        ? "Re-running the estimate with your refinements."
+        : "Computing tonnes from spend with confidence per row.";
+    case "CLUSTER":
+      return unanswered > 0
+        ? "Answer to lift confidence on the most uncertain clusters."
+        : "Grouping uncertain merchants for review.";
+    case "READY":
+      return state === "EXECUTING"
+        ? "Moving funds to your bunq Carbon Reserve sub-account."
+        : "Approve to transfer the reserve and route credits.";
+    case "APPROVED":
+      return "Loop closed for this month.";
   }
 };
 
@@ -119,7 +161,13 @@ export default async function CloseRunPage({
   const currentPhase: PhaseKey = STATE_TO_PHASE[run.state] ?? "INGEST";
   const currentPhaseIdx = PHASES.findIndex((p) => p.key === currentPhase);
   const unansweredCount = questions.filter((q) => !q.answer).length;
-  const statusLine = phaseCopy(currentPhase, unansweredCount);
+  const headline = phaseHeadline(
+    currentPhase,
+    run.state,
+    unansweredCount,
+    run.approved,
+  );
+  const sub = phaseSub(currentPhase, run.state, unansweredCount, run.approved);
   const statusColor = phaseColor(currentPhase);
 
   const proposed = run.proposedActions
@@ -130,59 +178,104 @@ export default async function CloseRunPage({
     ? (JSON.parse(run.creditRecommendation) as CreditMixRow[])
     : [];
   const totalTonnes = creditMix.reduce((s, m) => s + m.tonnes, 0);
-  const showTerminalPanel =
+  const isApproved = run.approved;
+  const isReady =
     currentPhaseIdx >= PHASES.findIndex((p) => p.key === "READY");
-  const chain = showTerminalPanel ? verifyChain(DEFAULT_ORG_ID) : null;
+  const chain = isReady ? verifyChain(DEFAULT_ORG_ID) : null;
 
   const confidenceInitial = run.initialConfidence ?? 0;
   const confidenceFinal = run.finalConfidence ?? confidenceInitial;
   const confidenceDelta = confidenceFinal - confidenceInitial;
+  const confidencePct = Math.round(confidenceFinal * 100);
 
   const finalKg = run.finalCo2eKg;
   const initialKg = run.initialCo2eKg;
+  const displayKg = finalKg ?? initialKg ?? null;
   const deltaKg =
     finalKg != null && initialKg != null ? finalKg - initialKg : null;
-  // ± range derived from (1 − confidence) applied to the emissions figure
+  // ± range derived from (1 − confidence) applied to the chosen estimate
   const rangeKg =
-    finalKg != null
-      ? Math.max(0.1, finalKg * (1 - confidenceFinal))
-      : initialKg != null
-        ? Math.max(0.1, initialKg * (1 - confidenceInitial))
-        : null;
+    displayKg != null
+      ? Math.max(0.1, displayKg * (1 - confidenceFinal))
+      : null;
+
+  // Sum of EUR transfers (defensive: today there's always exactly one)
+  const reserveAmount =
+    run.reserveEur ??
+    (proposed
+      ? proposed
+          .filter((a): a is Extract<ProposedAction, { kind: "reserve_transfer" }> =>
+            a.kind === "reserve_transfer",
+          )
+          .reduce((s, a) => s + a.amountEur, 0) || null
+      : null);
+
+  // Hydrate the live chat stream with whatever's already in the audit chain so
+  // it renders on first paint with no flash. The client polls /events for new
+  // ids after that.
+  const initialEvents = audit.map((e) => {
+    let payload: unknown = null;
+    try {
+      payload = JSON.parse(e.payload);
+    } catch {
+      payload = e.payload;
+    }
+    return {
+      id: e.id,
+      actor: e.actor as "agent" | "user" | "system" | "webhook",
+      type: e.type,
+      createdAt: e.createdAt,
+      hash: e.hash,
+      payload,
+    };
+  });
+  const initialStream = {
+    runId: id,
+    state: run.state,
+    status: run.status,
+    month: run.month,
+    initialCo2eKg: run.initialCo2eKg,
+    finalCo2eKg: run.finalCo2eKg,
+    initialConfidence: run.initialConfidence,
+    finalConfidence: run.finalConfidence,
+    reserveEur: run.reserveEur,
+    approved: run.approved,
+    events: initialEvents,
+    questions: questions.map((q) => ({
+      id: q.id,
+      closeRunId: q.closeRunId,
+      clusterId: q.clusterId,
+      question: q.question,
+      options: q.options,
+      answer: q.answer,
+      affectedTxIds: q.affectedTxIds,
+    })),
+  };
 
   return (
     <div className="relative z-[1] flex flex-col gap-12">
       {/* ─── Sticky 6-dot progress rail ─── */}
       <div
-        className="sticky top-[56px] z-10 -mx-6 px-6 py-5 backdrop-blur"
+        className="close-rail-sticky -mx-6 px-6 py-4 backdrop-blur"
         style={{
           background: "var(--bg-translucent)",
           borderBottom: "1px solid var(--border-faint)",
         }}
       >
         <div className="flex items-center justify-between gap-6 max-w-[1200px] mx-auto">
-          <div className="flex flex-col gap-2 min-w-0">
+          <div className="flex items-center gap-3 min-w-0">
             <CodeLabel>Monthly close · {run.month}</CodeLabel>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1
-                className="text-[24px] leading-[1.1] tracking-[-0.015em] m-0"
-                style={{ color: "var(--fg-primary)" }}
-              >
-                {statusLine}
-              </h1>
-              <span
-                className="font-mono text-[12px]"
-                style={{ color: "var(--fg-faint)" }}
-              >
-                {id.slice(0, 12)}…
-              </span>
-              <Link href={`/report/${run.month}`} className="ml-1">
-                <Button variant="ghost" size="sm" className="gap-1.5">
-                  <FileText className="h-3.5 w-3.5" />
-                  Export CSRD
-                </Button>
-              </Link>
-            </div>
+            <span
+              aria-hidden="true"
+              className="hidden sm:inline-block w-1 h-1 rounded-full shrink-0"
+              style={{ background: "var(--border-strong)" }}
+            />
+            <span
+              className="hidden sm:inline text-[12px]"
+              style={{ color: "var(--fg-muted)" }}
+            >
+              {PHASES[currentPhaseIdx]?.label ?? "—"}
+            </span>
           </div>
 
           <ol
@@ -190,8 +283,8 @@ export default async function CloseRunPage({
             aria-label="Close progress"
           >
             {PHASES.map((p, i) => {
-              const done = i < currentPhaseIdx;
-              const active = i === currentPhaseIdx;
+              const done = i < currentPhaseIdx || isApproved;
+              const active = !isApproved && i === currentPhaseIdx;
               const dotStyle: React.CSSProperties = done
                 ? {
                     background: "var(--brand-green)",
@@ -235,73 +328,85 @@ export default async function CloseRunPage({
         </div>
       </div>
 
-      {/* ─── Stat grid ─── */}
+      {/* ─── Hero status ─── */}
       <section className="flex flex-col gap-6">
-        <div className="flex items-center gap-3">
-          <CodeLabel>Results</CodeLabel>
-          <div
-            className="flex-1 h-px"
-            style={{ background: "var(--border-faint)" }}
-          />
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+          <div className="flex flex-col gap-3 max-w-[640px]">
+            <h1
+              className="text-[36px] leading-[1.1] tracking-[-0.015em] m-0"
+              style={{ color: "var(--fg-primary)" }}
+            >
+              {headline}
+            </h1>
+            <p
+              className="text-[15px] leading-[1.5] m-0"
+              style={{ color: "var(--fg-secondary)" }}
+            >
+              {sub}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
+            {!isApproved && proposed && unansweredCount === 0 && (
+              <ApproveButton runId={id} amountEur={reserveAmount} />
+            )}
+            <RerunCloseButton month={run.month} size="sm" variant="ghost" />
+            <Link href={`/report/${run.month}`}>
+              <Button variant="ghost" size="sm" className="gap-1.5">
+                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                Export CSRD
+              </Button>
+            </Link>
+          </div>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardBody>
+      {/* ─── Stat row — emissions, confidence, reserve ─── */}
+      <section className="flex flex-col gap-6">
+        <SectionDivider label="Results" />
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Emissions card spans 1; confidence inline */}
+          <Card className="md:col-span-1">
+            <CardBody className="flex flex-col gap-4">
               <Stat
-                label="Initial CO₂e"
-                value={initialKg != null ? fmtKg(initialKg) : "—"}
+                label="Estimated CO₂e"
+                value={displayKg != null ? fmtKg(displayKg) : "—"}
                 sub={
-                  initialKg != null
-                    ? `± ${(initialKg * (1 - confidenceInitial)).toFixed(1)} kg`
-                    : undefined
+                  rangeKg != null
+                    ? `± ${rangeKg.toFixed(1)} kg`
+                    : "Pending estimate"
                 }
               />
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardBody className="flex flex-col gap-3">
-              <Stat
-                label="Final CO₂e"
-                value={finalKg != null ? fmtKg(finalKg) : "—"}
-                sub={
-                  finalKg != null && rangeKg != null
-                    ? `± ${rangeKg.toFixed(1)} kg${
-                        deltaKg != null && deltaKg !== 0
-                          ? ` · ${deltaKg >= 0 ? "+" : ""}${deltaKg.toFixed(1)} kg refined`
-                          : ""
-                      }`
-                    : undefined
-                }
-              />
-              {finalKg != null && (
+              {displayKg != null && (
                 <ConfidenceBar value={confidenceFinal} animate />
               )}
             </CardBody>
           </Card>
 
           <Card>
-            <CardBody className="flex flex-col gap-3">
+            <CardBody className="flex flex-col gap-2">
               <Stat
                 label="Confidence"
-                value={`${Math.round(confidenceFinal * 100)}%`}
+                value={displayKg != null ? `${confidencePct}%` : "—"}
                 sub={
-                  confidenceDelta !== 0
-                    ? `${confidenceDelta >= 0 ? "+" : ""}${Math.round(
-                        confidenceDelta * 100,
-                      )} pts vs. initial`
-                    : "No refinement yet"
+                  deltaKg != null && deltaKg !== 0
+                    ? `${deltaKg >= 0 ? "+" : ""}${deltaKg.toFixed(1)} kg vs initial · ${confidenceDelta >= 0 ? "+" : ""}${Math.round(confidenceDelta * 100)} pts`
+                    : confidenceDelta !== 0
+                      ? `${confidenceDelta >= 0 ? "+" : ""}${Math.round(confidenceDelta * 100)} pts vs initial`
+                      : unansweredCount > 0
+                        ? "Refines after questions"
+                        : "No refinement yet"
                 }
                 tone={
                   confidenceFinal >= 0.85
                     ? "positive"
                     : confidenceFinal >= 0.6
                       ? "warning"
-                      : "danger"
+                      : displayKg != null
+                        ? "danger"
+                        : "default"
                 }
               />
-              <ConfidenceBar value={confidenceFinal} animate />
             </CardBody>
           </Card>
 
@@ -309,38 +414,55 @@ export default async function CloseRunPage({
             <CardBody>
               <Stat
                 label="Reserve"
-                value={run.reserveEur != null ? fmtEur(run.reserveEur, 0) : "—"}
+                value={reserveAmount != null ? fmtEur(reserveAmount, 0) : "—"}
                 sub={
-                  run.approved
-                    ? "Transferred"
-                    : run.reserveEur != null
-                      ? "Awaiting approval"
+                  isApproved
+                    ? "Transferred to Carbon Reserve"
+                    : reserveAmount != null
+                      ? unansweredCount > 0
+                        ? "Pending answers"
+                        : "Awaiting approval"
                       : "Not yet computed"
                 }
-                tone={run.approved ? "positive" : undefined}
+                tone={isApproved ? "positive" : undefined}
               />
             </CardBody>
           </Card>
         </div>
       </section>
 
+      {/* ─── Live agent transcript — Claude-Code style ─── */}
+      <section className="flex flex-col gap-6">
+        <SectionDivider label="Agent · live" />
+        <p
+          className="text-[14px] leading-[1.5] m-0 max-w-[640px] -mt-2"
+          style={{ color: "var(--fg-secondary)" }}
+        >
+          Watch the close run end-to-end: every tool call, every refinement,
+          every reserve transfer. Each line is hashed into the same audit chain
+          your CSRD report cites.
+        </p>
+        <CloseChatStream runId={id} initial={initialStream} />
+      </section>
+
       {/* ─── Questions (pending) ─── */}
       {questions.length > 0 && unansweredCount > 0 && (
         <section className="flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <CodeLabel>
-              Review · {unansweredCount} open
-            </CodeLabel>
-            <div
-              className="flex-1 h-px"
-              style={{ background: "var(--border-faint)" }}
-            />
-          </div>
+          <SectionDivider
+            label={`Review · ${unansweredCount} of ${questions.length} open`}
+          />
+          <p
+            className="text-[14px] leading-[1.5] m-0 max-w-[640px]"
+            style={{ color: "var(--fg-secondary)" }}
+          >
+            Each answer locks a cluster's category and re-runs the estimate.
+            Confidence updates live on the rail above.
+          </p>
           <div className="flex flex-col gap-3">
             {questions
               .filter((q) => !q.answer)
               .map((q) => (
-                <CloseActions.QuestionCard key={q.id} runId={id} question={q} />
+                <QuestionCard key={q.id} runId={id} question={q} />
               ))}
           </div>
         </section>
@@ -349,19 +471,19 @@ export default async function CloseRunPage({
       {/* ─── Questions (answered) ─── */}
       {questions.length > 0 && unansweredCount === 0 && (
         <section className="flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <CodeLabel>Answered</CodeLabel>
-            <div
-              className="flex-1 h-px"
-              style={{ background: "var(--border-faint)" }}
-            />
-          </div>
+          <SectionDivider label={`Refinements · ${questions.length} answered`} />
           <Card>
-            <CardBody className="flex flex-col gap-3 text-sm">
-              {questions.map((q) => (
+            <CardBody className="flex flex-col">
+              {questions.map((q, i) => (
                 <div
                   key={q.id}
-                  className="flex items-start justify-between gap-6 py-2"
+                  className="flex items-start justify-between gap-6 py-3"
+                  style={{
+                    borderBottom:
+                      i < questions.length - 1
+                        ? "1px solid var(--border-faint)"
+                        : "none",
+                  }}
                 >
                   <span
                     className="text-[14px] leading-[1.5]"
@@ -380,23 +502,23 @@ export default async function CloseRunPage({
       {/* ─── Proposed actions ─── */}
       {proposed && (
         <section className="flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <CodeLabel>Proposal</CodeLabel>
-            <div
-              className="flex-1 h-px"
-              style={{ background: "var(--border-faint)" }}
-            />
-          </div>
+          <SectionDivider label="Proposal" />
 
           <Card>
             <CardHeader>
-              <CardTitle>Proposed actions</CardTitle>
-              {run.state !== "COMPLETED" && (
-                <CloseActions.ApproveButton runId={id} />
+              <CardTitle>
+                {isApproved ? "What you approved" : "Proposed actions"}
+              </CardTitle>
+              {!isApproved && unansweredCount === 0 && (
+                <ApproveButton runId={id} amountEur={reserveAmount} />
               )}
-              {run.state === "COMPLETED" && (
-                <Badge tone="positive">Executed</Badge>
+              {!isApproved && unansweredCount > 0 && (
+                <Badge tone="warning">
+                  Answer {unansweredCount} question
+                  {unansweredCount === 1 ? "" : "s"} to unlock
+                </Badge>
               )}
+              {isApproved && <Badge tone="positive">Executed</Badge>}
             </CardHeader>
             <CardBody className="flex flex-col">
               {proposed.map((a, i) => (
@@ -411,7 +533,7 @@ export default async function CloseRunPage({
                   }}
                 >
                   <div
-                    className="flex-1"
+                    className="flex-1 min-w-0"
                     style={{ color: "var(--fg-secondary)" }}
                   >
                     {a.kind === "reserve_transfer" ? (
@@ -460,76 +582,18 @@ export default async function CloseRunPage({
         </section>
       )}
 
-      {/* ─── Audit trail ─── */}
-      <section className="flex flex-col gap-6">
-        <div className="flex items-center gap-3">
-          <CodeLabel>Audit trail</CodeLabel>
-          <div
-            className="flex-1 h-px"
-            style={{ background: "var(--border-faint)" }}
-          />
-        </div>
-
-        <Card>
-          <CardBody>
-            <ol className="flex flex-col gap-2 text-[12px] font-mono">
-              {audit.map((e) => (
-                <li
-                  key={e.id}
-                  className="flex items-center gap-3 py-1.5"
-                  style={{
-                    borderBottom: "1px solid var(--border-faint)",
-                  }}
-                >
-                  <span
-                    className="tabular-nums shrink-0"
-                    style={{ color: "var(--fg-faint)" }}
-                  >
-                    {new Date(e.createdAt * 1000).toLocaleTimeString()}
-                  </span>
-                  <Badge
-                    tone={
-                      e.actor === "agent"
-                        ? "info"
-                        : e.actor === "user"
-                          ? "positive"
-                          : "default"
-                    }
-                  >
-                    {e.actor}
-                  </Badge>
-                  <span
-                    className="flex-1 truncate"
-                    style={{ color: "var(--fg-primary)" }}
-                  >
-                    {e.type}
-                  </span>
-                  <span
-                    className="tabular-nums shrink-0"
-                    style={{ color: "var(--fg-faint)" }}
-                  >
-                    {e.hash.slice(0, 10)}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </CardBody>
-        </Card>
-      </section>
-
-      {/* ─── Terminal panel — reserve + credits + audit chain ─── */}
-      {showTerminalPanel && (
+      {/* ─── Approved · credit mix + ledger ─── */}
+      {isApproved && (
         <section className="flex flex-col gap-6">
-          <div className="flex items-center gap-3">
-            <CodeLabel>Loop closed</CodeLabel>
-            <div className="flex-1 h-px" style={{ background: "var(--border-faint)" }} />
-          </div>
+          <SectionDivider label="Loop closed" />
 
-          <Card>
+          <Card className="ca-card--branded">
             <CardHeader>
               <div>
-                <CodeLabel className="block mb-2">Reserve · credits · ledger</CodeLabel>
-                <CardTitle>What happens after approval</CardTitle>
+                <CodeLabel className="block mb-2">
+                  Reserve · credits · ledger
+                </CodeLabel>
+                <CardTitle>Coverage routed for {run.month}</CardTitle>
               </div>
               {chain && (
                 <Link href="/ledger" className="shrink-0">
@@ -542,20 +606,7 @@ export default async function CloseRunPage({
               )}
             </CardHeader>
             <CardBody className="flex flex-col gap-6">
-              {/* Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Stat
-                  label="Reserve"
-                  value={run.reserveEur != null ? fmtEur(run.reserveEur, 0) : "—"}
-                  sub={
-                    run.approved
-                      ? "Transferred"
-                      : run.reserveEur != null
-                        ? "Awaiting approval"
-                        : "Not yet computed"
-                  }
-                  tone={run.approved ? "positive" : undefined}
-                />
                 <Stat
                   label="Top credit project"
                   value={creditMix[0]?.project.name ?? "—"}
@@ -574,9 +625,21 @@ export default async function CloseRunPage({
                       : undefined
                   }
                 />
+                <Stat
+                  label="Approved"
+                  value={
+                    run.approvedAt
+                      ? new Date(run.approvedAt * 1000).toLocaleDateString(
+                          "en-NL",
+                          { day: "2-digit", month: "short", year: "numeric" },
+                        )
+                      : "—"
+                  }
+                  sub="Recorded in audit chain"
+                  tone="positive"
+                />
               </div>
 
-              {/* Mini credit-mix list */}
               {creditMix.length > 0 && (
                 <div
                   className="rounded-[8px]"
@@ -603,6 +666,7 @@ export default async function CloseRunPage({
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <span
+                          aria-hidden="true"
                           className="w-[6px] h-[6px] rounded-full shrink-0"
                           style={{ background: "var(--brand-green)" }}
                         />
@@ -637,7 +701,10 @@ export default async function CloseRunPage({
                       }}
                     >
                       <span>+{creditMix.length - 3} more in catalogue</span>
-                      <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                      <ArrowRight
+                        className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                        aria-hidden="true"
+                      />
                     </Link>
                   )}
                 </div>
@@ -646,6 +713,7 @@ export default async function CloseRunPage({
           </Card>
         </section>
       )}
+
     </div>
   );
 }
