@@ -82,9 +82,11 @@ describe("POST /api/forecast/annual (R005)", () => {
   });
 
   it("AC4: audit event written on success", async () => {
-    const before = audit.verifyChain("org_acme_bv").count;
+    const beforeChain = audit.verifyChain("org_acme_bv");
+    const before = (beforeChain as { count?: number }).count ?? 0;
     await post({ monthlySpendEur: 50_000 });
-    const after = audit.verifyChain("org_acme_bv").count;
+    const afterChain = audit.verifyChain("org_acme_bv");
+    const after = (afterChain as { count?: number }).count ?? 0;
     assert.ok(after > before, `audit count should grow: before=${before} after=${after}`);
   });
 
