@@ -175,7 +175,7 @@ export function BunqSubAccountsStage({
         style={{
           flex: 1,
           minHeight: 0,
-          padding: "20px 28px 24px",
+          padding: "20px 80px 24px 28px",
           display: "flex",
           flexDirection: "column",
           gap: 16,
@@ -234,7 +234,9 @@ export function BunqSubAccountsStage({
             transferT={transferT}
             fromIndex={FROM_INDEX}
             toIndex={TO_INDEX}
-            visible={transferring || (settled && transferT < 1.05)}
+            totalRows={ACCOUNTS.length}
+            visible={transferring || settled}
+            settled={settled}
           />
         </div>
 
@@ -663,80 +665,89 @@ function RouteTag({
  * SVG arc + flying puck.
  *
  * The arc connects the right edge of the FROM row to the right edge of the TO
- * row, dipping outward (rightward) so it reads as money lifting up out of one
- * account and landing into another.
+ * row, dipping outward (rightward) into the Stage's right padding so it reads
+ * as money lifting up out of one account and landing into another. Both the
+ * SVG path and the puck are pinned via `right: -ARC_OFFSET` so they overflow
+ * the rows wrapper into the breathing room reserved for them.
  */
+const ARC_DIP_X = 40;
+const ARC_OFFSET = ARC_DIP_X + 16;
+
 function TransferArc({
   transferT,
   fromIndex,
   toIndex,
+  totalRows,
   visible,
+  settled,
 }: {
   transferT: number;
   fromIndex: number;
   toIndex: number;
+  totalRows: number;
   visible: boolean;
+  settled: boolean;
 }) {
   // Coordinates inside the rows-container's bounding box.
-  // Anchor X: just past the right padding of each row (≈18px from edge).
-  // Anchor Y: vertical center of each row.
   const fromY = fromIndex * (ROW_HEIGHT + ROW_GAP) + ROW_HEIGHT / 2;
   const toY = toIndex * (ROW_HEIGHT + ROW_GAP) + ROW_HEIGHT / 2;
-  const anchorX = 0; // we'll position via right: ANCHOR_RIGHT
-  const dipX = 90; // outward bulge (rightward, off-row)
+  const midY = (fromY + toY) / 2;
 
-  // Quadratic bezier evaluation.
+  // Total height of the rows column (matches our positioning context).
+  const totalHeight = totalRows * ROW_HEIGHT + (totalRows - 1) * ROW_GAP;
+
+  // Quadratic bezier evaluation. Anchors are at x=0 (the rows wrapper's right
+  // edge); control point is at (ARC_DIP_X, midY) — rightward in SVG coords.
   const t = transferT;
   const oneMinusT = 1 - t;
-  const x = oneMinusT * oneMinusT * anchorX + 2 * oneMinusT * t * dipX + t * t * anchorX;
-  const y = oneMinusT * oneMinusT * fromY + 2 * oneMinusT * t * (fromY + toY) / 2 + t * t * toY;
+  const x = 2 * oneMinusT * t * ARC_DIP_X;
+  const y =
+    oneMinusT * oneMinusT * fromY +
+    2 * oneMinusT * t * midY +
+    t * t * toY;
 
-  // Bezier control point for the rendered SVG path.
-  const ctrlY = (fromY + toY) / 2;
-
-  // Path goes from from-anchor → control(dipX, ctrlY) → to-anchor.
-  // We render the path inside an SVG that's pinned to the right edge of the
-  // rows-container with width = dipX + 24 (some padding).
-  const svgWidth = dipX + 32;
-  const svgHeight = (toIndex - fromIndex + 1) * (ROW_HEIGHT + ROW_GAP);
-  const svgTop = fromIndex * (ROW_HEIGHT + ROW_GAP);
-
-  // Trail dasharray — reveals the path as the puck travels.
-  const totalLen = 600; // overestimate; large enough for the gap to chase the puck
+  // Reveal the path as the puck travels. Use a generous over-estimate of the
+  // path length so dasharray "gap" cleanly chases the puck.
+  const totalLen = Math.abs(toY - fromY) + ARC_DIP_X * 2 + 64;
   const dash = totalLen * t;
   const gap = totalLen - dash;
 
+  // Puck visibility — show during transit, plus a brief overshoot tail when
+  // settled so the green flash lands on the destination row.
+  const showPuck = visible && t > 0.001 && t < 0.999 && !settled;
+
   return (
-    <div
-      aria-hidden
-      style={{
-        position: "absolute",
-        right: 18, // align to the right edge of the amount cells
-        top: svgTop,
-        width: svgWidth,
-        height: svgHeight,
-        pointerEvents: "none",
-        opacity: visible ? 1 : 0,
-        transition: "opacity 220ms ease-out",
-      }}
-    >
+    <>
+      {/* SVG arc — overflows rightward into the Stage's right padding. */}
       <svg
-        width={svgWidth}
-        height={svgHeight}
-        viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-        style={{ overflow: "visible", display: "block" }}
+        aria-hidden
+        width={ARC_OFFSET}
+        height={totalHeight}
+        viewBox={`0 0 ${ARC_OFFSET} ${totalHeight}`}
+        preserveAspectRatio="none"
+        style={{
+          position: "absolute",
+          right: -ARC_OFFSET,
+          top: 0,
+          width: ARC_OFFSET,
+          height: totalHeight,
+          pointerEvents: "none",
+          overflow: "visible",
+          opacity: visible ? 1 : 0,
+          transition: "opacity 260ms ease-out",
+        }}
       >
-        {/* Soft path (full route — faint) */}
+        {/* Faint full route (always visible while arc is active) */}
         <path
-          d={`M 0 ${fromY - svgTop} Q ${dipX} ${ctrlY - svgTop} 0 ${toY - svgTop}`}
+          d={`M 0 ${fromY} Q ${ARC_DIP_X} ${midY} 0 ${toY}`}
           fill="none"
           stroke="var(--brand-green-border)"
           strokeWidth={1.5}
           strokeDasharray="4 4"
         />
-        {/* Active path — drawn up to current t */}
+        {/* Progress trail */}
         <path
-          d={`M 0 ${fromY - svgTop} Q ${dipX} ${ctrlY - svgTop} 0 ${toY - svgTop}`}
+          d={`M 0 ${fromY} Q ${ARC_DIP_X} ${midY} 0 ${toY}`}
           fill="none"
           stroke="var(--brand-green)"
           strokeWidth={2}
@@ -746,36 +757,48 @@ function TransferArc({
         />
       </svg>
 
-      {/* The puck itself — a glowing €412 chip riding the arc. */}
+      {/* Anchor element at top-right of rows; puck offsets via transform. */}
       <div
+        aria-hidden
         style={{
           position: "absolute",
-          left: x,
-          top: y - svgTop,
-          transform: "translate(-50%, -50%)",
-          opacity: t > 0.001 && t < 0.999 ? 1 : 0,
-          transition: "opacity 160ms ease-out",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          padding: "6px 10px",
-          borderRadius: 9999,
-          background: "var(--brand-green)",
-          color: "#08140c",
-          fontFamily: "var(--font-inter), system-ui, sans-serif",
-          fontSize: 12,
-          fontWeight: 500,
-          fontVariantNumeric: "tabular-nums",
-          letterSpacing: "-0.01em",
-          boxShadow:
-            "0 0 0 4px rgba(62, 207, 142, 0.20), 0 8px 24px rgba(62, 207, 142, 0.30)",
-          whiteSpace: "nowrap",
+          right: 0,
+          top: 0,
+          width: 0,
+          height: 0,
+          pointerEvents: "none",
         }}
       >
-        <ArrowDownRight size={12} strokeWidth={2.5} />
-        € {fmtBalance(TRANSFER_AMOUNT)}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            transform: `translate(calc(${x}px - 50%), calc(${y}px - 50%))`,
+            opacity: showPuck ? 1 : 0,
+            transition: "opacity 160ms ease-out",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            padding: "6px 12px",
+            borderRadius: 9999,
+            background: "var(--brand-green)",
+            color: "#08140c",
+            fontFamily: "var(--font-inter), system-ui, sans-serif",
+            fontSize: 13,
+            fontWeight: 500,
+            fontVariantNumeric: "tabular-nums",
+            letterSpacing: "-0.01em",
+            boxShadow:
+              "0 0 0 4px rgba(62, 207, 142, 0.20), 0 8px 24px rgba(62, 207, 142, 0.40)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          <ArrowDownRight size={13} strokeWidth={2.5} />
+          € {fmtBalance(TRANSFER_AMOUNT)}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
