@@ -219,3 +219,11 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] Live E2E verified: ANTHROPIC_MOCK=false, 0/7 mock agents, all Zod parsing passed, 400s wall time (2026-04-25)
 - [x] `scripts/live-close-test.ts` — Full close flow test script with CO₂ number breakdown (2026-04-25)
 - [x] `scripts/inspect-last-run.ts` — DAG run inspector script showing per-agent results (2026-04-25)
+
+## UI Bug Fixes (Ben)
+
+- [x] `components/AssistantWorkspace.tsx` — Fixed assistant chat scroll: removed `overflow-hidden` from card shell that clipped the scrollable thread container; capped thread `maxHeight` at `60dvh` for reliable viewport-relative constraint (2026-04-25)
+- [x] `components/AssistantWorkspace.tsx` + `components/ExplainModal.tsx` — Auto-scroll now checks proximity (< 80px from bottom) before snapping; users scrolled up to re-read earlier messages are no longer yanked back during streaming (2026-04-25)
+- [x] `components/ExplainModal.tsx` — Added Escape key handler to focus-trap effect; pressing ESC now closes the modal as the tooltip "Close (ESC)" promised (2026-04-25)
+- [x] `app/invoices/page.tsx` — Migrated all legacy design tokens (`--text`, `--text-mute`, `--text-dim`, `--text-faint`, `--border`, `--green`) to canonical tokens (`--fg-primary`, `--fg-muted`, `--fg-secondary`, `--fg-faint`, `--border-faint`, `--brand-green`); replaced `font-semibold` headers with `CodeLabel` components for design-system consistency; removed unused `fmtPct` import (2026-04-25)
+- [x] `app/ledger/page.tsx` — Added `min-width: 780px` to audit table so columns maintain readable widths before horizontal scroll activates on narrow viewports (2026-04-25)
