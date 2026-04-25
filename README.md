@@ -25,13 +25,13 @@
 
 ## Watch the demo
 
-<a href="https://www.youtube.com/watch?v=7zTyIQmJTBk">
-  <img src="https://img.youtube.com/vi/7zTyIQmJTBk/maxresdefault.jpg" alt="Carbo demo video — click to watch on YouTube" width="780" />
+<a href="https://www.youtube.com/watch?v=DqDqs-HGKSM">
+  <img src="https://img.youtube.com/vi/DqDqs-HGKSM/maxresdefault.jpg" alt="Carbo demo video — click to watch on YouTube" width="780" />
 </a>
 
 <br />
 
-### **[▸ Watch the full demo on YouTube](https://www.youtube.com/watch?v=7zTyIQmJTBk)**
+### **[▸ Watch the full demo on YouTube](https://www.youtube.com/watch?v=DqDqs-HGKSM)**
 
 <sub>3 minutes · click-by-click · live bunq sandbox + real Claude</sub>
 
@@ -415,7 +415,7 @@ Under time pressure, cut in this order:
 
 <br />
 
-[**▸ Watch the demo**](https://www.youtube.com/watch?v=7zTyIQmJTBk) · [Pitch](PITCH.md) · [Demo script](DEMO.md) · [Judge guide](JUDGE.md) · [Architecture](ARCHITECTURE.md) · [Design system](DESIGN.md) · [Agent docs](docs/agents/00-overview.md)
+[**▸ Watch the demo**](https://www.youtube.com/watch?v=DqDqs-HGKSM) · [Pitch](PITCH.md) · [Demo script](DEMO.md) · [Judge guide](JUDGE.md) · [Architecture](ARCHITECTURE.md) · [Design system](DESIGN.md) · [Agent docs](docs/agents/00-overview.md)
 
 <sub>Made with care · Carbon-aware · Audit-grade</sub>
 
