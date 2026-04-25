@@ -12,7 +12,7 @@ const STEPS = [
   { key: "AGGREGATE", label: "Aggregate" },
   { key: "ESTIMATE_INITIAL", label: "Estimate (initial)" },
   { key: "CLUSTER_UNCERTAINTY", label: "Cluster uncertainty" },
-  { key: "QUESTIONS_GENERATED", label: "Generate questions" },
+  { key: "DAG_RUNNING", label: "Run 8-agent DAG" },
   { key: "AWAITING_ANSWERS", label: "Awaiting answers" },
   { key: "APPLY_ANSWERS", label: "Apply answers" },
   { key: "ESTIMATE_FINAL", label: "Estimate (refined)" },

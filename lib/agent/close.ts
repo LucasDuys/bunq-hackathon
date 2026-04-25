@@ -17,13 +17,15 @@ import { estimateEmission, rollup } from "@/lib/emissions/estimate";
 import { factorFor } from "@/lib/factors";
 import { evaluatePolicy, type CategoryAggregate } from "@/lib/policy/evaluate";
 import { DEFAULT_POLICY, policySchema, type Policy } from "@/lib/policy/schema";
-import { generateRefinementQuestions } from "./questions";
+import { env } from "@/lib/env";
+import { runDag } from "@/lib/agents/dag";
+import type { AgentContext } from "@/lib/agents/dag/types";
 
 export type CloseState =
   | "AGGREGATE"
   | "ESTIMATE_INITIAL"
   | "CLUSTER_UNCERTAINTY"
-  | "QUESTIONS_GENERATED"
+  | "DAG_RUNNING"
   | "AWAITING_ANSWERS"
   | "APPLY_ANSWERS"
   | "ESTIMATE_FINAL"
@@ -149,23 +151,65 @@ export const startCloseRun = async (orgId: string, month: string) => {
   clusters.sort((a, b) => b.impactScore - a.impactScore);
   const topClusters = clusters.slice(0, 3);
 
-  // 4. GENERATE QUESTIONS
-  db.update(closeRuns).set({ state: "QUESTIONS_GENERATED" }).where(eq(closeRuns.id, id)).run();
-  const questions = await generateRefinementQuestions(topClusters);
-  for (const q of questions) {
-    const cluster = topClusters.find((c) => c.id === q.clusterId) ?? topClusters[0];
+  // 4. DAG_RUNNING — R008.AC1 / T012.
+  // Replaces the old QUESTIONS_GENERATED state. The 8-agent DAG produces the
+  // single `required_context_question` (or null) and is the only LLM touchpoint
+  // the close machine has. The DAG's `runId` is persisted on `close_runs.dagRunId`
+  // so reviewers can pull the full agent trace from `agent_messages`.
+  db.update(closeRuns).set({ state: "DAG_RUNNING" }).where(eq(closeRuns.id, id)).run();
+  const dagCtx: AgentContext = {
+    orgId,
+    analysisPeriod: month,
+    dryRun: env.dryRun,
+    mock: env.anthropicMock || !env.anthropicKey,
+    auditLog: async (event) => {
+      appendAudit({ orgId, actor: "agent", type: event.type, payload: event.payload, closeRunId: id });
+    },
+  };
+  const dag = await runDag({ orgId, month }, dagCtx);
+  db.update(closeRuns).set({ dagRunId: dag.runId }).where(eq(closeRuns.id, id)).run();
+  appendAudit({
+    orgId,
+    actor: "agent",
+    type: "close.dag_run",
+    payload: {
+      dagRunId: dag.runId,
+      requiredContextQuestion: dag.baseline.required_context_question,
+      mockAgentCount: dag.mock_agent_count,
+      totalLatencyMs: Math.round(dag.totalLatencyMs),
+    },
+    closeRunId: id,
+  });
+
+  // R008.AC3 — only park in AWAITING_ANSWERS if the DAG returned a context
+  // question. Otherwise advance the close machine straight to the policy/
+  // proposal chain via finalizeEstimates (idempotent when there are no
+  // refinement answers to apply).
+  const required = dag.baseline.required_context_question;
+  if (required != null) {
+    // Persist the single DAG-surfaced question. We can't re-classify a tx from
+    // it (no options, no category mapping), so we attach a one-shot
+    // acknowledge option and an empty affected-tx list. answerQuestion()
+    // accepts the acknowledge label and short-circuits to finalizeEstimates,
+    // which is the same control flow the original questions.ts path used.
+    const cluster = topClusters[0];
     db.insert(refinementQa).values({
       closeRunId: id,
-      clusterId: q.clusterId,
-      question: q.question,
-      options: JSON.stringify(q.options),
-      affectedTxIds: JSON.stringify(cluster?.txIds ?? []),
+      clusterId: cluster?.id ?? "dag",
+      question: required,
+      options: JSON.stringify([
+        { label: "acknowledge", category: cluster?.likelyCategory ?? "other", subCategory: cluster?.likelySubCategory ?? null },
+      ]),
+      affectedTxIds: JSON.stringify([]),
     }).run();
+    db.update(closeRuns).set({ state: "AWAITING_ANSWERS" }).where(eq(closeRuns.id, id)).run();
+    return { id, initialCo2eKg: initial.co2eKgPoint, initialConfidence: initial.confidence, questionCount: 1, dagRunId: dag.runId };
   }
-  appendAudit({ orgId, actor: "agent", type: "close.questions_generated", payload: { count: questions.length, clusterIds: questions.map((q) => q.clusterId) }, closeRunId: id });
-  db.update(closeRuns).set({ state: "AWAITING_ANSWERS" }).where(eq(closeRuns.id, id)).run();
 
-  return { id, initialCo2eKg: initial.co2eKgPoint, initialConfidence: initial.confidence, questionCount: questions.length };
+  // No question — close machine flows straight through finalizeEstimates →
+  // APPLY_POLICY → PROPOSED (or AWAITING_APPROVAL).
+  await finalizeEstimates(id);
+  return { id, initialCo2eKg: initial.co2eKgPoint, initialConfidence: initial.confidence, questionCount: 0, dagRunId: dag.runId };
 };
 
 export const answerQuestion = async (closeRunId: string, qaId: number, answerLabel: string) => {

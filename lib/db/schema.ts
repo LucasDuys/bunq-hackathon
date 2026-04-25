@@ -96,6 +96,10 @@ export const closeRuns = sqliteTable("close_runs", {
   approvedAt: integer("approved_at"),
   startedAt: integer("started_at").notNull().default(sql`(unixepoch())`),
   completedAt: integer("completed_at"),
+  // R008.AC1 / T012 — additive runId pointer linking this close run to the
+  // 8-agent DAG run it triggered (replaces the old questions.ts touchpoint).
+  // Nullable so historical close_runs rows from before T012 stay valid.
+  dagRunId: text("dag_run_id"),
 });
 
 export const refinementQa = sqliteTable("refinement_qa", {
