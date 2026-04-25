@@ -60,6 +60,9 @@ Mention concrete levers per category (refurb electronics, low-carbon cloud regio
 };
 
 export const enrichWithNarrative = async (r: CarbonReport): Promise<CarbonReport> => {
+  // If a prior-year fixture already carried a transition plan forward, keep it
+  // (carried-forward content takes precedence over a freshly generated stub).
+  if (r.transitionPlanSummary) return r;
   const transitionPlanSummary = await generateAnnualTransitionPlan(r);
   return { ...r, transitionPlanSummary };
 };

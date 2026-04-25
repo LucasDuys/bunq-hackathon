@@ -1,0 +1,244 @@
+{
+  "company": "bunq B.V.",
+  "reportingYear": 2024,
+  "country": "NL",
+  "industry": "Banking / fintech",
+  "revenueEur": null,
+  "employees": 650,
+  "sourceUrl": "https://static.bunq.com/website/documents/bunq-report-esg-2024-en.pdf",
+  "sourceFile": "bunq-2024.pdf",
+  "framework": "VOLUNTARY",
+  "frameworkNotes": "Reports voluntarily after Omnibus removed bunq from CSRD scope. Self-described approach: 'transparency shouldn't depend on regulatory obligation.' Methodology cites PCAF for financed emissions; no GHG Protocol Scope 2 location/market split.",
+  "assurance": {
+    "level": "none",
+    "assurer": null,
+    "scopeNote": "No external assurance in 2024. bunq states they 'will revisit assurance options as the regulatory landscape evolves.'"
+  },
+  "emissions": {
+    "unit": "tCO2e",
+    "baseYear": null,
+    "reportingPeriod": "2024",
+    "scope1": {
+      "totalTco2e": 30.45,
+      "methodNote": "Direct emissions from fuel combustion in office heating systems. 2024 expanded methodology to include all global locations using FTE-based approach anchored in Amsterdam. Per FTE: 0.6.",
+      "uncertaintyPct": null,
+      "includesBiogenic": false
+    },
+    "scope2": {
+      "locationBasedTco2e": 89.3,
+      "marketBasedTco2e": null,
+      "methodNote": "Indirect emissions from purchased electricity, heat, cooling. Per FTE: 1.7. Note: bunq does NOT split location-based vs market-based — sub-GHG-Protocol-standard disclosure.",
+      "uncertaintyPct": null
+    },
+    "scope3": [
+      {
+        "category": "cat1_purchased_goods_services",
+        "tco2e": 27.085,
+        "method": "activity_based",
+        "factorSource": "Self-calculated; partner emission factors from card suppliers, AWS (claims 100% renewable match), DHL GoGreen Plus",
+        "note": "Cards production 25.3, Cards distribution 0.03, Cloud computing 0.455, DHL 1.3. Card production is the largest line; full transition to AWS reduced cloud emissions.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat2_capital_goods",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial per bunq inventory.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat3_fuel_energy_related",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat4_upstream_transportation",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat5_waste_in_operations",
+        "tco2e": 18.1,
+        "method": "activity_based",
+        "factorSource": "Internal tracking",
+        "note": "E-waste 0.0, Event waste 17.0, Customer-related waste 1.1. Event waste tracked systematically for the first time in 2024.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat6_business_travel",
+        "tco2e": 166.4,
+        "method": "activity_based",
+        "factorSource": "Travel agency activity data; emission factors not disclosed",
+        "note": "Stable YoY (160 in 2023). Internal inconsistency in source: text body lists '166.1' on p.6 vs '166.4' in p.5 table. Commitment: increase rail, minimize air travel.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat7_employee_commuting",
+        "tco2e": 123.4,
+        "method": "activity_based",
+        "factorSource": "Employee survey + standard mode factors",
+        "note": "Down from 138 in 2023 thanks to flexible 2-day-WFH policy. 2024 data-quality enhancement initiative improved figures.",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      },
+      {
+        "category": "cat8_upstream_leased_assets",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat9_downstream_transportation",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat10_processing_sold_products",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat11_use_of_sold_products",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial. Note: customer-spending emissions (the bunq Business spend Carbo monitors) would naturally fit here — bunq does not currently disclose them.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat12_end_of_life",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat13_downstream_leased_assets",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat14_franchises",
+        "tco2e": null,
+        "method": null,
+        "factorSource": null,
+        "note": "Excluded as immaterial.",
+        "excludedAsImmaterial": true,
+        "notApplicable": false
+      },
+      {
+        "category": "cat15_investments",
+        "tco2e": 308988,
+        "method": "supplier_specific",
+        "factorSource": "PCAF (Partnership for Carbon Accounting Financials)",
+        "note": "CFG lending: AF 134,937 + ABL 418 + CRE 22,332 = 157,687 tCO2. Own investments: DRM 33,757 + RBS 423 + SCB 373 + Swap collateral 977 + ABS 53,839 + CLO 60,117 + Bonds 1,815 = 151,301 tCO2. The CLO line carries 275 tCO2/€M intensity (highest in portfolio).",
+        "excludedAsImmaterial": false,
+        "notApplicable": false
+      }
+    ],
+    "totalScope1And2Tco2e": 119.75,
+    "totalTco2e": 309442.35,
+    "intensity": [
+      { "metric": "tCO2e per FTE (Scope 1)", "value": 0.6, "scopeCoverage": ["Scope 1"] },
+      { "metric": "tCO2e per FTE (Scope 2)", "value": 1.7, "scopeCoverage": ["Scope 2"] }
+    ],
+    "avoidedEmissionsTco2e": null,
+    "biogenicEmissionsTco2e": null,
+    "operationalControlBoundary": true,
+    "equityShareBoundary": false
+  },
+  "energy": null,
+  "targets": [],
+  "credits": null,
+  "internalCarbonPrice": null,
+  "risks": [
+    {
+      "kind": "transition_market",
+      "timeHorizon": "medium",
+      "description": "Financing carbon-intensive assets (especially Asset Finance with 463 tCO2/€M and CLO portfolio at 275 tCO2/€M) creates exposure to transition-policy risk as EU tightens carbon pricing.",
+      "likelihoodLabel": "Likely",
+      "controlEffectivenessLabel": null,
+      "financialImpactEur": null
+    },
+    {
+      "kind": "transition_policy",
+      "timeHorizon": "short",
+      "description": "Cloud-services energy demand grows with bunq's user base; while AWS claims 100% renewable matching, the underlying grid intensity remains a passthrough risk.",
+      "likelihoodLabel": null,
+      "controlEffectivenessLabel": null,
+      "financialImpactEur": null
+    }
+  ],
+  "governance": {
+    "boardOversight": true,
+    "execRemunerationTiedToClimate": false,
+    "execRemunerationClimateSharePct": null,
+    "climateCommittees": [
+      "Managing Board (CEO, CFO, CRO)",
+      "Supervisory Board (3 non-execs, 2 fully independent)",
+      "ESG Team (quarterly updates to both boards)",
+      "Three-Lines-of-Defense risk model"
+    ],
+    "transitionPlanPublished": false,
+    "transitionPlanReference": null
+  },
+  "methodology": {
+    "ghgProtocolVersion": "Implicit (not formally cited); uses PCAF for Scope 3 Cat 15",
+    "scope2MethodsUsed": ["location_based"],
+    "gwpAssessmentReport": "unspecified",
+    "factorSources": [
+      "PCAF (Partnership for Carbon Accounting Financials) — financed emissions",
+      "AWS sustainability claims — cloud computing",
+      "DHL GoGreen Plus — shipping",
+      "Self-calculated for Scope 1 + 2 (no public factor library cited)"
+    ],
+    "materialityMethod": "Single materiality (financial / risk-based). Likelihood × Impact thresholds defined but no stakeholder consultation log disclosed.",
+    "restatedBaseYear": false,
+    "restatementReason": null
+  },
+  "euTaxonomy": null,
+  "transitionPlanSummary": null,
+  "actionSummary": "Veritree partnership: 13M+ mangroves planted since 2019 (Eden Reforestation Projects), 314,000 tCO2 claimed sequestration in 2024, 15.9M trees ordered total, 4.3M+ planted via Veritree, Kilifi region 2.7M of 3.4M ordered, 1,592 ha under restoration, 31,848 workdays. AWS migration completed (cloud emissions ~0.46 tCO2). Card production switched to more sustainable suppliers (25.3 tCO2 vs 77.5 in 2023). DHL GoGreen Plus for shipping. Sustainable Banking Coalition member. ABL portfolio scaled back from €39M to €11M to phase out less sustainable lending.",
+  "_extraction": {
+    "model": "manual-from-pdf",
+    "extractedAt": "2026-04-25T01:00:00Z",
+    "warnings": [
+      "Cat 6 internal inconsistency (166.4 vs 166.1)",
+      "Scope 1+2 total 119.8 vs location-table 83 unreconciled gap",
+      "Scope 2 not split location vs market — below GHG Protocol standard",
+      "No targets, no transition plan, no SBTi, no net-zero year, no double materiality",
+      "Cat 11 'use of sold products' marked immaterial — but customer-spending emissions arguably belong here for a bank"
+    ]
+  }
+}

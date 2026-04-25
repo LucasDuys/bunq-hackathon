@@ -26,7 +26,7 @@ export const env = {
   dbUrl: process.env.DATABASE_URL ?? "file:./data/carbon.db",
   dryRun: flag("DRY_RUN", true),
   maxToolCalls: Number(process.env.MAX_TOOL_CALLS ?? "8"),
-  defaultOrgName: process.env.DEFAULT_ORG_NAME ?? "Acme BV",
+  defaultOrgName: process.env.DEFAULT_ORG_NAME ?? "bunq B.V.",
   // Research agent (plans/matrix-research.md)
   researchDisabled: flag("RESEARCH_DISABLED", false),
   researchMaxSearchesPerCluster: intOr("RESEARCH_MAX_SEARCHES_PER_CLUSTER", 3),
