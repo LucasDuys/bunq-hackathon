@@ -105,6 +105,14 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: COLOR.mint200,
   },
+  headerByline: {
+    fontFamily: "Inter",
+    fontWeight: 400,
+    fontSize: 7,
+    color: COLOR.mint200,
+    marginTop: 2,
+    letterSpacing: 0.2,
+  },
 
   // Hero
   hero: {
@@ -377,6 +385,234 @@ const styles = StyleSheet.create({
     color: COLOR.fgMuted,
   },
 
+  // Cover page — full-bleed forest band on top, big period headline + 3 KPIs.
+  coverPage: {
+    padding: 0,
+    fontFamily: "Inter",
+    backgroundColor: COLOR.paper,
+  },
+  coverBand: {
+    backgroundColor: COLOR.forest950,
+    paddingHorizontal: 40,
+    paddingTop: 32,
+    paddingBottom: 36,
+  },
+  coverEyebrow: {
+    fontFamily: "Inter",
+    fontWeight: 700,
+    fontSize: 8,
+    color: COLOR.mint500,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    marginBottom: 14,
+  },
+  coverBrandRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
+  coverBrand: {
+    fontFamily: "Montserrat",
+    fontWeight: 800,
+    fontSize: 22,
+    color: COLOR.mint500,
+    letterSpacing: -0.5,
+  },
+  coverByline: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 9,
+    color: COLOR.mint200,
+    letterSpacing: 0.3,
+  },
+  coverBody: {
+    paddingHorizontal: 40,
+    paddingTop: 60,
+    paddingBottom: 40,
+    flexGrow: 1,
+  },
+  coverTitle: {
+    fontFamily: "Montserrat",
+    fontWeight: 800,
+    fontSize: 56,
+    color: COLOR.forest950,
+    letterSpacing: -1.4,
+    lineHeight: 1.0,
+    marginBottom: 8,
+  },
+  coverSubTitle: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 12,
+    color: COLOR.fgSecondary,
+    marginBottom: 36,
+    lineHeight: 1.45,
+  },
+  coverKpiRow: { flexDirection: "row", gap: 12, marginBottom: 36 },
+  coverKpiBox: {
+    flex: 1,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    backgroundColor: COLOR.surface,
+    borderWidth: 0.6,
+    borderColor: COLOR.borderDefault,
+    borderRadius: 14,
+  },
+  coverKpiBoxAccent: {
+    flex: 1,
+    paddingVertical: 22,
+    paddingHorizontal: 18,
+    backgroundColor: COLOR.mint100,
+    borderWidth: 0.6,
+    borderColor: COLOR.mint200,
+    borderRadius: 14,
+  },
+  coverKpiLabel: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: 7,
+    color: COLOR.fgMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.9,
+  },
+  coverKpiValue: {
+    fontFamily: "Montserrat",
+    fontWeight: 800,
+    fontSize: 26,
+    color: COLOR.forest950,
+    marginTop: 8,
+    letterSpacing: -0.6,
+  },
+  coverKpiSub: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 9,
+    color: COLOR.fgSecondary,
+    marginTop: 4,
+  },
+  coverFooter: {
+    paddingHorizontal: 40,
+    paddingBottom: 40,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  coverFooterLeft: { flex: 1 },
+  coverFooterCaption: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: 7,
+    color: COLOR.fgMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
+    marginBottom: 6,
+  },
+  coverFooterText: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 9,
+    color: COLOR.fgSecondary,
+    lineHeight: 1.5,
+  },
+  coverFooterMono: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 7,
+    color: COLOR.fgMuted,
+    letterSpacing: 0.4,
+    marginTop: 4,
+  },
+  coverSignatureLine: {
+    width: 180,
+    borderBottomWidth: 0.8,
+    borderBottomColor: COLOR.borderStrong,
+    marginBottom: 4,
+    paddingBottom: 30,
+  },
+  coverSignatureCaption: {
+    fontFamily: "Inter",
+    fontWeight: 500,
+    fontSize: 7,
+    color: COLOR.fgMuted,
+    letterSpacing: 0.6,
+    textAlign: "right",
+  },
+
+  // Equivalency card row (replaces inline triple).
+  equivRow: { flexDirection: "row", gap: 10, marginBottom: 22 },
+  equivCard: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    backgroundColor: COLOR.surface,
+    borderWidth: 0.6,
+    borderColor: COLOR.borderDefault,
+    borderRadius: 12,
+  },
+  equivCardAccent: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    backgroundColor: COLOR.mint100,
+    borderWidth: 0.6,
+    borderColor: COLOR.mint200,
+    borderRadius: 12,
+  },
+  equivLabel: {
+    fontFamily: "Inter",
+    fontWeight: 600,
+    fontSize: 7,
+    color: COLOR.fgMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.7,
+  },
+  equivNumber: {
+    fontFamily: "Montserrat",
+    fontWeight: 800,
+    fontSize: 20,
+    color: COLOR.forest950,
+    letterSpacing: -0.5,
+    marginTop: 6,
+  },
+
+  // Share-bar (proportional fill on table rows).
+  shareBarTrack: {
+    height: 4,
+    backgroundColor: COLOR.surfaceMuted,
+    borderRadius: 2,
+    marginTop: 4,
+    width: "100%",
+  },
+  shareBarFill: {
+    height: 4,
+    backgroundColor: COLOR.forest600,
+    borderRadius: 2,
+  },
+
+  // Anomaly status pill (replaces dot).
+  anomalyPillUp: {
+    fontFamily: "Inter",
+    fontWeight: 700,
+    fontSize: 7,
+    color: COLOR.warn,
+    backgroundColor: "#fef3c7",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+    marginRight: 8,
+    width: 32,
+    textAlign: "center",
+  },
+  anomalyPillNew: {
+    fontFamily: "Inter",
+    fontWeight: 700,
+    fontSize: 7,
+    color: COLOR.forest800,
+    backgroundColor: COLOR.mint100,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 999,
+    marginRight: 8,
+    width: 32,
+    textAlign: "center",
+  },
+
   // Section divider — forest canvas with mint pill (DESIGN.md "rainbow"
   // accent translated to forest/mint).
   divider: {
@@ -425,26 +661,95 @@ const fmtPct = (n: number, withSign = false) => `${withSign && n >= 0 ? "+" : ""
 
 const Header = ({ orgName, period }: { orgName: string; period: CarbonBriefing["period"] }) => (
   <View style={styles.header} fixed>
-    <Text style={styles.headerBrand}>Carbo</Text>
+    <View>
+      <Text style={styles.headerBrand}>Carbo</Text>
+      <Text style={styles.headerByline}>Generated by bunq Business</Text>
+    </View>
     <Text style={styles.headerOrg}>
       {orgName} · {period.label}
     </Text>
   </View>
 );
 
+// Period label → "March 2026" form for the cover headline.
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const periodHeadline = (label: string, kind: string): string => {
+  if (kind !== "month") return label;
+  const [yStr, mStr] = label.split("-");
+  const y = Number(yStr);
+  const m = Number(mStr);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || m < 1 || m > 12) return label;
+  return `${MONTH_NAMES[m - 1]} ${y}`;
+};
+
 export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps> => {
   const startDate = new Date(b.period.startTs * 1000).toISOString().slice(0, 10);
   const endDate = new Date(b.period.endTs * 1000).toISOString().slice(0, 10);
   const generated = new Date(b.generatedAt).toISOString().slice(0, 16).replace("T", " ");
+  const generatedDate = new Date(b.generatedAt).toISOString().slice(0, 10);
   const co2eDeltaImproved = b.summary.deltaCo2ePct !== null && b.summary.deltaCo2ePct < 0;
+  const headline = periodHeadline(b.period.label, b.period.kind);
+  const isMonth = b.period.kind === "month";
 
   return (
     <Document
-      title={`Carbon briefing ${b.period.label}`}
-      author="Carbo"
-      subject={`${b.orgName} ${b.period.label}`}
-      keywords="carbon briefing bunq carbo"
+      title={`Carbon report ${b.period.label}`}
+      author="bunq Carbo"
+      subject={`${b.orgName} ${b.period.label} carbon disclosure`}
+      keywords="carbon report bunq carbo csrd esrs e1"
     >
+      {/* Cover page (Page 0) — only for monthly reports. Weekly briefings stay
+          one-pager-style and skip the cover. */}
+      {isMonth ? (
+        <Page size="A4" style={styles.coverPage}>
+          <View style={styles.coverBand}>
+            <Text style={styles.coverEyebrow}>Monthly carbon report</Text>
+            <View style={styles.coverBrandRow}>
+              <Text style={styles.coverBrand}>Carbo</Text>
+              <Text style={styles.coverByline}>bunq Business · {b.orgName}</Text>
+            </View>
+          </View>
+          <View style={styles.coverBody}>
+            <Text style={styles.coverTitle}>{headline}</Text>
+            <Text style={styles.coverSubTitle}>
+              {startDate} to {endDate} · CSRD ESRS E1-7 source artefact · {b.summary.txCount} transactions
+            </Text>
+            <View style={styles.coverKpiRow}>
+              <View style={styles.coverKpiBoxAccent}>
+                <Text style={styles.coverKpiLabel}>Total CO₂e</Text>
+                <Text style={styles.coverKpiValue}>{fmtTon(b.summary.totalCo2eKg)} t</Text>
+                <Text style={styles.coverKpiSub}>
+                  {fmtKgPlain(b.summary.totalCo2eKg)} kg · {b.summary.deltaCo2ePct === null
+                    ? "no prior baseline"
+                    : `${fmtPct(b.summary.deltaCo2ePct, true)} vs ${b.period.priorLabel}`}
+                </Text>
+              </View>
+              <View style={styles.coverKpiBox}>
+                <Text style={styles.coverKpiLabel}>Spend</Text>
+                <Text style={styles.coverKpiValue}>{fmtEur(b.summary.totalSpendEur)}</Text>
+                <Text style={styles.coverKpiSub}>{b.summary.txCount} transactions</Text>
+              </View>
+              <View style={styles.coverKpiBox}>
+                <Text style={styles.coverKpiLabel}>Recommended offset</Text>
+                <Text style={styles.coverKpiValue}>{fmtEur(b.reserve.recommendedSpendEur)}</Text>
+                <Text style={styles.coverKpiSub}>{b.reserve.recommendedTonnes.toFixed(2)} t · {b.reserve.projectMix.length} EU projects</Text>
+              </View>
+            </View>
+          </View>
+          <View style={styles.coverFooter}>
+            <View style={styles.coverFooterLeft}>
+              <Text style={styles.coverFooterCaption}>Prepared by</Text>
+              <Text style={styles.coverFooterText}>bunq Business · Carbo</Text>
+              <Text style={styles.coverFooterMono}>generated {generated} UTC</Text>
+            </View>
+            <View>
+              <View style={styles.coverSignatureLine} />
+              <Text style={styles.coverSignatureCaption}>Sustainability lead · {generatedDate}</Text>
+            </View>
+          </View>
+        </Page>
+      ) : null}
+
       <Page size="A4" style={styles.page}>
         <Header orgName={b.orgName} period={b.period} />
         <View style={styles.pageBody}>
@@ -454,25 +759,24 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
           </Text>
 
           <View style={styles.pillRow}>
+            {isMonth ? <Text style={styles.pill}>CSRD ESRS E1-7 ready</Text> : null}
             <Text style={styles.pill}>Internal summary</Text>
             <Text style={styles.pill}>{b.summary.txCount} transactions</Text>
             <Text style={styles.pill}>Confidence {(b.summary.confidence * 100).toFixed(0)}%</Text>
           </View>
 
-          <View style={styles.triple}>
-            <View>
-              <Text style={styles.tripleNumber}>{fmtKgPlain(b.summary.totalCo2eKg)} kg</Text>
-              <Text style={styles.tripleLabel}>CO₂e this period</Text>
+          <View style={styles.equivRow}>
+            <View style={styles.equivCard}>
+              <Text style={styles.equivLabel}>CO₂e this period</Text>
+              <Text style={styles.equivNumber}>{fmtKgPlain(b.summary.totalCo2eKg)} kg</Text>
             </View>
-            <Text style={styles.tripleEquals}>=</Text>
-            <View>
-              <Text style={styles.tripleNumber}>{fmtTon(b.summary.totalCo2eKg)} t</Text>
-              <Text style={styles.tripleLabel}>tonnes equivalent</Text>
+            <View style={styles.equivCardAccent}>
+              <Text style={styles.equivLabel}>Tonnes equivalent</Text>
+              <Text style={styles.equivNumber}>{fmtTon(b.summary.totalCo2eKg)} t</Text>
             </View>
-            <Text style={styles.tripleEquals}>=</Text>
-            <View>
-              <Text style={styles.tripleNumber}>{fmtEur(b.reserve.recommendedSpendEur)}</Text>
-              <Text style={styles.tripleLabel}>to fully offset</Text>
+            <View style={styles.equivCard}>
+              <Text style={styles.equivLabel}>To fully offset</Text>
+              <Text style={styles.equivNumber}>{fmtEur(b.reserve.recommendedSpendEur)}</Text>
             </View>
           </View>
 
@@ -527,14 +831,19 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
               <Text style={[styles.th, { flex: 3 }]}>Category</Text>
               <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>Spend</Text>
               <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>CO₂e</Text>
-              <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Share</Text>
+              <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>Share</Text>
             </View>
             {b.topCategories.map((c) => (
               <View key={c.category} style={styles.tableRow}>
                 <Text style={[styles.td, { flex: 3, textTransform: "capitalize" }]}>{c.category.replace(/_/g, " ")}</Text>
                 <Text style={[styles.tdNumeric, { flex: 2, textAlign: "right" }]}>{fmtEur(c.spendEur)}</Text>
                 <Text style={[styles.tdNumeric, { flex: 2, textAlign: "right" }]}>{fmtKg(c.co2eKg)}</Text>
-                <Text style={[styles.tdNumeric, { flex: 1, textAlign: "right" }]}>{c.sharePct.toFixed(0)}%</Text>
+                <View style={{ flex: 2, paddingLeft: 12 }}>
+                  <Text style={[styles.tdNumeric, { textAlign: "right" }]}>{c.sharePct.toFixed(0)}%</Text>
+                  <View style={styles.shareBarTrack}>
+                    <View style={[styles.shareBarFill, { width: `${Math.min(100, Math.max(0, c.sharePct))}%` }]} />
+                  </View>
+                </View>
               </View>
             ))}
           </View>
@@ -546,7 +855,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
               <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Tx</Text>
               <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>Spend</Text>
               <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>CO₂e</Text>
-              <Text style={[styles.th, { flex: 1, textAlign: "right" }]}>Share</Text>
+              <Text style={[styles.th, { flex: 2, textAlign: "right" }]}>Share</Text>
             </View>
             {b.topMerchants.map((m) => (
               <View key={m.merchantNorm} style={styles.tableRow}>
@@ -557,7 +866,12 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
                 <Text style={[styles.tdNumeric, { flex: 1, textAlign: "right" }]}>{m.txCount}</Text>
                 <Text style={[styles.tdNumeric, { flex: 2, textAlign: "right" }]}>{fmtEur(m.spendEur)}</Text>
                 <Text style={[styles.tdNumeric, { flex: 2, textAlign: "right" }]}>{fmtKg(m.co2eKg)}</Text>
-                <Text style={[styles.tdNumeric, { flex: 1, textAlign: "right" }]}>{m.sharePct.toFixed(0)}%</Text>
+                <View style={{ flex: 2, paddingLeft: 12 }}>
+                  <Text style={[styles.tdNumeric, { textAlign: "right" }]}>{m.sharePct.toFixed(0)}%</Text>
+                  <View style={styles.shareBarTrack}>
+                    <View style={[styles.shareBarFill, { width: `${Math.min(100, Math.max(0, m.sharePct))}%` }]} />
+                  </View>
+                </View>
               </View>
             ))}
           </View>
@@ -577,17 +891,21 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
           {b.anomalies.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>What changed</Text>
-              {b.anomalies.map((a, i) => (
-                <View key={i} style={styles.bullet}>
-                  <Text style={[styles.bulletDot, { color: a.deltaPct !== null && a.deltaPct >= 0 ? COLOR.warn : COLOR.forest600 }]}>
-                    {a.deltaPct !== null && a.deltaPct >= 0 ? "↑" : a.deltaPct !== null ? "↓" : "•"}
-                  </Text>
-                  <View style={styles.bulletBody}>
-                    <Text style={styles.bulletPrimary}>{a.subject}</Text>
-                    <Text style={styles.bulletSecondary}>{a.message}</Text>
+              {b.anomalies.map((a, i) => {
+                const isUp = a.deltaPct !== null && a.deltaPct >= 0;
+                const isNew = a.deltaPct === null;
+                const pillStyle = isNew ? styles.anomalyPillNew : styles.anomalyPillUp;
+                const pillLabel = isNew ? "NEW" : isUp ? `+${Math.round(a.deltaPct!)}%` : `${Math.round(a.deltaPct!)}%`;
+                return (
+                  <View key={i} style={styles.bullet}>
+                    <Text style={pillStyle}>{pillLabel}</Text>
+                    <View style={styles.bulletBody}>
+                      <Text style={styles.bulletPrimary}>{a.subject}</Text>
+                      <Text style={styles.bulletSecondary}>{a.message}</Text>
+                    </View>
                   </View>
-                </View>
-              ))}
+                );
+              })}
             </View>
           )}
 
@@ -652,7 +970,7 @@ export const briefingDocument = (b: CarbonBriefing): ReactElement<DocumentProps>
           </View>
 
           <Text style={styles.meta}>
-            Generated by Carbo from bunq Business transaction data. Methodology: spend-based GHG Protocol Scope 3 with category-level emission factors (DEFRA 2024, ADEME Base Carbone, Exiobase v3.8.2). Confidence reflects factor uncertainty x classifier confidence x tier weight. Recommended-credit project mix favours EU-registered removal credits per Oxford Principles 2024 / VCMI guidance. Visual style follows the team DESIGN.md (bunq Easy Green palette, Montserrat + Inter typography). This briefing is an internal advisory artefact, not an audited disclosure under CSRD ESRS E1.
+            Prepared by bunq Carbo from bunq Business transaction data. This artefact is the source disclosure feeding {b.orgName}&apos;s annual CSRD ESRS E1 report. Methodology: spend-based GHG Protocol Scope 3 with category-level emission factors (DEFRA 2024, ADEME Base Carbone, Exiobase v3.8.2). Confidence reflects factor uncertainty x classifier confidence x tier weight. Recommended-credit project mix favours EU-registered removal credits per Oxford Principles 2024 / VCMI guidance.
           </Text>
         </View>
         <Text style={styles.pageNumber} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} fixed />

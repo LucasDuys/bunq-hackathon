@@ -38,5 +38,8 @@ export const env = {
   gmailRefreshToken: process.env.GMAIL_REFRESH_TOKEN ?? "",
   gmailPollAddress: process.env.GMAIL_POLL_ADDRESS ?? "",
   gmailMock: flag("GMAIL_MOCK", true),
+  // Auto-generate the bunq-branded carbon report PDF on close.completed.
+  // Disable with CARBO_AUTOEXPORT=0 (e.g. in tests that don't want disk writes).
+  carboAutoExport: flag("CARBO_AUTOEXPORT", true),
 };
 export { required };

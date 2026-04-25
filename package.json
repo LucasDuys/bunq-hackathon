@@ -19,10 +19,13 @@
     "bunq:create-reserve": "tsx scripts/bunq-create-reserve.ts",
     "bunq:sugardaddy": "tsx scripts/bunq-sugardaddy.ts",
     "bunq:backfill-notes": "tsx scripts/bunq-backfill-notes.ts",
+    "bunq:annual-export": "tsx scripts/bunq-annual-export.ts",
     "bunq:register": "tsx scripts/register-webhook.ts",
     "dev:live": "bash scripts/dev-live.sh",
     "dev:fire": "tsx scripts/fire-test-event.ts",
+    "dev:fire-draft": "tsx scripts/fire-draft-callback.ts",
     "reports:coverage": "tsx scripts/reports-coverage.ts",
+    "reports:mock": "tsx scripts/render-mock-pdf.ts",
     "invoice:test": "tsx scripts/test-invoice-extraction.ts",
     "invoice:test:live": "tsx scripts/test-invoice-extraction.ts --live",
     "typecheck": "tsc --noEmit"
