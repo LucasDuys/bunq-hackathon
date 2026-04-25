@@ -57,6 +57,7 @@ Agents (`lib/agent/`):
 - `close.ts` (close SM), `onboarding.ts` + `onboarding-{interviewer,drafter,parser}.ts`.
 - `impact-analysis.ts`, `impacts.ts`.
 - `narrative.ts` (CSRD, Sonnet), `questions.ts` (refine Qs, Sonnet).
+- `report-agent.ts` — facade for the auto-generated CSRD PDF; `runReportAgent({orgId, label})` for monthly, `({orgId, year})` for annual. Triggered from `close.ts approveAndExecute` after `close.completed`. Implementation: `lib/reports/auto-export.ts`. Disable with `CARBO_AUTOEXPORT=0`.
 
 DAG (`lib/agents/dag/`):
 - Nodes: `spendBaseline`, `research`, `greenAlternatives`/`greenJudge`, `costSavings`/`costJudge`, `creditStrategy`, `executiveReport`.

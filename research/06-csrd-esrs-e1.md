@@ -25,6 +25,19 @@ The CSRD (Corporate Sustainability Reporting Directive) with standards EFRAG ESR
 - **Narrative summary**: 4 sentences — what the number is, top drivers, reserve allocated, methodology caveat. Sonnet-generated; deterministic mock fallback.
 - **Methodology appendix**: classifier + factor sources + confidence methodology + audit ledger pointer.
 
+## Auto-generated PDF (the company doesn't assemble this themselves)
+
+The pitch behavioural shift: **bunq generates the CSRD source artefact; the sustainability team downloads it.**
+
+Every `close.completed` audit row triggers `lib/agent/report-agent.ts::runReportAgent`, which renders a bunq-branded monthly PDF (`lib/reports/render-briefing.tsx`) and writes it to `data/exports/carbo-{orgId}-{YYYY}-{MM}.pdf`. December closes additionally fire the year's annual report once (idempotent via audit-chain scan). The dashboard's **Reports** panel (`app/page.tsx`) lists the latest six PDFs with one-tap downloads served by `app/api/reports/download/route.ts`.
+
+The monthly PDF positioning: **CSRD ESRS E1-7 source artefact**, not a substitute for the company's audited annual disclosure. Cover page reads "CSRD ESRS E1-7 ready"; methodology footer says "source disclosure feeding {orgName}'s annual CSRD ESRS E1 report". Limited-assurance audit sign-off remains the company's responsibility — Carbo automates the assembly, not the certification.
+
+What this saves a 50-person EU mid-cap (anchored to defensible benchmarks; see `research/14-realistic-seed-data.md` and Cushman & Wakefield Amsterdam offices for cost references):
+- **6–12 weeks of Q1 staff time** today on Excel-stitching invoices to factors and writing the methodology narrative.
+- **€15–40k/yr in external consultant fees** for a small mid-cap.
+- Carbo automates the assembly; conservative estimate is **~80% reduction in CSRD assembly hours and €10–30k/yr saved on consultant fees**, while raising audit quality (deterministic factor citation per row vs hand-keyed spreadsheets).
+
 ## Gaps we're honest about
 - We don't do Scope 1 (direct emissions, e.g. company vehicles) or Scope 2 (electricity from grid). Those need utility bills / vehicle records, not bank txs.
 - Scope 3 coverage is limited to categories visible in bank spend — no upstream supplier emissions beyond what their spend factor implies.

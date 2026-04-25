@@ -235,3 +235,39 @@ Counterpart to `TODO.md` (what's left to do). This file tracks what's **done**.
 - [x] `app/verify/[id]/page.tsx` — Public verification landing page: runs `verifyChain()`, checks digest match, shows close summary (emissions, confidence, reserve, approval date), chain integrity status, mobile-first dark theme (2026-04-25)
 - [x] `app/close/[id]/page.tsx` — Added "Proof of carbon offset" QR card in the Loop Closed section; only renders when close run is approved (2026-04-25)
 - [x] `npm install qrcode.react` — QR rendering dependency (2026-04-25)
+
+## bunq generates the report — Auto-generated CSRD PDF (2026-04-25)
+
+> The pitch: bunq generates the company's CSRD ESRS E1-7 source artefact automatically.
+> The sustainability team downloads the PDF — no spreadsheets, no consultant assembly.
+> Conservative time savings for a 50-person SME: ~80% reduction in CSRD assembly hours
+> and €10–30k/yr saved on consultant fees.
+
+- [x] `lib/bunq/notes.ts` (`writeCarbonNote`, `attachReceiptToPayment`) — every bunq Payment carries a Carbo carbon stamp on the bank's side (`"kg CO2e: 8.45 ±2.96 | factor: DEFRA 2024 #travel.taxi"`) (PR #6 Phase 1, 2026-04-25)
+- [x] `app/api/webhook/bunq/route.ts` — webhook handler writes the NoteText after every `tx.ingested`, audits `bunq.note.written` / `bunq.note.failed` (2026-04-25)
+- [x] `scripts/bunq-backfill-notes.ts` (`npm run bunq:backfill-notes`) — paints every existing transaction with a NoteText. Idempotent. (2026-04-25)
+- [x] `lib/bunq/draft-payment.ts` (`createDraftPayment`, `getDraftPayment`) + `app/api/bunq/draft-callback/route.ts` — over-threshold close runs route approval through bunq's app via DraftPayment; bank-grade signature gates the money. (PR #6 Phase 2, 2026-04-25)
+- [x] `scripts/fire-draft-callback.ts` (`npm run dev:fire-draft -- --draft=<id>`) — demo shortcut that POSTs a synthetic ACCEPTED/REJECTED callback so the flow runs without a real CFO bunq user. (2026-04-25)
+- [x] `lib/bunq/annual-export.ts` + `scripts/bunq-annual-export.ts` (`npm run bunq:annual-export -- --year=2026`) — generates the auditor-facing year-end pair: `data/exports/carbo-annual-{year}.csv` (every tx with the carbon column) + `data/exports/bunq-annual-{year}.pdf` (bunq's official annual overview). (PR #6 Phase 3, 2026-04-25)
+- [x] `lib/reports/auto-export.ts` (`writeMonthlyReport`, `writeAnnualReport`) — reuses `buildBriefing` + `briefingDocument` (and `buildAnnualReport` + `enrichWithNarrative` + `annualReportDocument` for annual). Renders → writes → SHA-256 → audits `bunq.report.generated`. (PR #6 follow-up, 2026-04-25)
+- [x] `lib/agent/close.ts approveAndExecute()` — auto-export hook fires after `close.completed`. December closes additionally fire the annual once per year (idempotent via audit-chain scan). Failure is non-fatal — `bunq.report.failed` audit, close stays `COMPLETED`. Gated by `CARBO_AUTOEXPORT` env (default true). (2026-04-25)
+- [x] `lib/agent/report-agent.ts` — stable facade: `runReportAgent`, `writeMonthlyReport`, `writeAnnualReport`. JSDoc explains trigger points, outputs, failure modes. (2026-04-25)
+- [x] `app/api/reports/download/route.ts` — guarded streamer for `data/exports/`. 200 for canonical paths, 403 for path traversal or any path outside `data/exports/`. (2026-04-25)
+- [x] `app/page.tsx` — Reports panel between KPI strip and Trend; lists last 6 generated PDFs with one-tap download links. Empty state: "No reports yet — they auto-generate when a close completes." (2026-04-25)
+- [x] `lib/queries.ts` — `getGeneratedReports()` helper reads recent `bunq.report.generated` audit rows. (2026-04-25)
+- [x] **Visual upgrade** to `lib/reports/render-briefing.tsx`: dedicated cover page (period as headline, three hero KPI cards, signature line for sustainability lead), equivalency cards, share bars on tables, anomaly pills (`+239%` warn / `NEW` mint), polished swap badges, footer rewritten so it no longer contradicts the cover ("source disclosure feeding <orgName>'s annual CSRD ESRS E1 report"). PDF metadata: title "Carbon report", author "bunq Carbo". (PR #6 follow-up, 2026-04-25)
+- [x] `wrap={false}` on table rows + sections — keeps Top categories and Top emitting merchants on a single page; eliminates the orphan-page-3 issue. (PR #7, 2026-04-25)
+- [x] `scripts/render-mock-pdf.ts` (`npm run reports:mock`) — fixture-driven mock renderer; produces `data/exports/mock-bunq-carbo-monthly.pdf` with no DB / close-run dependency. Useful for handing the document to a stakeholder in isolation. (2026-04-25)
+
+### Files
+
+| Concern | Files |
+|---|---|
+| Agent facade | `lib/agent/report-agent.ts` |
+| Render + write + hash + audit | `lib/reports/auto-export.ts` |
+| PDF templates | `lib/reports/render-briefing.tsx`, `lib/reports/render-annual.tsx` |
+| Triggered by | `lib/agent/close.ts` (after `close.completed`) |
+| Download | `app/api/reports/download/route.ts` |
+| Dashboard surface | `app/page.tsx` (Reports panel) |
+| Mock | `scripts/render-mock-pdf.ts` (`npm run reports:mock`) |
+| Year-end CSV pair | `scripts/bunq-annual-export.ts` (`npm run bunq:annual-export`) |
